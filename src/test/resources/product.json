@@ -1,0 +1,16 @@
+{
+    "product": {
+        "properties": {
+            "ProductId":            { "type": "string", "index": "not_analyzed" },
+            "Description":          { "type": "string", "index": "not_analyzed" },
+
+            "ProductName" : {
+                "type" : "multi_field",
+                "fields" : {
+                    "ProductName":  { "type": "string", "index": "not_analyzed" },
+                    "suggest" :     { "type": "string", "analyzer": "suggest_analyzer" }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,56 @@
+h1. Suggester Plugin for Elasticsearch
+
+This little plugin uses the FSTSuggeser from lucene to create suggestions from a certain field for a specified term instead of returning index data.
+
+THIS IS NOT PRODUCTION READY! DO NOT USE IT.
+
+This is my first attempt with elasticsearch. I am not too deep into elasticsearch internals, nor I have deep knowledge about lucene. So please forgive this code.
+The plugin only works with the most simple setup of one shard on one node.
+Feel free to comment, improve and help - I am thankful for any insights.
+
+Oh and in case you have not read it above:
+
+THIS IS NOT PRODUCTION READY! DO NOT USE IT.
+
+In case you want to contact me, drop me a mail at alexander@reelsen.net
+
+
+h2. Installation
+
+ * Clone this repo
+ * Run: gradle clean build
+ * Install the plugin: /path/to/elasticsearch/bin/plugin -install elasticsearch-suggest -url file:///$PWD/build/distributions/elasticsearch-suggest-0.0.1.zip
+
+
+h2. Usage
+
+Fire up curl like this
+
+<pre><code>
+# curl -X POST 'localhost:9200/products1/product/_suggest?pretty=1' -d '{ "field": "ProductName.suggest", "term": "tischwäsche", "size": "10"  }'
+{
+  "suggest" : [ "tischwäsche", "tischwäsche 100", 
+    "tischwäsche aberdeen", "tischwäsche acryl", "tischwäsche ambiente", 
+    "tischwäsche aquarius", "tischwäsche atlanta", "tischwäsche atlas", 
+    "tischwäsche augsburg", "tischwäsche aus", "tischwäsche austria" ]
+}
+</code></pre>
+
+As you can see, this queries the products index for the field ProductName.suggest with the specified term and size
+
+You might want to check out the included unit test as well. I use a shingle filter in my examples, take a look at the files in src/test/resources directory.
+
+
+h2. TODO
+
+ * Add debugging
+ * Test the SuggestService instead of the JSON response
+ * Parse the JSON arguments like in the ES actions (currently the size parameter as string can spit exceptions)
+ * Extend the client interface and create a SuggestRequest java class - is this possible at all with a plugin
+ * Find out whether the index reader list leaks memory (possibly)
+ * Find out why there is a one second delay in response while there are lots of updates - and how to remove it
+ * Create a real action
+ * Support multiple shards on one node
+ * Support multiple shards over multiple nodes
+ * Make it generelly less hacky
+

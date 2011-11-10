@@ -1,0 +1,25 @@
+# Unicast Discovery (disable multicast)
+discovery:
+  zen:
+    multicast.enabled: false
+
+http:
+  max_content_length: 100000
+
+index:
+  number_of_shards: 1
+
+  analysis:
+    analyzer: 
+      default:
+        type: standard
+
+      lowercase_analyzer:
+        type: custom
+        tokenizer: standard
+        filter: [standard, lowercase]
+
+      suggest_analyzer:
+        type: custom
+        tokenizer: standard
+        filter: [standard, lowercase, shingle]
