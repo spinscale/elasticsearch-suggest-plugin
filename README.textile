@@ -43,8 +43,9 @@ You might want to check out the included unit test as well. I use a shingle filt
 
 h2. TODO
 
- * Add debugging
+ * DONE: Add debugging
  * Test the SuggestService instead of the JSON response
+ * Clean up exception handling (perhaps only one is needed)
  * Parse the JSON arguments like in the ES actions (currently the size parameter as string can spit exceptions)
  * Extend the client interface and create a SuggestRequest java class - is this possible at all with a plugin
  * Find out whether the index reader list leaks memory (possibly)
@@ -52,5 +53,6 @@ h2. TODO
  * Create a real action
  * Support multiple shards on one node
  * Support multiple shards over multiple nodes
+ * What about supporting certain types only, this is completely ignored for now
  * Make it generelly less hacky
 

@@ -8,8 +8,8 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Module;
 import org.elasticsearch.plugins.AbstractPlugin;
 import org.elasticsearch.rest.RestModule;
-import org.elasticsearch.rest.action.suggest.SuggestAction.SuggestAction;
-import org.elasticsearch.service.SuggestService;
+import org.elasticsearch.rest.action.suggest.SuggestAction;
+import org.elasticsearch.service.suggest.SuggestService;
 
 
 public class SuggestPlugin extends AbstractPlugin {
@@ -31,6 +31,7 @@ public class SuggestPlugin extends AbstractPlugin {
         }
     }
 
+    @SuppressWarnings("rawtypes")
     @Override public Collection<Class<? extends LifecycleComponent>> services() {
         Collection<Class<? extends LifecycleComponent>> services = Lists.newArrayList();
         services.add(SuggestService.class);
