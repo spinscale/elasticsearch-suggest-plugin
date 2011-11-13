@@ -58,7 +58,6 @@ public class SuggestActionTest {
         return Arrays.asList(data);
     }
 
-
     @Before
     public void startServers() throws Exception {
         startElasticSearch();
