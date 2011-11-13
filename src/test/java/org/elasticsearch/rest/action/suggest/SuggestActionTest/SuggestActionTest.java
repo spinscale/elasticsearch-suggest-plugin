@@ -8,6 +8,8 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -32,14 +34,30 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
 
+@RunWith(value = Parameterized.class)
 public class SuggestActionTest {
 
     private AsyncHttpClient httpClient = new AsyncHttpClient();
     private Node node;
+    private int numberOfShards;
+
+    public SuggestActionTest(int shards) {
+        numberOfShards = shards;
+    }
+
+    @Parameters
+    public static Collection<Object[]> data() {
+        Object[][] data = new Object[][] { { 1 }, { 2 }, { 3 } };
+        return Arrays.asList(data);
+    }
+
 
     @Before
     public void startServers() throws Exception {
@@ -60,7 +78,7 @@ public class SuggestActionTest {
 
         settingsBuilder.put("gateway.type", "none");
         settingsBuilder.put("cluster.name", randStr);
-        settingsBuilder.put("index.number_of_shards", 1);
+        settingsBuilder.put("index.number_of_shards", numberOfShards);
 
         LogConfigurator.configure(settingsBuilder.build());
 
