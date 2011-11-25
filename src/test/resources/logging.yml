@@ -1,6 +1,7 @@
 rootLogger: INFO, console
 logger:
-  org.elasticsearch.service.suggest: DEBUG
+  org.elasticsearch.service.suggest: TRACE
+  org.elasticsearch.service.suggest.NodeClientWithSuggest: DEBUG
   org.elasticsearch.service.suggest.SuggestService: DEBUG
   org.elasticsearch.rest.action.suggest.SuggestAction: DEBUG
   org.elasticsearch.plugin.suggest.SuggestPlugin: DEBUG

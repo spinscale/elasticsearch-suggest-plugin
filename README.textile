@@ -5,8 +5,7 @@ This little plugin uses the FSTSuggeser from lucene to create suggestions from a
 THIS IS NOT PRODUCTION READY! DO NOT USE IT.
 
 This is my first attempt with elasticsearch. I am not too deep into elasticsearch internals, nor I have deep knowledge about lucene. So please forgive this code.
-The plugin only works with the most simple setup of one shard on one node.
-Feel free to comment, improve and help - I am thankful for any insights.
+Feel free to comment, improve and help - I am thankful for any insights, no matter whether you want to help with elasticsearch, lucene or my other flaws.
 
 Oh and in case you have not read it above:
 
@@ -43,16 +42,16 @@ You might want to check out the included unit test as well. I use a shingle filt
 
 h2. TODO
 
- * DONE: Add debugging
- * Test the SuggestService instead of the JSON response
  * Clean up exception handling (perhaps only one is needed)
- * Parse the JSON arguments like in the ES actions (currently the size parameter as string can spit exceptions)
- * Extend the client interface and create a SuggestRequest java class - is this possible at all with a plugin
  * Find out whether the index reader list leaks memory (possibly)
  * Find out why there is a one second delay in response while there are lots of updates - and how to remove it
- * Create a real action
- * Support multiple shards on one node
+ * Remove SuggestItem class and use just strings
+ * Parse JSON in Request, not in ShardRequest
+ * Add query field to set the unsharpness and auto correction (can be implemented as did-you-mean)
+ * Make nicer tests
+ * Test the SuggestService instead of the JSON response, integration test is nice, but not what I want
  * Support multiple shards over multiple nodes
  * What about supporting certain types only, this is completely ignored for now
+ * How to extend node.client() to return a node client with suggest support?
  * Make it generelly less hacky
 
