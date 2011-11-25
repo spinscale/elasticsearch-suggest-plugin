@@ -28,6 +28,7 @@ Fire up curl like this
 <pre><code>
 # curl -X POST 'localhost:9200/products1/product/_suggest?pretty=1' -d '{ "field": "ProductName.suggest", "term": "tischwäsche", "size": "10"  }'
 {
+  "count" : 120,
   "suggest" : [ "tischwäsche", "tischwäsche 100", 
     "tischwäsche aberdeen", "tischwäsche acryl", "tischwäsche ambiente", 
     "tischwäsche aquarius", "tischwäsche atlanta", "tischwäsche atlas", 
@@ -42,10 +43,10 @@ You might want to check out the included unit test as well. I use a shingle filt
 
 h2. TODO
 
+ * Remove SuggestItem class and use just strings
  * Clean up exception handling (perhaps only one is needed)
  * Find out whether the index reader list leaks memory (possibly)
  * Find out why there is a one second delay in response while there are lots of updates - and how to remove it
- * Remove SuggestItem class and use just strings
  * Parse JSON in Request, not in ShardRequest
  * Add query field to set the unsharpness and auto correction (can be implemented as did-you-mean)
  * Make nicer tests

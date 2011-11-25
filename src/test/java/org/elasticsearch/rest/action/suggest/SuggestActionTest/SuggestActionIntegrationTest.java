@@ -99,7 +99,7 @@ public class SuggestActionIntegrationTest {
         assertThat(products.size(), is(3));
         indexProducts(products, node);
 
-        List<String> suggestions = getSuggestions("ProductName.suggest", "foo", 2);
+        List<String> suggestions = getSuggestions("ProductName.suggest", "foo", 2, 3);
         assertThat(suggestions + " is not correct", suggestions, hasSize(2));
         assertThat(suggestions, contains("foob", "fooba"));
     }
@@ -213,14 +213,25 @@ public class SuggestActionIntegrationTest {
         assertThat("Suggestions are: " + suggestions, suggestions, contains(terms));
     }
 
-    @SuppressWarnings("unchecked")
     private List<String> getSuggestions(String field, String term, Integer size) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
+        return getSuggestions(field, term, size, size);
+   }
+
+    @SuppressWarnings("unchecked")
+    private List<String> getSuggestions(String field, String term, Integer size, Integer totalCount) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
         String json = String.format("{ \"field\": \"%s\", \"term\": \"%s\", \"size\": \"%s\" }", field, term, size);
         Response r = httpClient.preparePost("http://localhost:9200/products/product/_suggest").setBody(json).execute().get();
         assertThat(r.getStatusCode(), is(200));
         XContentParser parser = JsonXContent.jsonXContent.createParser(r.getResponseBody());
         Map<String, Object> jsonResponse = parser.map();
+
+        // Check for paging
+        if (totalCount > size) {
+            assertThat(jsonResponse, hasKey("count"));
+            assertThat((Integer)jsonResponse.get("count"), is(totalCount));
+        }
         assertThat(jsonResponse, hasKey("suggestions"));
         return (List<String>) jsonResponse.get("suggestions");
-   }
+    }
+
 }
