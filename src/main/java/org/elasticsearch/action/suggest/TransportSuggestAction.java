@@ -99,12 +99,6 @@ public class TransportSuggestAction extends TransportBroadcastOperationAction<Su
             }
         }
 
-//        SortedSet<SuggestItem> itemSet = ImmutableSortedSet.copyOf(items);
-//        System.out.println("GGGGG: " + itemSet);
-//        List<SuggestItem> resultItems = Lists.newArrayList(itemSet).subList(0, Math.min(itemSet.size(), arg1)); // TODO: find parameters, FUCK
-
-//        List<SuggestItem> items = Lists.newArrayList();
-
         List<SuggestItem> resultItems = ImmutableSortedSet.copyOf(items).asList();
         return new SuggestResponse(resultItems.subList(0, Math.min(resultItems.size(), size)),
                 shardsResponses.length(), successfulShards, failedShards, shardFailures);
