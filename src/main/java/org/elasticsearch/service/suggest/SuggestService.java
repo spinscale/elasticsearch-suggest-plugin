@@ -10,7 +10,6 @@ import org.apache.lucene.search.spell.HighFrequencyDictionary;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
 import org.apache.lucene.search.suggest.fst.FSTLookup;
 import org.elasticsearch.ElasticSearchException;
-import org.elasticsearch.action.suggest.SuggestResponse.SuggestItem;
 import org.elasticsearch.common.StopWatch;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.collect.Maps;
@@ -43,7 +42,7 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
     @Override
     protected void doClose() throws ElasticSearchException {}
 
-    public List<SuggestItem> suggest(IndexShard indexShard, byte[] querySource) throws ElasticSearchException {
+    public List<String> suggest(IndexShard indexShard, byte[] querySource) throws ElasticSearchException {
         try {
             XContentParser parser = XContentFactory.xContent(querySource).createParser(querySource);
             Map<String, Object> parserMap = parser.mapAndClose();
@@ -59,7 +58,7 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
         }
     }
 
-    public List<SuggestItem> suggest(IndexShard indexShard, String field, String term, int limit) throws ElasticSearchException {
+    public List<String> suggest(IndexShard indexShard, String field, String term, int limit) throws ElasticSearchException {
         StopWatch shardWatch = new StopWatch().start();
         try {
 
@@ -72,9 +71,9 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
             logger.debug("Suggested {} results {} for term [{}] in index [{}] shard [{}], duration [{}]", lookupResults.size(),
                     lookupResults, term, indexShard.shardId().index().name(), indexShard.shardId().id(), shardWatch.totalTime());
 
-            List<SuggestItem> results = Lists.newArrayList();
+            List<String> results = Lists.newArrayListWithCapacity(lookupResults.size());
             for (LookupResult lookupResult : lookupResults) {
-                results.add(new SuggestItem(lookupResult.key));
+                results.add(lookupResult.key);
             }
             return results;
 

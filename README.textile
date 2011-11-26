@@ -42,7 +42,6 @@ You might want to check out the included unit test as well. I use a shingle filt
 
 h2. TODO
 
- * Remove SuggestItem class and use just strings
  * Clean up exception handling (perhaps only one is needed)
  * Find out whether the index reader list leaks memory (possibly)
  * Find out why there is a one second delay in response while there are lots of updates - and how to remove it

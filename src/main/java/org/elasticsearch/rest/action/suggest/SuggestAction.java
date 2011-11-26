@@ -48,7 +48,7 @@ public class SuggestAction extends BaseRestHandler {
                 try {
                     XContentBuilder builder = RestXContentBuilder.restContentBuilder(request);
                     builder.startObject();
-                    builder.field("suggestions", response.suggestionsAsString());
+                    builder.field("suggestions", response.suggestions());
                     buildBroadcastShardsHeader(builder, response);
 
                     builder.endObject();
