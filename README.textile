@@ -28,7 +28,6 @@ Fire up curl like this
 <pre><code>
 # curl -X POST 'localhost:9200/products1/product/_suggest?pretty=1' -d '{ "field": "ProductName.suggest", "term": "tischwäsche", "size": "10"  }'
 {
-  "count" : 120,
   "suggest" : [ "tischwäsche", "tischwäsche 100", 
     "tischwäsche aberdeen", "tischwäsche acryl", "tischwäsche ambiente", 
     "tischwäsche aquarius", "tischwäsche atlanta", "tischwäsche atlas", 

@@ -77,7 +77,6 @@ public class TransportSuggestAction extends TransportBroadcastOperationAction<Su
 
         int successfulShards = 0;
         int failedShards = 0;
-        int totalResultCount = 0;
         List<ShardOperationFailedException> shardFailures = null;
         List<SuggestItem> items = Lists.newArrayList();
         for (int i = 0; i < shardsResponses.length(); i++) {
@@ -94,7 +93,6 @@ public class TransportSuggestAction extends TransportBroadcastOperationAction<Su
                 ShardSuggestResponse shardSuggestResponse = (ShardSuggestResponse) shardResponse;
                 List<SuggestItem> shardItems = shardSuggestResponse.suggestions();
                 items.addAll(shardItems);
-                totalResultCount += shardItems.size();
                 successfulShards++;
             } else {
                 successfulShards++;
@@ -108,7 +106,7 @@ public class TransportSuggestAction extends TransportBroadcastOperationAction<Su
 //        List<SuggestItem> items = Lists.newArrayList();
 
         List<SuggestItem> resultItems = ImmutableSortedSet.copyOf(items).asList();
-        return new SuggestResponse(resultItems.subList(0, Math.min(resultItems.size(), size)), totalResultCount,
+        return new SuggestResponse(resultItems.subList(0, Math.min(resultItems.size(), size)),
                 shardsResponses.length(), successfulShards, failedShards, shardFailures);
     }
 

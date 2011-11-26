@@ -99,7 +99,8 @@ public class SuggestActionIntegrationTest {
         assertThat(products.size(), is(3));
         indexProducts(products, node);
 
-        List<String> suggestions = getSuggestions("ProductName.suggest", "foo", 2, 3);
+        String response = getSuggestResponse("ProductName.suggest", "foo", 2);
+        List<String> suggestions = getSuggestionsFromResponse(response);
         assertThat(suggestions + " is not correct", suggestions, hasSize(2));
         assertThat(suggestions, contains("foob", "fooba"));
     }
@@ -214,24 +215,28 @@ public class SuggestActionIntegrationTest {
     }
 
     private List<String> getSuggestions(String field, String term, Integer size) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
-        return getSuggestions(field, term, size, size);
+        return getSuggestionsFromResponse(getSuggestResponse(field, term, size));
    }
 
-    @SuppressWarnings("unchecked")
-    private List<String> getSuggestions(String field, String term, Integer size, Integer totalCount) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
+    private String getSuggestResponse(String field, String term, Integer size) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
         String json = String.format("{ \"field\": \"%s\", \"term\": \"%s\", \"size\": \"%s\" }", field, term, size);
         Response r = httpClient.preparePost("http://localhost:9200/products/product/_suggest").setBody(json).execute().get();
         assertThat(r.getStatusCode(), is(200));
-        XContentParser parser = JsonXContent.jsonXContent.createParser(r.getResponseBody());
-        Map<String, Object> jsonResponse = parser.map();
+        return r.getResponseBody();
+    }
 
-        // Check for paging
-        if (totalCount > size) {
-            assertThat(jsonResponse, hasKey("count"));
-            assertThat((Integer)jsonResponse.get("count"), is(totalCount));
-        }
+    @SuppressWarnings("unchecked")
+    private List<String> getSuggestionsFromResponse(String response) throws IOException {
+        XContentParser parser = JsonXContent.jsonXContent.createParser(response);
+        Map<String, Object> jsonResponse = parser.map();
         assertThat(jsonResponse, hasKey("suggestions"));
         return (List<String>) jsonResponse.get("suggestions");
     }
 
+    private Integer getSuggestCount(String response) throws IOException {
+        XContentParser parser = JsonXContent.jsonXContent.createParser(response);
+        Map<String, Object> jsonResponse = parser.map();
+        assertThat(jsonResponse, hasKey("count"));
+        return (Integer)jsonResponse.get("count");
+    }
 }

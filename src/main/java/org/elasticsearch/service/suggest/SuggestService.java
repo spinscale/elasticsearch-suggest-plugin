@@ -1,14 +1,8 @@
 package org.elasticsearch.service.suggest;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 import org.apache.lucene.index.IndexReader;
@@ -20,21 +14,17 @@ import org.elasticsearch.action.suggest.SuggestResponse.SuggestItem;
 import org.elasticsearch.common.StopWatch;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.collect.Maps;
-import org.elasticsearch.common.collect.Sets;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
-import org.elasticsearch.index.service.IndexService;
 import org.elasticsearch.index.shard.service.IndexShard;
-import org.elasticsearch.indices.IndicesService;
 
 public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
 
-    @Inject private IndicesService indicesService;
-    private ConcurrentMap<IndexReader, Map<String, FSTLookup>> lookups = Maps.newConcurrentMap();
+    private static final ConcurrentMap<IndexReader, Map<String, FSTLookup>> lookups = Maps.newConcurrentMap();
 
     @Inject public SuggestService(Settings settings) {
         super(settings);
@@ -75,7 +65,7 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
 
             IndexReader indexReader = indexShard.searcher().searcher().getIndexReader();
             FSTLookup lookup;
-                lookup = createFSTLookup(indexReader, field);
+                lookup = createFSTLookup(indexReader, indexShard.shardId().index().name(), field);
 
             List<LookupResult> lookupResults = lookup.lookup(term, true, limit+1); // TODO: Not sure why +1
             shardWatch.stop();
@@ -93,59 +83,7 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
         }
     }
 
-
-    public List<String> suggest(String[] indices, String field, String term) {
-        return suggest(indices, field, term, 10);
-    }
-
-    public List<String> suggest(String[] indices, String field, String term, Integer limit) throws ElasticSearchException {
-        StopWatch watch = new StopWatch().start();
-        IndexReader indexReader = null;
-
-        Collection<String> indexCollection = Arrays.asList(indices);
-
-        try {
-            List<LookupResult> lookupResultsOverAllShards = Lists.newArrayList();
-
-            for (String index : indexCollection) {
-                if (indicesService.hasIndex(index)) {
-                    IndexService indexService = indicesService.indexService(index);
-                    Iterator<IndexShard> shardIterator = indexService.iterator();
-
-                    while (shardIterator.hasNext()) {
-                        IndexShard indexShard = shardIterator.next();
-                        StopWatch shardWatch = new StopWatch().start();
-
-                        indexReader = indexShard.searcher().searcher().getIndexReader();
-                        FSTLookup lookup = createFSTLookup(indexReader, field);
-
-                        List<LookupResult> lookupResults = lookup.lookup(term, true, limit+1); // TODO: Not sure why +1
-                        lookupResultsOverAllShards.addAll(lookupResults);
-                        shardWatch.stop();
-                        logger.debug("Suggested {} results {} for term [{}] in index [{}] shard [{}], duration [{}]", lookupResults.size(),
-                                lookupResults, term, indexShard.shardId().index().name(), indexShard.shardId().id(), shardWatch.totalTime());
-                    }
-                }
-            }
-
-            Collections.sort(lookupResultsOverAllShards);
-
-            LinkedHashSet<String> results = Sets.newLinkedHashSet();
-            for (LookupResult lookupResult : lookupResultsOverAllShards.subList(0, Math.min(limit, lookupResultsOverAllShards.size()))) {
-                results.add(lookupResult.key);
-            }
-
-            return Lists.newArrayList(results);
-        } catch (IOException e) {
-            logger.error("Error in suggest service", e);
-            throw new ElasticSearchException("Error in suggest", e);
-        } finally {
-            watch.stop();
-            logger.debug("Total suggest time for [{}]: [{}]", term, watch.shortSummary());
-        }
-    }
-
-    private FSTLookup createFSTLookup(IndexReader indexReader, String field) throws IOException {
+    private FSTLookup createFSTLookup(IndexReader indexReader, String index, String field) throws IOException {
         //      SpellChecker checker = new SpellChecker(new RAMDirectory());
         //      checker.indexDictionary(dict);
         if (!lookups.containsKey(indexReader)) {
@@ -158,7 +96,7 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
             FSTLookup lookup = new FSTLookup();
             lookup.build(dict);
             lookups.get(indexReader).put(field, lookup);
-            logger.debug("Creating FSTLookup for index [{}] and field [{}]", "TBD", field);
+            logger.debug("Creating FSTLookup for index [{}] and field [{}]", index, field);
         }
 
         return lookups.get(indexReader).get(field);

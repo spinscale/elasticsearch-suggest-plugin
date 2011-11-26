@@ -9,20 +9,17 @@ import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Streamable;
-import org.elasticsearch.common.xcontent.ToXContent;
 
 public class SuggestResponse extends BroadcastOperationResponse {
 
     private List<SuggestItem> suggestions;
-    private int count;
 
     public SuggestResponse() {
     }
 
-    public SuggestResponse(List<SuggestItem> suggestions, int totalResultCount, int totalShards, int successfulShards, int failedShards, List<ShardOperationFailedException> shardFailures) {
+    public SuggestResponse(List<SuggestItem> suggestions, int totalShards, int successfulShards, int failedShards, List<ShardOperationFailedException> shardFailures) {
         super(totalShards, successfulShards, failedShards, shardFailures);
         this.suggestions = suggestions;
-        count = totalResultCount;
     }
 
     public List<String> suggestionsAsString() {
@@ -41,17 +38,8 @@ public class SuggestResponse extends BroadcastOperationResponse {
         return Lists.newArrayList(suggestions);
     }
 
-    public int count() {
-        return count;
-    }
-
-    public int getCount() {
-        return count;
-    }
-
     @Override public void readFrom(StreamInput in) throws IOException {
         super.readFrom(in);
-        count = in.readVInt();
         int size = in.readVInt();
         suggestions = Lists.newArrayList();
         for (int i = 0; i < size; i++) {
@@ -61,7 +49,6 @@ public class SuggestResponse extends BroadcastOperationResponse {
 
     @Override public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
-        out.writeVInt(count);
         out.writeVInt(suggestions.size());
         for (SuggestItem item : suggestions) {
             item.writeTo(out);
