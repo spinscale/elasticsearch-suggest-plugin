@@ -11,7 +11,6 @@ import org.elasticsearch.action.Actions;
 import org.elasticsearch.action.support.broadcast.BroadcastOperationRequest;
 import org.elasticsearch.action.support.broadcast.BroadcastOperationThreading;
 import org.elasticsearch.client.Requests;
-import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.Required;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.Unicode;
@@ -27,8 +26,6 @@ public class SuggestRequest extends BroadcastOperationRequest {
 
     private static final XContentType contentType = Requests.CONTENT_TYPE;
     private String[] types = Strings.EMPTY_ARRAY;
-
-    @Nullable protected String routing;
 
     private byte[] suggestSource;
     private int suggestSourceOffset;
@@ -183,26 +180,8 @@ public class SuggestRequest extends BroadcastOperationRequest {
         return suggestSourceLength;
     }
 
-    public String routing() {
-        return routing;
-    }
-
-    public SuggestRequest routing(String routing) {
-        this.routing = routing;
-        return this;
-    }
-
-    public SuggestRequest routing(String... routings) {
-        routing = Strings.arrayToCommaDelimitedString(routings);
-        return this;
-    }
-
     @Override public void readFrom(StreamInput in) throws IOException {
         super.readFrom(in);
-
-        if (in.readBoolean()) {
-            routing = in.readUTF();
-        }
 
         suggestSourceOffset = 0;
         suggestSourceLength = in.readVInt();
@@ -220,13 +199,6 @@ public class SuggestRequest extends BroadcastOperationRequest {
 
     @Override public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
-
-        if (routing == null) {
-            out.writeBoolean(false);
-        } else {
-            out.writeBoolean(true);
-            out.writeUTF(routing);
-        }
 
         out.writeVInt(suggestSourceLength);
         out.writeBytes(suggestSource, suggestSourceOffset, suggestSourceLength);
