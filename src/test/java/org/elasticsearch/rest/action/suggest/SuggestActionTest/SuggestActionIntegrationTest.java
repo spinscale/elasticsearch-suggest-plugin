@@ -1,6 +1,7 @@
 package org.elasticsearch.rest.action.suggest.SuggestActionTest;
 
-import static org.elasticsearch.rest.action.suggest.SuggestActionTest.SuggestTestHelper.*;
+import static org.elasticsearch.rest.action.suggest.SuggestActionTest.SuggestTestHelper.createProducts;
+import static org.elasticsearch.rest.action.suggest.SuggestActionTest.SuggestTestHelper.indexProducts;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasKey;
@@ -15,6 +16,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.io.IOUtils;
+import org.elasticsearch.action.admin.indices.exists.IndicesExistsResponse;
+import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.logging.log4j.LogConfigurator;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.ImmutableSettings.Builder;
@@ -23,7 +26,6 @@ import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,36 +40,24 @@ public class SuggestActionIntegrationTest {
 
     private AsyncHttpClient httpClient = new AsyncHttpClient();
     private Node node;
+    private List<Node> nodes = Lists.newArrayList();
     private int numberOfShards;
+    private String clusterName = "IntegrationTestCluster_" + Math.random();
 
-    public SuggestActionIntegrationTest(int shards) {
+    public SuggestActionIntegrationTest(int shards, int nodeCount) throws IOException {
         numberOfShards = shards;
+        for (int i = 0 ; i < nodeCount ; i++) {
+            nodes.add(createNode());
+        }
+
+        node = nodes.get(0);
     }
 
     @Parameters
     public static Collection<Object[]> data() {
-        Object[][] data = new Object[][] { { 1 }, { 2 }, { 3 } };
+        // first argument: number of shards, second argument: number of nodes
+        Object[][] data = new Object[][] { { 1, 1 }, { 4, 1 }, { 10, 1 }, { 4, 4 } };
         return Arrays.asList(data);
-    }
-
-    @Before
-    public void startElasticSearch() throws Exception {
-        String randStr = "IntegrationTestCluster" + Math.random();
-        Builder settingsBuilder = ImmutableSettings.settingsBuilder();
-        String config = IOUtils.toString(getClass().getResourceAsStream("/elasticsearch.yml"));
-        settingsBuilder = settingsBuilder.loadFromSource(config);
-
-        settingsBuilder.put("gateway.type", "none");
-        settingsBuilder.put("cluster.name", randStr);
-        System.out.println("Number of shards: " + numberOfShards);
-        settingsBuilder.put("index.number_of_shards", numberOfShards);
-
-        LogConfigurator.configure(settingsBuilder.build());
-
-        node = NodeBuilder.nodeBuilder().settings(settingsBuilder.build()).node();
-        String mapping = IOUtils.toString(getClass().getResourceAsStream("/product.json"));
-        node.client().admin().indices().prepareCreate("products").execute().actionGet();
-        node.client().admin().indices().preparePutMapping("products").setType("product").setSource(mapping).execute().actionGet();
     }
 
     @After
@@ -222,6 +212,7 @@ public class SuggestActionIntegrationTest {
         String json = String.format("{ \"field\": \"%s\", \"term\": \"%s\", \"size\": \"%s\" }", field, term, size);
         Response r = httpClient.preparePost("http://localhost:9200/products/product/_suggest").setBody(json).execute().get();
         assertThat(r.getStatusCode(), is(200));
+        httpClient.close();
         return r.getResponseBody();
     }
 
@@ -233,10 +224,28 @@ public class SuggestActionIntegrationTest {
         return (List<String>) jsonResponse.get("suggestions");
     }
 
-    private Integer getSuggestCount(String response) throws IOException {
-        XContentParser parser = JsonXContent.jsonXContent.createParser(response);
-        Map<String, Object> jsonResponse = parser.map();
-        assertThat(jsonResponse, hasKey("count"));
-        return (Integer)jsonResponse.get("count");
+    private Node createNode() throws IOException {
+        Builder settingsBuilder = ImmutableSettings.settingsBuilder();
+        String config = IOUtils.toString(getClass().getResourceAsStream("/elasticsearch.yml"));
+        settingsBuilder = settingsBuilder.loadFromSource(config);
+
+        settingsBuilder.put("gateway.type", "none");
+        settingsBuilder.put("cluster.name", clusterName);
+        System.out.println("Number of shards: " + numberOfShards);
+        settingsBuilder.put("index.number_of_shards", numberOfShards);
+        settingsBuilder.put("index.number_of_replicas", 0);
+
+        LogConfigurator.configure(settingsBuilder.build());
+
+        node = NodeBuilder.nodeBuilder().settings(settingsBuilder.build()).node();
+
+        IndicesExistsResponse existsResponse = node.client().admin().indices().prepareExists("products").execute().actionGet();
+        if (!existsResponse.exists()) {
+            String mapping = IOUtils.toString(getClass().getResourceAsStream("/product.json"));
+            node.client().admin().indices().prepareCreate("products").execute().actionGet();
+            node.client().admin().indices().preparePutMapping("products").setType("product").setSource(mapping).execute().actionGet();
+        }
+
+        return node;
     }
 }

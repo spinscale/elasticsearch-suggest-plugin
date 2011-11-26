@@ -49,7 +49,6 @@ h2. TODO
  * Add query field to set the unsharpness and auto correction (can be implemented as did-you-mean)
  * Make nicer tests
  * Test the SuggestService instead of the JSON response, integration test is nice, but not what I want
- * Support multiple shards over multiple nodes
  * What about supporting certain types only, this is completely ignored for now
  * How to extend node.client() to return a node client with suggest support?
  * Make it generelly less hacky
