@@ -17,7 +17,7 @@ In case you want to contact me, drop me a mail at alexander@reelsen.net
 h2. Installation
 
  * Clone this repo
- * Run: gradle clean build
+ * Run: gradle clean build zip
  * Install the plugin: /path/to/elasticsearch/bin/plugin -install elasticsearch-suggest -url file:///$PWD/build/distributions/elasticsearch-suggest-0.0.1.zip
 
 
