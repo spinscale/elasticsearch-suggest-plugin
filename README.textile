@@ -64,12 +64,10 @@ We will setup elasticsearch, index some products and query those for suggestions
 <pre><code>index:
   analysis:
     analyzer:
-      
       lowercase_analyzer:
         type: custom
         tokenizer: standard
         filter: [standard, lowercase] 
-        
       suggest_analyzer:
         type: custom
         tokenizer: standard
@@ -81,25 +79,23 @@ We will setup elasticsearch, index some products and query those for suggestions
     "mappings" : {
         "product" : {
             "properties" : {
-	            "ProductId":	{ "type": "string", "index": "not_analyzed" },
-	            "ProductName" : {
-	                "type" : "multi_field",
-	                "fields" : {
-	                    "ProductName":  { "type": "string", "index": "not_analyzed" },
-	                    "lowercase":    { "type": "string", "analyzer": "lowercase_analyzer" },
-	                    "suggest" :     { "type": "string", "analyzer": "suggest_analyzer" }
-	                }
+	        "ProductId":	{ "type": "string", "index": "not_analyzed" },
+	        "ProductName" : {
+	            "type" : "multi_field",
+	            "fields" : {
+	                "ProductName":  { "type": "string", "index": "not_analyzed" },
+	                "lowercase":    { "type": "string", "analyzer": "lowercase_analyzer" },
+	                "suggest" :     { "type": "string", "analyzer": "suggest_analyzer" }
 	            }
+	        }
             }
         }
     }
 }'</code></pre>
  * Now lets add some products
 <pre><code>for i in 1 2 3 4 5 6 7 8 9 10 100 101 1000; do
-
-json=$(printf '{"ProductId": "%s", "ProductName": "%s" }', $i, "My Product $i")
-curl -X PUT localhost:9200/products/product/$i -d "$json"
-
+    json=$(printf '{"ProductId": "%s", "ProductName": "%s" }', $i, "My Product $i")
+    curl -X PUT localhost:9200/products/product/$i -d "$json"
 done</code></pre>
 
 h3. Queries
