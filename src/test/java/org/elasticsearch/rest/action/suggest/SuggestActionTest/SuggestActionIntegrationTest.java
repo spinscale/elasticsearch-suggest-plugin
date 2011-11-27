@@ -232,7 +232,6 @@ public class SuggestActionIntegrationTest {
 
         settingsBuilder.put("gateway.type", "none");
         settingsBuilder.put("cluster.name", clusterName);
-        System.out.println("Number of shards: " + numberOfShards);
         settingsBuilder.put("index.number_of_shards", numberOfShards);
         settingsBuilder.put("index.number_of_replicas", 0);
 

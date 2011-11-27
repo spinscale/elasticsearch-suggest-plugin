@@ -64,7 +64,7 @@ public class TransportSuggestAction extends TransportBroadcastOperationAction<Su
     @Override
     protected SuggestResponse newResponse(SuggestRequest request,
             AtomicReferenceArray shardsResponses, ClusterState clusterState) {
-        System.out.println("Entered TransportSuggestAction.newResponse()");
+        logger.trace("Entered TransportSuggestAction.newResponse()");
 
         // I am parsing this here, because otherwise
         int size = 10;
@@ -121,7 +121,7 @@ public class TransportSuggestAction extends TransportBroadcastOperationAction<Su
 
     @Override
     protected ShardSuggestResponse shardOperation(ShardSuggestRequest request) throws ElasticSearchException {
-        System.out.println("Entered TransportSuggestAction.shardOperation()");
+        logger.trace("Entered TransportSuggestAction.shardOperation()");
         IndexShard indexShard = indicesService.indexServiceSafe(request.index()).shardSafe(request.shardId());
         List<String> items = suggestService.suggest(indexShard, request.querySource());
         return new ShardSuggestResponse(request.index(), request.shardId(), items);
@@ -130,7 +130,7 @@ public class TransportSuggestAction extends TransportBroadcastOperationAction<Su
     @Override
     protected GroupShardsIterator shards(SuggestRequest request,
             String[] concreteIndices, ClusterState clusterState) {
-        System.out.println("Entered TransportSuggestAction.shards()");
+        logger.trace("Entered TransportSuggestAction.shards()");
         return clusterService.operationRouting().searchShards(clusterState, request.indices(), concreteIndices, null, null, null);
     }
 

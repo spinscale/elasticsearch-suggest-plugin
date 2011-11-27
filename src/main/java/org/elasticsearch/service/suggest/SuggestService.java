@@ -55,7 +55,7 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
             final Integer size = XContentMapValues.nodeIntegerValue(parserMap.get("size"), 10);
             final Float similarity = XContentMapValues.nodeFloatValue(parserMap.get("similarity"), 1.0f);
 
-            System.out.println(String.format("field %s, term %s, size %s, similarity", field, term, size, similarity));
+            logger.trace(String.format("Suggest Query: field %s, term %s, size %s, similarity", field, term, size, similarity));
 
             return suggest(indexShard, field, term, size, similarity);
         } catch (IOException e) {
