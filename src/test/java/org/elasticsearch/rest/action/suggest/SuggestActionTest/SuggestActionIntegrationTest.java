@@ -78,8 +78,8 @@ public class SuggestActionIntegrationTest {
         indexProducts(products, node);
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "foo", 10);
-        assertThat(suggestions, hasSize(3));
-        assertThat(suggestions, contains("foo", "foob", "foobar"));
+        assertThat(suggestions.toString(), suggestions, hasSize(3));
+        assertThat(suggestions.toString(), suggestions, contains("foo", "foob", "foobar"));
     }
 
     @Test
@@ -180,6 +180,20 @@ public class SuggestActionIntegrationTest {
         assertSuggestions(suggestions, "kochjacke paulinator", "kochjacke pauline", "kochjacke paulinpanzer");
     }
 
+    @Test
+    public void testThatSuggestionWorksWithSimilarity() throws Exception {
+        List<Map<String, Object>> products = createProducts(4);
+        products.get(0).put("ProductName", "kochjacke bla");
+        products.get(1).put("ProductName", "kochjacke blubb");
+        products.get(2).put("ProductName", "kochjacke blibb");
+        products.get(3).put("ProductName", "kochjacke paul");
+        indexProducts(products, node);
+
+        List<String> suggestions = getSuggestions("ProductName.suggest", "kochajcke", 10, 0.75f);
+        assertThat(suggestions, hasSize(1));
+        assertThat(suggestions, contains("kochjacke"));
+    }
+
 //    @Test
 //    public void performanceTest() throws Exception {
 //        List<Map<String, Object>> products = createProducts(60000);
@@ -206,15 +220,38 @@ public class SuggestActionIntegrationTest {
         assertThat("Suggestions are: " + suggestions, suggestions, contains(terms));
     }
 
-    private List<String> getSuggestions(String field, String term, Integer size) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
-        return getSuggestionsFromResponse(getSuggestResponse(field, term, size));
+    private List<String> getSuggestions(String field, String term, Integer size, Float similarity) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
+        return getSuggestionsFromResponse(getSuggestResponse(field, term, size, similarity));
    }
 
-    private String getSuggestResponse(String field, String term, Integer size) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
-        String json = String.format("{ \"field\": \"%s\", \"term\": \"%s\", \"size\": \"%s\" }", field, term, size);
+    private List<String> getSuggestions(String field, String term, Integer size) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
+        return getSuggestionsFromResponse(getSuggestResponse(field, term, size, null));
+    }
+
+    private String createJSONQuery(String field, String term, Integer size, Float similarity) {
+        StringBuilder query = new StringBuilder("{");
+        query.append(String.format("\"field\": \"%s\", ", field));
+        query.append(String.format("\"term\": \"%s\"", term));
+        if (size != null) {
+            query.append(String.format(", \"size\": \"%s\"", size));
+        }
+        if (similarity != null && similarity > 0.0 && similarity < 1.0) {
+            query.append(String.format(", \"similarity\": \"%s\"", similarity));
+        }
+        query.append("}");
+
+        return query.toString();
+    }
+
+    private String getSuggestResponse(String field, String term, Integer size, Float similarity) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
+        String json = createJSONQuery(field, term, size, similarity);
         Response r = httpClient.preparePost("http://localhost:9200/products/product/_suggest").setBody(json).execute().get();
         assertThat(r.getStatusCode(), is(200));
         return r.getResponseBody();
+    }
+
+    private String getSuggestResponse(String field, String term, Integer size) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
+        return getSuggestResponse(field, term, size, null);
     }
 
     @SuppressWarnings("unchecked")

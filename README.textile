@@ -42,14 +42,12 @@ You might want to check out the included unit test as well. I use a shingle filt
 
 h2. TODO
 
- * Clean up exception handling (perhaps only one is needed)
- * Find out whether the index reader list leaks memory (possibly)
+ * Find out whether the indexreader hashmap leaks memory (possibly)
  * Find out why there is a one second delay in response while there are lots of updates - and how to remove it
- * Parse JSON in Request, not in ShardRequest
- * Add query field to set the unsharpness and auto correction (can be implemented as did-you-mean)
  * Make nicer tests
- * Test the SuggestService instead of the JSON response, integration test is nice, but not what I want
+ * Really test the SuggestService instead of the JSON response, integration test is nice, but not what I want
  * What about supporting certain types only, this is completely ignored for now
  * How to extend node.client() to return a node client with suggest support?
+ * Conduct performance tests, especially during updates
  * Make it generelly less hacky
 
