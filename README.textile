@@ -39,9 +39,19 @@ As you can see, this queries the products index for the field ProductName.sugges
 
 You might want to check out the included unit test as well. I use a shingle filter in my examples, take a look at the files in src/test/resources directory.
 
+h2. Thanks
+
+ * Shay for giving feedback
 
 h2. TODO
 
+ * Check Shays response and incorporate comments
+   * Call searcher.release() in finally statement in order to release resources
+   * Index should not get refreshed on each change (implement periodic update, also implement rest call to refresh)
+   * Build the service as shard level service like the ShardGetService
+   * https://groups.google.com/group/elasticsearch/browse_thread/thread/7c8693c6640cbc49/d448e8880552e999?lnk=gst&q=reelsen#d448e8880552e999
+ * Testing: Get TransportSuggestAction from Injector and test the code that way
+   * https://groups.google.com/group/elasticsearch/browse_thread/thread/212277b2d8b158ca/db0ebda562bf7daf?lnk=gst&q=reelsen#db0ebda562bf7daf
  * Find out whether the indexreader hashmap leaks memory (possibly)
  * Take care of case when the indexreader has been closed
  * Find out why there is a one second delay in response while there are lots of updates - and how to remove it

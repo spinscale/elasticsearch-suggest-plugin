@@ -6,12 +6,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
+import org.apache.lucene.analysis.WhitespaceAnalyzer;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.search.spell.HighFrequencyDictionary;
 import org.apache.lucene.search.spell.SpellChecker;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
 import org.apache.lucene.search.suggest.fst.FSTLookup;
 import org.apache.lucene.store.RAMDirectory;
+import org.apache.lucene.util.Version;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.common.StopWatch;
 import org.elasticsearch.common.collect.Lists;
@@ -122,7 +125,8 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
             HighFrequencyDictionary dict = new HighFrequencyDictionary(indexReader, field, 0.00001f);
 
             SpellChecker checker = new SpellChecker(new RAMDirectory());
-            checker.indexDictionary(dict);
+            IndexWriterConfig indexWriterConfig = new IndexWriterConfig(Version.LUCENE_35, new WhitespaceAnalyzer(Version.LUCENE_35));
+            checker.indexDictionary(dict, indexWriterConfig, false);
 
             spellCheckers.get(indexReader).put(field, checker);
             logger.debug("Creating Spellchecker for index [{}] and field [{}]", index, field);

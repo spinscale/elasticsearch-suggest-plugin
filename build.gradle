@@ -2,8 +2,9 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
 
-esversion = '0.18.2'
-pluginVersion = '0.0.1'
+pluginVersion = '0.0.2'
+esVersion = '0.18.5'
+luceneVersion = '3.5.0'
 archivesBaseName = "elasticsearch-suggest-" + pluginVersion
 
 explodedDistDir = new File(distsDir, 'exploded')
@@ -30,11 +31,11 @@ repositories {
 }
 
 dependencies {
-    compile group: 'org.elasticsearch', name: 'elasticsearch', version: esversion, transitive: true
-    compile "org.apache.lucene:lucene-misc:3.4.0"
-    compile "org.apache.lucene:lucene-spellchecker:3.4.0"
-    distLib "org.apache.lucene:lucene-misc:3.4.0"
-    distLib "org.apache.lucene:lucene-spellchecker:3.4.0"
+    compile group: 'org.elasticsearch', name: 'elasticsearch', version: esVersion, transitive: true
+    compile "org.apache.lucene:lucene-misc:" + luceneVersion
+    compile "org.apache.lucene:lucene-spellchecker:" + luceneVersion
+    distLib "org.apache.lucene:lucene-misc:" + luceneVersion
+    distLib "org.apache.lucene:lucene-spellchecker:" + luceneVersion
     testCompile "org.hamcrest:hamcrest-core:1.2"
     testCompile "org.hamcrest:hamcrest-library:1.2"
     testCompile "junit:junit-dep:4.8.2"
