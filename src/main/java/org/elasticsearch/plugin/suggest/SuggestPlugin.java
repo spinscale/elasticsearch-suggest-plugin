@@ -4,7 +4,6 @@ import java.util.Collection;
 
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.component.LifecycleComponent;
-import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Module;
 import org.elasticsearch.plugins.AbstractPlugin;
 import org.elasticsearch.rest.RestModule;
@@ -13,9 +12,6 @@ import org.elasticsearch.service.suggest.SuggestService;
 
 
 public class SuggestPlugin extends AbstractPlugin {
-
-    @Inject public SuggestPlugin() {
-    }
 
     public String name() {
         return "suggest";

@@ -39,6 +39,15 @@ As you can see, this queries the products index for the field ProductName.sugges
 
 You might want to check out the included unit test as well. I use a shingle filter in my examples, take a look at the files in src/test/resources directory.
 
+Furthermore the suggest data is not updated, whenever you index a new product but every few minutes. The default is to update the index every 10 minutes, but you can change that in your elasticsearch.yml configuration:
+
+<pre><code>
+suggest:
+  refresh_interval: 600
+</code></pre>
+
+In this case the suggest indexes are refreshed every 10 minutes. This is also the default.
+
 h2. Thanks
 
  * Shay for giving feedback
@@ -46,22 +55,22 @@ h2. Thanks
 h2. TODO
 
  * Check Shays response and incorporate comments
-   * Call searcher.release() in finally statement in order to release resources
-   * Index should not get refreshed on each change (implement periodic update, also implement rest call to refresh)
    * Build the service as shard level service like the ShardGetService
    * https://groups.google.com/group/elasticsearch/browse_thread/thread/7c8693c6640cbc49/d448e8880552e999?lnk=gst&q=reelsen#d448e8880552e999
  * Testing: Get TransportSuggestAction from Injector and test the code that way
    * https://groups.google.com/group/elasticsearch/browse_thread/thread/212277b2d8b158ca/db0ebda562bf7daf?lnk=gst&q=reelsen#db0ebda562bf7daf
- * Find out whether the indexreader hashmap leaks memory (possibly)
- * Take care of case when the indexreader has been closed
- * Find out why there is a one second delay in response while there are lots of updates - and how to remove it
  * Make nicer tests
  * Really test the SuggestService instead of the JSON response, integration test is nice, but not what I want
  * What about supporting certain types only, this is completely ignored for now
- * How to extend node.client() to return a node client with suggest support? Is this possible without hard patching?
  * Conduct performance tests, especially during updates
  * Make it generelly less hacky
+ * How to extend node.client() to return a node client with suggest support? Is this possible without hard patching? Currently not as Shay said on the ML.
 
+h2. Changelog
+
+ * 2011-12-11: Fixed the biggest issues: Searchers are released now and do not leak
+ * 2011-12-11: Indexing is now done periodically
+ * 2011-12-11: Found a way to get the injector from the node, so I can build my tests without using HTTP requests
 
 h2. HOWTO - the long version
 

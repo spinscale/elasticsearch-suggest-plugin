@@ -1,27 +1,17 @@
 package org.elasticsearch.service.suggest;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 
-import org.apache.lucene.analysis.WhitespaceAnalyzer;
 import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.search.spell.HighFrequencyDictionary;
-import org.apache.lucene.search.spell.SpellChecker;
-import org.apache.lucene.search.suggest.Lookup.LookupResult;
-import org.apache.lucene.search.suggest.fst.FSTLookup;
-import org.apache.lucene.store.RAMDirectory;
-import org.apache.lucene.util.Version;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.common.StopWatch;
-import org.elasticsearch.common.collect.Lists;
-import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
@@ -29,25 +19,48 @@ import org.elasticsearch.index.shard.service.IndexShard;
 
 public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
 
-    private static final ConcurrentMap<IndexReader, Map<String, FSTLookup>> lookups = Maps.newConcurrentMap();
-    private static final ConcurrentMap<IndexReader, Map<String, SpellChecker>> spellCheckers = Maps.newConcurrentMap();
+    private Integer suggestRefreshInterval;
+    private Suggester suggester;
+    private volatile Thread suggestUpdaterThread;
+    private volatile boolean closed;
 
-    @Inject public SuggestService(Settings settings) {
+    @Inject public SuggestService(Settings settings, Suggester suggester) {
         super(settings);
+        this.suggester = suggester;
+        suggestRefreshInterval = settings.getAsInt("suggest.refresh_interval", 600) * 1000;
     }
 
     @Override
     protected void doStart() throws ElasticSearchException {
-        logger.info("Suggest component started");
+        logger.info("Suggest component started with refresh interval [{}]", TimeValue.timeValueMillis(suggestRefreshInterval));
+        // Start indexer thread here
+        // index all 5 minutes
+        suggestUpdaterThread = EsExecutors.daemonThreadFactory(settings, "suggest_updater").newThread(new SuggestUpdaterThread(suggester));
+        suggestUpdaterThread.start();
+
     }
 
     @Override
     protected void doStop() throws ElasticSearchException {
         logger.info("Suggest component stopped");
+        closeAll();
     }
 
     @Override
-    protected void doClose() throws ElasticSearchException {}
+    protected void doClose() throws ElasticSearchException {
+        closeAll();
+    }
+
+    private void closeAll() {
+        if (closed) {
+            return;
+        }
+        closed = true;
+        suggester.clean();
+        if (suggestUpdaterThread != null) {
+            suggestUpdaterThread.interrupt();
+        }
+    }
 
     public List<String> suggest(IndexShard indexShard, byte[] querySource) throws ElasticSearchException {
         try {
@@ -67,71 +80,49 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
     }
 
     public List<String> suggest(IndexShard indexShard, String field, String term, int limit, Float similarity) throws ElasticSearchException {
-        StopWatch shardWatch = new StopWatch().start();
         try {
+            StopWatch shardWatch = new StopWatch().start();
 
             IndexReader indexReader = indexShard.searcher().searcher().getIndexReader();
-            FSTLookup lookup = createFSTLookup(indexReader, indexShard.shardId().index().name(), field);
+            List<String> results = suggester.getSuggestions(indexShard.shardId(), field, term, limit, similarity, indexReader);
 
-            List<LookupResult> lookupResults = lookup.lookup(term, true, limit+1); // TODO: Not sure why +1
             shardWatch.stop();
-            logger.debug("Suggested {} results {} for term [{}] in index [{}] shard [{}], duration [{}]", lookupResults.size(),
-                    lookupResults, term, indexShard.shardId().index().name(), indexShard.shardId().id(), shardWatch.totalTime());
-
-            List<String> results = Lists.newArrayListWithExpectedSize(lookupResults.size());
-            for (LookupResult lookupResult : lookupResults) {
-                results.add(lookupResult.key);
-            }
-
-            // Only check if we want different words
-            if (similarity < 1.0f) {
-                SpellChecker checker = getSpellChecker(indexReader, indexShard.shardId().index().name(), field);
-                String[] suggestSimilar = checker.suggestSimilar(term, limit, similarity);
-                results.addAll(Arrays.asList(suggestSimilar));
-            }
+            logger.debug("Suggested {} results {} for term [{}] in index [{}] shard [{}], duration [{}]", results.size(),
+                    results, term, indexShard.shardId().index().name(), indexShard.shardId().id(), shardWatch.totalTime());
 
             return results;
-
         } catch (IOException e) {
             throw new ElasticSearchException("Problem with suggest", e);
+        } finally {
+            indexShard.searcher().release();
         }
     }
 
-    private FSTLookup createFSTLookup(IndexReader indexReader, String index, String field) throws IOException {
-        if (!lookups.containsKey(indexReader)) {
-            Map<String, FSTLookup> emptyLookupMap = Maps.newHashMapWithExpectedSize(2); // Are you doing suggest on more than two fields from your index?
-            lookups.putIfAbsent(indexReader, emptyLookupMap);
+    public class SuggestUpdaterThread implements Runnable {
+
+        private Suggester suggester;
+
+        public SuggestUpdaterThread(Suggester suggester) {
+            this.suggester = suggester;
         }
 
-        if (!lookups.get(indexReader).containsKey(field)) {
-            HighFrequencyDictionary dict = new HighFrequencyDictionary(indexReader, field, 0.00001f);
+        public void run() {
+            while (!closed) {
+                try {
+                    StopWatch sw = new StopWatch().start();
+                    suggester.update();
+                    logger.info("Suggest update took [{}]", sw.stop().totalTime());
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
 
-            FSTLookup lookup = new FSTLookup();
-            lookup.build(dict);
-            lookups.get(indexReader).put(field, lookup);
-            logger.debug("Creating FSTLookup for index [{}] and field [{}]", index, field);
+                try {
+                    Thread.sleep(suggestRefreshInterval);
+                } catch (InterruptedException e1) {
+                    continue;
+                }
+            }
         }
-
-        return lookups.get(indexReader).get(field);
-    }
-
-    private SpellChecker getSpellChecker(IndexReader indexReader, String index, String field) throws IOException {
-        if (!spellCheckers.containsKey(indexReader)) {
-            Map<String, SpellChecker> emptyLookupMap = Maps.newHashMapWithExpectedSize(2); // Are you doing suggest on more than two fields from your index?
-            spellCheckers.putIfAbsent(indexReader, emptyLookupMap);
-        }
-
-        if (!spellCheckers.get(indexReader).containsKey(field)) {
-            HighFrequencyDictionary dict = new HighFrequencyDictionary(indexReader, field, 0.00001f);
-
-            SpellChecker checker = new SpellChecker(new RAMDirectory());
-            IndexWriterConfig indexWriterConfig = new IndexWriterConfig(Version.LUCENE_35, new WhitespaceAnalyzer(Version.LUCENE_35));
-            checker.indexDictionary(dict, indexWriterConfig, false);
-
-            spellCheckers.get(indexReader).put(field, checker);
-            logger.debug("Creating Spellchecker for index [{}] and field [{}]", index, field);
-        }
-
-        return spellCheckers.get(indexReader).get(field);
     }
 }
