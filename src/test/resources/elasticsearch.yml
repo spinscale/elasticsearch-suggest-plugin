@@ -6,6 +6,9 @@ discovery:
 http:
   max_content_length: 100000
 
+suggest:
+  refresh_interval: 1
+
 index:
   number_of_shards: 1
 
