@@ -55,10 +55,10 @@ h2. Thanks
 h2. TODO
 
 * Check Shays response and incorporate comments
-    * Build the service as shard level service like the ShardGetService
-    * https://groups.google.com/group/elasticsearch/browse_thread/thread/7c8693c6640cbc49/d448e8880552e999?lnk=gst&q=reelsen#d448e8880552e999
+** Build the service as shard level service like the ShardGetService
+** https://groups.google.com/group/elasticsearch/browse_thread/thread/7c8693c6640cbc49/d448e8880552e999?lnk=gst&q=reelsen#d448e8880552e999
 * Testing: Get TransportSuggestAction from Injector and test the code that way
-    * https://groups.google.com/group/elasticsearch/browse_thread/thread/212277b2d8b158ca/db0ebda562bf7daf?lnk=gst&q=reelsen#db0ebda562bf7daf
+** https://groups.google.com/group/elasticsearch/browse_thread/thread/212277b2d8b158ca/db0ebda562bf7daf?lnk=gst&q=reelsen#db0ebda562bf7daf
 * Make nicer tests
 * Really test the SuggestService instead of the JSON response, integration test is nice, but not what I want
 * What about supporting certain types only, this is completely ignored for now
