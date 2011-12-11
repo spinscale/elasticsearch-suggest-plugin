@@ -50,36 +50,36 @@ In this case the suggest indexes are refreshed every 10 minutes. This is also th
 
 h2. Thanks
 
- * Shay for giving feedback
+* Shay for giving feedback
 
 h2. TODO
 
- * Check Shays response and incorporate comments
-   * Build the service as shard level service like the ShardGetService
-   * https://groups.google.com/group/elasticsearch/browse_thread/thread/7c8693c6640cbc49/d448e8880552e999?lnk=gst&q=reelsen#d448e8880552e999
- * Testing: Get TransportSuggestAction from Injector and test the code that way
-   * https://groups.google.com/group/elasticsearch/browse_thread/thread/212277b2d8b158ca/db0ebda562bf7daf?lnk=gst&q=reelsen#db0ebda562bf7daf
- * Make nicer tests
- * Really test the SuggestService instead of the JSON response, integration test is nice, but not what I want
- * What about supporting certain types only, this is completely ignored for now
- * Conduct performance tests, especially during updates
- * Make it generelly less hacky
- * How to extend node.client() to return a node client with suggest support? Is this possible without hard patching? Currently not as Shay said on the ML.
+* Check Shays response and incorporate comments
+    * Build the service as shard level service like the ShardGetService
+    * https://groups.google.com/group/elasticsearch/browse_thread/thread/7c8693c6640cbc49/d448e8880552e999?lnk=gst&q=reelsen#d448e8880552e999
+* Testing: Get TransportSuggestAction from Injector and test the code that way
+    * https://groups.google.com/group/elasticsearch/browse_thread/thread/212277b2d8b158ca/db0ebda562bf7daf?lnk=gst&q=reelsen#db0ebda562bf7daf
+* Make nicer tests
+* Really test the SuggestService instead of the JSON response, integration test is nice, but not what I want
+* What about supporting certain types only, this is completely ignored for now
+* Conduct performance tests, especially during updates
+* Make it generelly less hacky
+* How to extend node.client() to return a node client with suggest support? Is this possible without hard patching? Currently not as Shay said on the ML.
 
 h2. Changelog
 
- * 2011-12-11: Fixed the biggest issues: Searchers are released now and do not leak
- * 2011-12-11: Indexing is now done periodically
- * 2011-12-11: Found a way to get the injector from the node, so I can build my tests without using HTTP requests
+* 2011-12-11: Fixed the biggest issues: Searchers are released now and do not leak
+* 2011-12-11: Indexing is now done periodically
+* 2011-12-11: Found a way to get the injector from the node, so I can build my tests without using HTTP requests
 
 h2. HOWTO - the long version
 
 This HOWTO will help you to setup a clean elasticsearch installation with the correct index settings and mappings, so you can use the plugin as easy as possible.
 We will setup elasticsearch, index some products and query those for suggestions.
 
- * Get elasticsearch, install it
- * Get this plugin, install it
- * Add a suggest and a lowercase analyzer to your elasticsearch/config/elasticsearch.yml config file
+* Get elasticsearch, install it
+* Get this plugin, install it
+* Add a suggest and a lowercase analyzer to your elasticsearch/config/elasticsearch.yml config file
 <pre><code>index:
   analysis:
     analyzer:
@@ -92,8 +92,8 @@ We will setup elasticsearch, index some products and query those for suggestions
         tokenizer: standard
         filter: [standard, lowercase, shingle]
 </code></pre>
- * Start elasticsearch
- * Now a mapping has to be created. You can either create it via configuration in a file or during index creation. We will create an index with a mapping now
+* Start elasticsearch
+* Now a mapping has to be created. You can either create it via configuration in a file or during index creation. We will create an index with a mapping now
 <pre><code>curl -X PUT localhost:9200/products -d '{
     "mappings" : {
         "product" : {
@@ -111,7 +111,7 @@ We will setup elasticsearch, index some products and query those for suggestions
         }
     }
 }'</code></pre>
- * Now lets add some products
+* Now lets add some products
 <pre><code>for i in 1 2 3 4 5 6 7 8 9 10 100 101 1000; do
     json=$(printf '{"ProductId": "%s", "ProductName": "%s" }', $i, "My Product $i")
     curl -X PUT localhost:9200/products/product/$i -d "$json"
@@ -120,21 +120,21 @@ done</code></pre>
 h3. Queries
 
  Time to query and understand the different analyzers, returns 10 matches
- * Queries the not analyzed field, returns 10 matches (default), always the full product name:
+* Queries the not analyzed field, returns 10 matches (default), always the full product name:
 <pre><code>curl -X POST localhost:9200/products/product/_suggest -d '{ "field": "ProductName", "term": "My" }'</code></pre>
- * Queries the not analyzed field, returns nothing (because lowercase):
+* Queries the not analyzed field, returns nothing (because lowercase):
 <pre><code>curl -X POST localhost:9200/products/product/_suggest -d '{ "field": "ProductName", "term": "my" }'</code></pre>
- * Queries the lowercase field, returns only the occuring word (which is pretty bad for suggests):
+* Queries the lowercase field, returns only the occuring word (which is pretty bad for suggests):
 <pre><code>curl -X POST localhost:9200/products/product/_suggest -d '{ "field": "ProductName.lowercase", "term": "m" }'</code></pre>
- * Queries the suggest field, returns two words (this is the default length of the shingle filter), in this case "my" and "my product"
+* Queries the suggest field, returns two words (this is the default length of the shingle filter), in this case "my" and "my product"
 <pre><code>curl -X POST localhost:9200/products/product/_suggest -d '{ "field": "ProductName.suggest", "term": "my" }'</code></pre>
- * Queries the suggest field, returns ten product names as we started with the second word + another one due to the shingle
+* Queries the suggest field, returns ten product names as we started with the second word + another one due to the shingle
 <pre><code>curl -X POST localhost:9200/products/product/_suggest -d '{ "field": "ProductName.suggest", "term": "product" }'</code></pre>
- * Queries the suggest field, returns all products with "product 1" in the shingle
+* Queries the suggest field, returns all products with "product 1" in the shingle
 <pre><code>curl -X POST localhost:9200/products/product/_suggest -d '{ "field": "ProductName.suggest", "term": "product 1" }'</code></pre>
- * The same query as above, but limits the result set to two 
+* The same query as above, but limits the result set to two 
 <pre><code>curl -X POST localhost:9200/products/product/_suggest -d '{ "field": "ProductName.suggest", "term": "product 1", "size": 2 }'</code></pre>
- * And last but not least, typo finding, the query without similarity parameter set returns nothing:
+* And last but not least, typo finding, the query without similarity parameter set returns nothing:
 <pre><code>curl -X POST localhost:9200/products/product/_suggest -d '{ "field": "ProductName.suggest", "term": "proudct", similarity: 0.7 }'</code></pre>
 
 The similarity is a float between 0.0 and 1.0 - if it is not specified 1.0 is used, which means it must equal. I've found 0.7 ok for cases, when two letters were exchanged, but mileage may very as I tested merely on german product names.
