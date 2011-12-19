@@ -1,10 +1,5 @@
 package org.elasticsearch.rest.action.suggest.SuggestActionTest;
 
-import static org.elasticsearch.rest.action.suggest.SuggestActionTest.NodeTestHelper.*;
-import static org.elasticsearch.rest.action.suggest.SuggestActionTest.ProductTestHelper.*;
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-
 import java.util.List;
 import java.util.Map;
 
@@ -12,45 +7,47 @@ import org.elasticsearch.action.suggest.SuggestRequest;
 import org.elasticsearch.action.suggest.SuggestResponse;
 import org.elasticsearch.action.suggest.TransportSuggestAction;
 import org.elasticsearch.common.collect.Maps;
-import org.elasticsearch.node.Node;
 import org.elasticsearch.node.internal.InternalNode;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-public class TransportSuggestActionTest {
+@RunWith(value = Parameterized.class)
+public class TransportSuggestActionTest extends AbstractSuggestTest {
 
-    private Node node;
-    private TransportSuggestAction suggestAction;
-    private String clusterName = "TransportSuggestActionTestCluster_" + Math.random();
-
-    @Before
-    public void setup() throws Exception {
-        node = createNode(clusterName, 1);
-        suggestAction = ((InternalNode) node).injector().getInstance(TransportSuggestAction.class);
+    public TransportSuggestActionTest(int shards, int nodeCount) throws Exception {
+        super(shards, nodeCount);
     }
 
-    @Test
-    public void testThatSuggestWorks() throws Exception {
-        Map<String, String> querySource = Maps.newHashMap();
-        querySource.put("size", "10");
-        querySource.put("term", "a");
-        querySource.put("field", "foo");
+    @Override
+    public List<String> getSuggestions(String field, String term, Integer size, Float similarity) throws Exception {
+        TransportSuggestAction suggestAction = ((InternalNode) node).injector().getInstance(TransportSuggestAction.class);
+
+        Map<String, Object> querySource = Maps.newHashMap();
+        querySource.put("term", term);
+        querySource.put("field", field);
+        if (size != null) {
+            querySource.put("size", size);
+        }
+        if (similarity != null && similarity > 0.0 && similarity < 1.0) {
+            querySource.put("similarity", similarity);
+        }
 
         SuggestRequest request = new SuggestRequest("products").query(querySource);
-        List<Map<String, Object>> products = createProducts(3);
-        products.get(0).put("foo", "ab");
-        products.get(1).put("foo", "abc");
-        products.get(2).put("foo", "abcd");
-        indexProducts(products, node);
         SuggestResponse response = suggestAction.execute(request).actionGet();
 
-        assertThat(response.suggestions(), contains("ab", "abc", "abcd"));
-
-        products = createProducts(1);
-        products.get(0).put("foo", "abcde");
-        indexProducts(products, node);
-        Thread.sleep(2000);
-        response = suggestAction.execute(request).actionGet();
-        assertThat(response.suggestions(), contains("ab", "abc", "abcd", "abcde"));
+        return response.suggestions();
     }
+
+    @Override
+    public List<String> getSuggestions(String field, String term, Integer size)
+            throws Exception {
+        return getSuggestions(field, term, size, null);
+    }
+
+    @Override
+    public void refreshSuggestIndex() throws Exception {
+        // TODO: dont sleep, but do something instead
+        Thread.sleep(2000);
+    }
+
 }
