@@ -61,7 +61,7 @@ public class Suggester {
         return results;
     }
 
-    public void update() throws IOException {
+    public void update() {
         List<Structure> toBeRemoved = Lists.newArrayList();
 
         for (String indexField : structures.keySet()) {
@@ -81,7 +81,11 @@ public class Suggester {
                     }
 
                     Structure refreshedStructure = Structure.createStructure(structure.field, structure.shardId, indexShard.searcher().searcher().getIndexReader());
-                    structures.put(indexField, refreshedStructure);
+                    if (refreshedStructure != null) {
+                        structures.put(indexField, refreshedStructure);
+                    } else {
+                        toBeRemoved.add(refreshedStructure);
+                    }
                 }
 
             } finally {
@@ -99,6 +103,8 @@ public class Suggester {
     }
 
     public static class Structure {
+        private static ESLogger logger = Loggers.getLogger(Structure.class);
+
         public String field;
         public FSTLookup lookup;
         public SpellChecker spellChecker;
@@ -116,17 +122,23 @@ public class Suggester {
             return shardId.index().name() + "/" + shardId.id() + "/" + field;
         }
 
-        public static Structure createStructure(String field, ShardId shardId, IndexReader indexReader) throws IOException {
-            HighFrequencyDictionary dict = new HighFrequencyDictionary(indexReader, field, 0.00001f);
+        public static Structure createStructure(String field, ShardId shardId, IndexReader indexReader) {
+            try {
+                HighFrequencyDictionary dict = new HighFrequencyDictionary(indexReader, field, 0.00001f);
 
-            FSTLookup lookup = new FSTLookup();
-            lookup.build(dict);
+                FSTLookup lookup = new FSTLookup();
+                lookup.build(dict);
 
-            SpellChecker spellChecker = new SpellChecker(new RAMDirectory());
-            IndexWriterConfig indexWriterConfig = new IndexWriterConfig(Version.LUCENE_35, new WhitespaceAnalyzer(Version.LUCENE_35));
-            spellChecker.indexDictionary(dict, indexWriterConfig, false);
+                SpellChecker spellChecker = new SpellChecker(new RAMDirectory());
+                IndexWriterConfig indexWriterConfig = new IndexWriterConfig(Version.LUCENE_35, new WhitespaceAnalyzer(Version.LUCENE_35));
+                spellChecker.indexDictionary(dict, indexWriterConfig, false);
 
-            return new Structure(field, shardId, lookup, spellChecker);
+                return new Structure(field, shardId, lookup, spellChecker);
+            } catch (IOException e) {
+                logger.error("Error when creating FSTLookup and Spellchecker: [{}]", e, e.getMessage());
+            }
+
+            return null;
         }
     }
 

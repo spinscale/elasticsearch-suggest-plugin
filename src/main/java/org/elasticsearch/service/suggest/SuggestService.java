@@ -108,14 +108,9 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
 
         public void run() {
             while (!closed) {
-                try {
-                    StopWatch sw = new StopWatch().start();
-                    suggester.update();
-                    logger.info("Suggest update took [{}]", sw.stop().totalTime());
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+                StopWatch sw = new StopWatch().start();
+                suggester.update();
+                logger.info("Suggest update took [{}]", sw.stop().totalTime());
 
                 try {
                     Thread.sleep(suggestRefreshInterval);
