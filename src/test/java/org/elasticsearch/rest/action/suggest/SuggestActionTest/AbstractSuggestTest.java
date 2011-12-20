@@ -8,7 +8,6 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -41,7 +40,6 @@ public abstract class AbstractSuggestTest {
         }
 
         node = nodes.get(0);
-
     }
 
 
