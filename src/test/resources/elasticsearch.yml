@@ -7,7 +7,7 @@ http:
   max_content_length: 100000
 
 suggest:
-  refresh_interval: 1
+  refresh_interval: 600
 
 index:
   number_of_shards: 1
