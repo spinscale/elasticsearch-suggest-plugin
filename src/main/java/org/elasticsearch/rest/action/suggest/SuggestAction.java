@@ -60,7 +60,6 @@ public class SuggestAction extends BaseRestHandler {
 
             public void onFailure(Throwable e) {
                 try {
-                    e.printStackTrace();
                     channel.sendResponse(new XContentThrowableRestResponse(request, e));
                 } catch (IOException e1) {
                     logger.error("Failed to send failure response", e1);

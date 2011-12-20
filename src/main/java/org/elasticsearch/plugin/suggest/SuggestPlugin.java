@@ -7,6 +7,7 @@ import org.elasticsearch.common.component.LifecycleComponent;
 import org.elasticsearch.common.inject.Module;
 import org.elasticsearch.plugins.AbstractPlugin;
 import org.elasticsearch.rest.RestModule;
+import org.elasticsearch.rest.action.suggest.RefreshSuggestAction;
 import org.elasticsearch.rest.action.suggest.SuggestAction;
 import org.elasticsearch.service.suggest.SuggestService;
 
@@ -24,6 +25,7 @@ public class SuggestPlugin extends AbstractPlugin {
     @Override public void processModule(Module module) {
         if (module instanceof RestModule) {
             ((RestModule) module).addRestAction(SuggestAction.class);
+            ((RestModule) module).addRestAction(RefreshSuggestAction.class);
         }
     }
 

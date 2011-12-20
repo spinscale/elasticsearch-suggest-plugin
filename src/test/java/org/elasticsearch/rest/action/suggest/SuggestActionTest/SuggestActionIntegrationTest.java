@@ -48,8 +48,8 @@ public class SuggestActionIntegrationTest extends AbstractSuggestTest {
 
     @Override
     public void refreshSuggestIndex() throws Exception {
-        // TODO: Issue rest call, sleeping sucks
-        Thread.sleep(2000);
+        Response r = httpClient.preparePost("http://localhost:9200/_suggestRefresh").execute().get();
+        assertThat(r.getStatusCode(), is(200));
     }
 
 
