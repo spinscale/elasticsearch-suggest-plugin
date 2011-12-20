@@ -9,7 +9,6 @@ import org.elasticsearch.client.node.NodeClientWithSuggest;
 
 public class SuggestRequestBuilder extends BaseRequestBuilder<SuggestRequest, SuggestResponse> {
 
-//    private InternalTransportClientWithSuggest transportClient;
     private NodeClientWithSuggest nodeClient;
 
     public SuggestRequestBuilder(NodeClientWithSuggest client) {
@@ -17,23 +16,9 @@ public class SuggestRequestBuilder extends BaseRequestBuilder<SuggestRequest, Su
         nodeClient = client;
     }
 
-//    public SuggestRequestBuilder(InternalTransportClientWithSuggest client) {
-//        super(client, new SuggestRequest());
-//        transportClient = client;
-//    }
-
-//    @Inject public SuggestRequestBuilder(InternalTransportClientWithSuggest client, SuggestRequest request) {
-//        super(client, request);
-//        this.client = client;
-//    }
-
     @Override
     protected void doExecute(ActionListener<SuggestResponse> listener) {
-//        if (transportClient != null) {
-//            transportClient.suggest(request, listener);
-//        } else if (nodeClient != null) {
             nodeClient.suggest(request, listener);
-//        }
     }
 
     public SuggestRequestBuilder setQuery(byte[] querySource) {
