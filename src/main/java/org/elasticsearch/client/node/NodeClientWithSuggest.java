@@ -13,11 +13,12 @@ import org.elasticsearch.action.mlt.TransportMoreLikeThisAction;
 import org.elasticsearch.action.percolate.TransportPercolateAction;
 import org.elasticsearch.action.search.TransportSearchAction;
 import org.elasticsearch.action.search.TransportSearchScrollAction;
+import org.elasticsearch.action.suggest.NodesSuggestRefreshRequest;
+import org.elasticsearch.action.suggest.NodesSuggestRefreshResponse;
 import org.elasticsearch.action.suggest.SuggestRequest;
 import org.elasticsearch.action.suggest.SuggestResponse;
+import org.elasticsearch.action.suggest.TransportNodesSuggestRefreshAction;
 import org.elasticsearch.action.suggest.TransportSuggestAction;
-import org.elasticsearch.client.node.NodeAdminClient;
-import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -25,6 +26,7 @@ import org.elasticsearch.threadpool.ThreadPool;
 public class NodeClientWithSuggest extends NodeClient {
 
     private TransportSuggestAction suggestAction;
+    private TransportNodesSuggestRefreshAction suggestRefreshAction;
 
     @Inject public NodeClientWithSuggest(Settings settings, ThreadPool threadPool,
             NodeAdminClient admin, TransportIndexAction indexAction,
@@ -37,11 +39,13 @@ public class NodeClientWithSuggest extends NodeClient {
             TransportSearchScrollAction searchScrollAction,
             TransportMoreLikeThisAction moreLikeThisAction,
             TransportPercolateAction percolateAction,
-            TransportSuggestAction suggestAction) {
+            TransportSuggestAction suggestAction,
+            TransportNodesSuggestRefreshAction suggestRefreshAction) {
         super(settings, threadPool, admin, indexAction, deleteAction, bulkAction,
                 deleteByQueryAction, getAction, multiGetAction, countAction,
                 searchAction, searchScrollAction, moreLikeThisAction, percolateAction);
         this.suggestAction = suggestAction;
+        this.suggestRefreshAction = suggestRefreshAction;
     }
 
     public ActionFuture<SuggestResponse> suggest(SuggestRequest request) {
@@ -50,6 +54,14 @@ public class NodeClientWithSuggest extends NodeClient {
 
     public void suggest(SuggestRequest request, ActionListener<SuggestResponse> listener) {
         suggestAction.execute(request, listener);
+    }
+
+    public ActionFuture<NodesSuggestRefreshResponse> suggestRefresh(NodesSuggestRefreshRequest request) {
+        return suggestRefreshAction.execute(request);
+    }
+
+    public void suggestRefresh(NodesSuggestRefreshRequest request, ActionListener<NodesSuggestRefreshResponse> listener) {
+        suggestRefreshAction.execute(request, listener);
     }
 
 }

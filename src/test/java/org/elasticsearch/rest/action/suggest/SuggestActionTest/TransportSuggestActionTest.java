@@ -3,8 +3,10 @@ package org.elasticsearch.rest.action.suggest.SuggestActionTest;
 import java.util.List;
 import java.util.Map;
 
+import org.elasticsearch.action.suggest.NodesSuggestRefreshRequest;
 import org.elasticsearch.action.suggest.SuggestRequest;
 import org.elasticsearch.action.suggest.SuggestResponse;
+import org.elasticsearch.action.suggest.TransportNodesSuggestRefreshAction;
 import org.elasticsearch.action.suggest.TransportSuggestAction;
 import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.node.internal.InternalNode;
@@ -46,8 +48,9 @@ public class TransportSuggestActionTest extends AbstractSuggestTest {
 
     @Override
     public void refreshSuggestIndex() throws Exception {
-        // TODO: dont sleep, but do something instead
-        Thread.sleep(2000);
+        TransportNodesSuggestRefreshAction refreshAction = ((InternalNode) node).injector().getInstance(TransportNodesSuggestRefreshAction.class);
+        NodesSuggestRefreshRequest refreshRequest = new NodesSuggestRefreshRequest();
+        refreshAction.execute(refreshRequest).actionGet();
     }
 
 }
