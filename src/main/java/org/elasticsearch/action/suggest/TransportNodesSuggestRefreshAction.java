@@ -28,12 +28,12 @@ public class TransportNodesSuggestRefreshAction extends TransportNodesOperationA
 
     @Override
     protected String transportAction() {
-        return "indices/suggest/refresh";
+        return "/indices/suggest/refresh";
     }
 
     @Override
     protected String transportNodeAction() {
-        return "indices/suggest/refresh/node";
+        return "/indices/suggest/refresh/node";
     }
 
     @Override
@@ -54,6 +54,8 @@ public class TransportNodesSuggestRefreshAction extends TransportNodesOperationA
             if (resp instanceof NodeSuggestRefreshResponse) {
                 NodeSuggestRefreshResponse response = (NodeSuggestRefreshResponse) resp;
                 logger.trace("Got refresh response from [{}]", response.node().id());
+            } else {
+                logger.trace("Got some response from [{}]", resp);
             }
         }
 
@@ -79,6 +81,7 @@ public class TransportNodesSuggestRefreshAction extends TransportNodesOperationA
     @Override
     protected NodeSuggestRefreshResponse nodeOperation(
             NodeSuggestRefreshRequest request) throws ElasticSearchException {
+        logger.trace("TransportNodesSuggestRefreshAction.nodeOperation() called");
         suggester.update();
         return new NodeSuggestRefreshResponse(nodeService.info().getNode());
     }

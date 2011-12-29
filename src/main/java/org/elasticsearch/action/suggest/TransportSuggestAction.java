@@ -43,12 +43,12 @@ public class TransportSuggestAction extends TransportBroadcastOperationAction<Su
 
     @Override
     protected String transportAction() {
-        return "indices/suggest";
+        return "/indices/suggest";
     }
 
     @Override
     protected String transportShardAction() {
-        return "indices/suggest/shard";
+        return "/indices/suggest/shard";
     }
 
     @Override
