@@ -1,19 +1,19 @@
 package org.elasticsearch.rest.action.suggest.SuggestActionTest;
 
-import static org.elasticsearch.rest.action.suggest.SuggestActionTest.NodeTestHelper.createNode;
+import static org.elasticsearch.rest.action.suggest.SuggestActionTest.NodeTestHelper.*;
 import static org.elasticsearch.rest.action.suggest.SuggestActionTest.ProductTestHelper.createProducts;
 import static org.elasticsearch.rest.action.suggest.SuggestActionTest.ProductTestHelper.indexProducts;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.Matchers.*;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.elasticsearch.action.deletebyquery.DeleteByQueryRequest;
 import org.elasticsearch.common.collect.Lists;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.node.Node;
 import org.junit.After;
 import org.junit.Ignore;
@@ -166,6 +166,11 @@ public abstract class AbstractSuggestTest {
 
         suggestions = getSuggestions("ProductName.suggest", "kochjacke paulin", 10);
         assertSuggestions(suggestions, "kochjacke paulinator", "kochjacke pauline", "kochjacke paulinpanzer");
+
+        cleanIndex();
+        refreshSuggestIndex();
+        suggestions = getSuggestions("ProductName.suggest", "kochjacke paulin", 10);
+        assertThat(suggestions.size(), is(0));
     }
 
     @Test
@@ -208,5 +213,8 @@ public abstract class AbstractSuggestTest {
         assertThat("Suggestions are: " + suggestions, suggestions, contains(terms));
     }
 
+    private void cleanIndex() {
+        node.client().deleteByQuery(new DeleteByQueryRequest("products").types("product").query(QueryBuilders.matchAllQuery())).actionGet();
+    }
 
 }
