@@ -43,10 +43,10 @@ Furthermore the suggest data is not updated, whenever you index a new product bu
 
 <pre><code>
 suggest:
-  refresh_interval: 600
+  refresh_interval: 600s
 </code></pre>
 
-In this case the suggest indexes are refreshed every 10 minutes. This is also the default.
+In this case the suggest indexes are refreshed every 10 minutes. This is also the default. You can use values like "10s", "10ms" or "10m" as with most other time based configuration settings in elasticsearch.
 
 If you want to refresh your FST suggesters manually instead of waiting for 10 minutes just issue a POST request to the "/_suggestRefresh" URL.
 
@@ -96,9 +96,8 @@ h2. TODO
 * Check Shays response and incorporate comments
 ** Build the service as shard level service like the ShardGetService
 ** https://groups.google.com/group/elasticsearch/browse_thread/thread/7c8693c6640cbc49/d448e8880552e999?lnk=gst&q=reelsen#d448e8880552e999
-* Testing: Get TransportSuggestAction from Injector and test the code that way
-** https://groups.google.com/group/elasticsearch/browse_thread/thread/212277b2d8b158ca/db0ebda562bf7daf?lnk=gst&q=reelsen#db0ebda562bf7daf
 * Create a useful SuggestRequestBuilder instead of this useless thing... Also create a SuggestRefreshRequestBuilder for completeness
+* Allow clearing of fst suggesters at least per index
 * What about supporting certain types only, this is completely ignored for now
 * Conduct performance tests, especially during updates
 * Make it generelly less hacky
@@ -106,6 +105,8 @@ h2. TODO
 
 h2. Changelog
 
+* 2011-12-29: The refresh interval can now be chosen as time based value like any other elasticsearch configuration
+* 2011-12-29: Instead of having all nodes sleeping the same time and updating the suggester asynchronously, the master node now triggers the update for all slaves
 * 2011-12-20: Added transport action (and REST action) to trigger reloading of all FST suggesters
 * 2011-12-11: Fixed the biggest issues: Searchers are released now and do not leak
 * 2011-12-11: Indexing is now done periodically
