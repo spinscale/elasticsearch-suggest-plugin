@@ -6,6 +6,10 @@ import java.util.Map;
 
 import org.apache.lucene.index.IndexReader;
 import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.action.suggest.NodesSuggestRefreshRequest;
+import org.elasticsearch.action.suggest.TransportNodesSuggestRefreshAction;
+import org.elasticsearch.cluster.ClusterService;
+import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.StopWatch;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
@@ -19,23 +23,26 @@ import org.elasticsearch.index.shard.service.IndexShard;
 
 public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
 
-    private Integer suggestRefreshInterval;
-    private Suggester suggester;
+    private TimeValue suggestRefreshInterval;
     private volatile Thread suggestUpdaterThread;
     private volatile boolean closed;
+    private TransportNodesSuggestRefreshAction suggestRefreshAction;
+    private Suggester suggester;
+    private ClusterService clusterService;
 
-    @Inject public SuggestService(Settings settings, Suggester suggester) {
+    @Inject public SuggestService(Settings settings, Suggester suggester, TransportNodesSuggestRefreshAction suggestRefreshAction,
+            ClusterService clusterService) {
         super(settings);
         this.suggester = suggester;
-        suggestRefreshInterval = settings.getAsInt("suggest.refresh_interval", 600) * 1000;
+        this.suggestRefreshAction = suggestRefreshAction;
+        this.clusterService = clusterService;
+        suggestRefreshInterval = settings.getAsTime("suggest.refresh_interval", TimeValue.timeValueMinutes(10));
     }
 
     @Override
     protected void doStart() throws ElasticSearchException {
-        logger.info("Suggest component started with refresh interval [{}]", TimeValue.timeValueMillis(suggestRefreshInterval));
-        // Start indexer thread here
-        // index all 5 minutes
-        suggestUpdaterThread = EsExecutors.daemonThreadFactory(settings, "suggest_updater").newThread(new SuggestUpdaterThread(suggester));
+        logger.info("Suggest component started with refresh interval [{}]", suggestRefreshInterval);
+        suggestUpdaterThread = EsExecutors.daemonThreadFactory(settings, "suggest_updater").newThread(new SuggestUpdaterThread());
         suggestUpdaterThread.start();
 
     }
@@ -99,21 +106,23 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
     }
 
     public class SuggestUpdaterThread implements Runnable {
-
-        private Suggester suggester;
-
-        public SuggestUpdaterThread(Suggester suggester) {
-            this.suggester = suggester;
-        }
-
         public void run() {
             while (!closed) {
-                StopWatch sw = new StopWatch().start();
-                suggester.update();
-                logger.info("Suggest update took [{}]", sw.stop().totalTime());
+                DiscoveryNode node = clusterService.localNode();
+                DiscoveryNode masterNode = clusterService.state().nodes().masterNode();
+
+                if (node != null && node.equals(masterNode)) {
+                    StopWatch sw = new StopWatch().start();
+                    suggestRefreshAction.execute(new NodesSuggestRefreshRequest()).actionGet();
+                    logger.info("Suggest update took [{}], next update in [{}]", sw.stop().totalTime(), suggestRefreshInterval);
+                } else {
+                    if (node != null) {
+                        logger.debug("[{}]/[{}] is not master node, not triggering update", node.getId(), node.getName());
+                    }
+                }
 
                 try {
-                    Thread.sleep(suggestRefreshInterval);
+                    Thread.sleep(suggestRefreshInterval.millis());
                 } catch (InterruptedException e1) {
                     continue;
                 }
