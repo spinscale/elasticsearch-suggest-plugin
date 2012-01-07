@@ -16,6 +16,10 @@ In case you want to contact me, drop me a mail at alexander@reelsen.net
 
 h2. Installation
 
+If you do not want to work on the repository, just use the standard elasticsearch plugin command (inside your elasticsearch/bin directory)
+<pre><code>bin/plugin -url https://github.com/downloads/spinscale/elasticsearch-suggest-plugin/elasticsearch-suggest-0.0.2-0.18.6.zip -install suggest</code></pre>
+
+If you want to work on the repository
  * Clone this repo with git clone git://github.com/spinscale/elasticsearch-suggest-plugin.git
  * Run: <code>gradle clean assemble zip</code> - this does not run any unit tests, as they take some time. If you want to run them, better run <code>gradle clean build zip</code>
  * Install the plugin: <code>/path/to/elasticsearch/bin/plugin -install elasticsearch-suggest -url file:///$PWD/build/distributions/elasticsearch-suggest-0.0.1.zip</code>
