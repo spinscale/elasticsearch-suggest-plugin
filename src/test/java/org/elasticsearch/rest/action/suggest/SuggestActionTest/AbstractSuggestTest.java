@@ -29,7 +29,7 @@ public abstract class AbstractSuggestTest {
     @Parameters
     public static Collection<Object[]> data() {
         // first argument: number of shards, second argument: number of nodes
-//        Object[][] data = new Object[][] { { 1, 1 } };
+//        Object[][] data = new Object[][] { { 1,1 } };
         Object[][] data = new Object[][] { { 1, 1 }, { 4, 1 }, { 10, 1 }, { 4, 4 } };
         return Arrays.asList(data);
     }

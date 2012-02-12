@@ -21,8 +21,23 @@ public class SuggestRequestBuilder extends BaseRequestBuilder<SuggestRequest, Su
             nodeClient.suggest(request, listener);
     }
 
-    public SuggestRequestBuilder setQuery(byte[] querySource) {
-        request.query(querySource);
+    public SuggestRequestBuilder term(String term) {
+        request.term(term);
+        return this;
+    }
+
+    public SuggestRequestBuilder field(String field) {
+        request.field(field);
+        return this;
+    }
+
+    public SuggestRequestBuilder similarity(float similarity) {
+        request.similarity(similarity);
+        return this;
+    }
+
+    public SuggestRequestBuilder size(int size) {
+        request.size(size);
         return this;
     }
 

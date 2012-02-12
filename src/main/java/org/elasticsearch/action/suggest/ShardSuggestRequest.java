@@ -9,32 +9,53 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 
 public class ShardSuggestRequest extends BroadcastShardOperationRequest {
 
-    private byte[] querySource;
-    private int querySourceOffset;
-    private int querySourceLength;
-
+    private int size = 10;
+    private String field;
+    private float similarity = 1.0f;
+    private String term;
     private String[] types = Strings.EMPTY_ARRAY;
 
     public ShardSuggestRequest() {}
 
     public ShardSuggestRequest(String index, int shardId, SuggestRequest request) {
         super(index, shardId);
-        querySource = request.querySource();
-        querySourceOffset = request.querySourceOffset();
-        querySourceLength = request.querySourceLength();
+        size = request.size();
+        field = request.field();
+        term = request.term();
+        similarity = request.similarity();
         types = request.types();
     }
 
-    public byte[] querySource() {
-        return querySource;
+    public int size() {
+        return size;
     }
 
-    public int querySourceOffset() {
-        return querySourceOffset;
+    public void size(int size) {
+        this.size = size;
     }
 
-    public int querySourceLength() {
-        return querySourceLength;
+    public String field() {
+        return field;
+    }
+
+    public void field(String field) {
+        this.field = field;
+    }
+
+    public float similarity() {
+        return similarity;
+    }
+
+    public void similarity(float similarity) {
+        this.similarity = similarity;
+    }
+
+    public String term() {
+        return term;
+    }
+
+    public void term(String term) {
+        this.term = term;
     }
 
     public String[] types() {
@@ -43,10 +64,12 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
 
     @Override public void readFrom(StreamInput in) throws IOException {
         super.readFrom(in);
-        querySourceLength = in.readVInt();
-        querySourceOffset = 0;
-        querySource = new byte[querySourceLength];
-        in.readFully(querySource);
+
+        size = in.readVInt();
+        similarity = in.readFloat();
+        field = in.readUTF();
+        term = in.readUTF();
+
         int typesSize = in.readVInt();
         if (typesSize > 0) {
             types = new String[typesSize];
@@ -58,8 +81,12 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
 
     @Override public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
-        out.writeVInt(querySourceLength);
-        out.writeBytes(querySource, querySourceOffset, querySourceLength);
+
+        out.writeVInt(size);
+        out.writeFloat(similarity);
+        out.writeUTF(field);
+        out.writeUTF(term);
+
         out.writeVInt(types.length);
         for (String type : types) {
             out.writeUTF(type);

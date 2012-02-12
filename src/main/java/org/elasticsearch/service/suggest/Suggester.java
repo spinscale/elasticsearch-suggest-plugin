@@ -70,7 +70,8 @@ public class Suggester {
             IndexShard indexShard = null;
             try {
                 IndexService indexService = indicesService.indexService(structure.shardId.index().name());
-                if (indexService == null) {
+                // No indexService or no indexshard (due to cluster joins/leaves) means removal from here
+                if (indexService == null || !indexService.hasShard(structure.shardId.id())) {
                     toBeRemoved.add(structure);
                 } else {
                     indexShard = indexService.shardSafe(structure.shardId.id());

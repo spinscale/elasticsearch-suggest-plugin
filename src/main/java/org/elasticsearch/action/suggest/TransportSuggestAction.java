@@ -3,7 +3,6 @@ package org.elasticsearch.action.suggest;
 import static org.elasticsearch.common.collect.Lists.newArrayList;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import org.elasticsearch.ElasticSearchException;
@@ -19,9 +18,6 @@ import org.elasticsearch.common.collect.ImmutableSortedSet;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.common.xcontent.XContentParser;
-import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.index.shard.service.IndexShard;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.service.suggest.SuggestService;
@@ -66,14 +62,6 @@ public class TransportSuggestAction extends TransportBroadcastOperationAction<Su
             AtomicReferenceArray shardsResponses, ClusterState clusterState) {
         logger.trace("Entered TransportSuggestAction.newResponse()");
 
-        // I am parsing this here, because otherwise
-        int size = 10;
-        try {
-            XContentParser parser = XContentFactory.xContent(request.querySource()).createParser(request.querySource());
-            Map<String, Object> parserMap = parser.mapAndClose();
-            size = XContentMapValues.nodeIntegerValue(parserMap.get("size"), 10);
-        } catch (Exception e) {}
-
         int successfulShards = 0;
         int failedShards = 0;
         List<ShardOperationFailedException> shardFailures = null;
@@ -99,7 +87,7 @@ public class TransportSuggestAction extends TransportBroadcastOperationAction<Su
         }
 
         List<String> resultItems = ImmutableSortedSet.copyOf(items).asList();
-        return new SuggestResponse(resultItems.subList(0, Math.min(resultItems.size(), size)),
+        return new SuggestResponse(resultItems.subList(0, Math.min(resultItems.size(), request.size())),
                 shardsResponses.length(), successfulShards, failedShards, shardFailures);
     }
 
@@ -123,7 +111,7 @@ public class TransportSuggestAction extends TransportBroadcastOperationAction<Su
     protected ShardSuggestResponse shardOperation(ShardSuggestRequest request) throws ElasticSearchException {
         logger.trace("Entered TransportSuggestAction.shardOperation()");
         IndexShard indexShard = indicesService.indexServiceSafe(request.index()).shardSafe(request.shardId());
-        List<String> items = suggestService.suggest(indexShard, request.querySource());
+        List<String> items = suggestService.suggest(indexShard, request);
         return new ShardSuggestResponse(request.index(), request.shardId(), items);
     }
 

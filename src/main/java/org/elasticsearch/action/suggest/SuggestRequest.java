@@ -2,37 +2,57 @@ package org.elasticsearch.action.suggest;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Map;
 
-import org.apache.lucene.util.UnicodeUtil;
-import org.elasticsearch.ElasticSearchGenerationException;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.Actions;
 import org.elasticsearch.action.support.broadcast.BroadcastOperationRequest;
 import org.elasticsearch.action.support.broadcast.BroadcastOperationThreading;
-import org.elasticsearch.client.Requests;
-import org.elasticsearch.common.Required;
-import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.Unicode;
-import org.elasticsearch.common.io.BytesStream;
+import org.elasticsearch.common.base.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.index.query.QueryBuilder;
 
 public class SuggestRequest extends BroadcastOperationRequest {
 
-    private static final XContentType contentType = Requests.CONTENT_TYPE;
-    private String[] types = Strings.EMPTY_ARRAY;
+    private String[] types = org.elasticsearch.common.Strings.EMPTY_ARRAY;
 
-    private byte[] suggestSource;
-    private int suggestSourceOffset;
-    private int suggestSourceLength;
-    private boolean suggestSourceUnsafe;
+    private int size = 10;
+    private String field;
+    private float similarity = 1.0f;
+    private String term;
 
     SuggestRequest() {
+    }
+
+    public int size() {
+        return size;
+    }
+
+    public void size(int size) {
+        this.size = size;
+    }
+
+    public String field() {
+        return field;
+    }
+
+    public void field(String field) {
+        this.field = field;
+    }
+
+    public float similarity() {
+        return similarity;
+    }
+
+    public void similarity(float similarity) {
+        this.similarity = similarity;
+    }
+
+    public String term() {
+        return term;
+    }
+
+    public void term(String term) {
+        this.term = term;
     }
 
     /**
@@ -45,8 +65,11 @@ public class SuggestRequest extends BroadcastOperationRequest {
 
     @Override public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = super.validate();
-        if (suggestSource == null) {
-            validationException = Actions.addValidationError("suggest query is missing", validationException);
+        if (Strings.isNullOrEmpty(field)) {
+            validationException = Actions.addValidationError("No suggest field specified", validationException);
+        }
+        if (Strings.isNullOrEmpty(term)) {
+            validationException = Actions.addValidationError("No query term specified", validationException);
         }
         return validationException;
     }
@@ -57,15 +80,6 @@ public class SuggestRequest extends BroadcastOperationRequest {
     @Override public SuggestRequest operationThreading(BroadcastOperationThreading operationThreading) {
         super.operationThreading(operationThreading);
         return this;
-    }
-
-    // TODO: FIXME: Do it
-    @Override protected void beforeLocalFork() {
-        if (suggestSourceUnsafe) {
-            suggestSource = Arrays.copyOfRange(suggestSource, suggestSourceOffset, suggestSourceOffset + suggestSourceLength);
-            suggestSourceOffset = 0;
-            suggestSourceUnsafe = false;
-        }
     }
 
     /**
@@ -97,96 +111,13 @@ public class SuggestRequest extends BroadcastOperationRequest {
         return this;
     }
 
-    /**
-     * The query source to execute.
-     *
-     * @see org.elasticsearch.index.query.QueryBuilders
-     */
-    @Required public SuggestRequest query(QueryBuilder queryBuilder) {
-        BytesStream bos = queryBuilder.buildAsUnsafeBytes();
-        suggestSource = bos.underlyingBytes();
-        suggestSourceOffset = 0;
-        suggestSourceLength = bos.size();
-        suggestSourceUnsafe = true;
-        return this;
-    }
-
-    /**
-     * The query source to execute in the form of a map.
-     */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    @Required public SuggestRequest query(Map querySource) {
-        try {
-            XContentBuilder builder = XContentFactory.contentBuilder(contentType);
-            builder.map(querySource);
-            return query(builder);
-        } catch (IOException e) {
-            throw new ElasticSearchGenerationException("Failed to generate [" + querySource + "]", e);
-        }
-    }
-
-    @Required public SuggestRequest query(XContentBuilder builder) {
-        try {
-            suggestSource = builder.underlyingBytes();
-            suggestSourceOffset = 0;
-            suggestSourceLength = builder.underlyingBytesLength();
-            suggestSourceUnsafe = false;
-            return this;
-        } catch (IOException e) {
-            throw new ElasticSearchGenerationException("Failed to generate [" + builder + "]", e);
-        }
-    }
-
-    /**
-     * The query source to execute. It is preferable to use either {@link #query(byte[])}
-     * or {@link #query(org.elasticsearch.index.query.QueryBuilder)}.
-     */
-    @Required public SuggestRequest query(String querySource) {
-        UnicodeUtil.UTF8Result result = Unicode.fromStringAsUtf8(querySource);
-        suggestSource = result.result;
-        suggestSourceOffset = 0;
-        suggestSourceLength = result.length;
-        suggestSourceUnsafe = true;
-        return this;
-    }
-
-    /**
-     * The query source to execute.
-     */
-    @Required public SuggestRequest query(byte[] suggestSource) {
-        return query(suggestSource, 0, suggestSource.length, false);
-    }
-
-    /**
-     * The query source to execute.
-     */
-    @Required public SuggestRequest query(byte[] querySource, int offset, int length, boolean unsafe) {
-        suggestSource = querySource;
-        suggestSourceOffset = offset;
-        suggestSourceLength = length;
-        suggestSourceUnsafe = unsafe;
-        return this;
-    }
-
-    public byte[] querySource() {
-        return suggestSource;
-    }
-
-    public int querySourceOffset() {
-        return suggestSourceOffset;
-    }
-
-    public int querySourceLength() {
-        return suggestSourceLength;
-    }
-
     @Override public void readFrom(StreamInput in) throws IOException {
         super.readFrom(in);
 
-        suggestSourceOffset = 0;
-        suggestSourceLength = in.readVInt();
-        suggestSource = new byte[suggestSourceLength];
-        in.readFully(suggestSource);
+        size = in.readVInt();
+        similarity = in.readFloat();
+        field = in.readUTF();
+        term = in.readUTF();
 
         int typesSize = in.readVInt();
         if (typesSize > 0) {
@@ -200,8 +131,10 @@ public class SuggestRequest extends BroadcastOperationRequest {
     @Override public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
 
-        out.writeVInt(suggestSourceLength);
-        out.writeBytes(suggestSource, suggestSourceOffset, suggestSourceLength);
+        out.writeInt(size);
+        out.writeFloat(similarity);
+        out.writeUTF(field);
+        out.writeUTF(term);
 
         out.writeVInt(types.length);
         for (String type : types) {
@@ -210,6 +143,6 @@ public class SuggestRequest extends BroadcastOperationRequest {
     }
 
     @Override public String toString() {
-        return "[" + Arrays.toString(indices) + "]" + Arrays.toString(types) + ", querySource[" + Unicode.fromBytes(suggestSource) + "]";
+        return String.format("[%s] %s, field[%s], term[%s], size[%s], similarity[%s]", Arrays.toString(indices), Arrays.toString(types), field, term, size, similarity);
     }
 }
