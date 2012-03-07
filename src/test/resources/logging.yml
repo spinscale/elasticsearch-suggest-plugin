@@ -1,13 +1,20 @@
 rootLogger: INFO, console
 
 logger:
-  service.suggest: TRACE
-  org.elasticsearch.action.suggest: TRACE
-  action.suggest: TRACE
-  service.suggest.NodeClientWithSuggest: TRACE
-  service.suggest.SuggestService: TRACE
-  rest.action.suggest.SuggestAction: TRACE
-  plugin.suggest.SuggestPlugin: TRACE
+  org.elasticsearch.service.suggest: DEBUG
+  org.elasticsearch.action.suggest: DEBUG
+  org.elasticsearch.action.suggest: DEBUG
+  org.elasticsearch.service.suggest.NodeClientWithSuggest: DEBUG
+  org.elasticsearch.service.suggest.SuggestService: DEBUG
+  org.elasticsearch.rest.action.suggest.SuggestAction: DEBUG
+  org.elasticsearch.plugin.suggest.SuggestPlugin: DEBUG
+  service.suggest: DEBUG
+  action.suggest: DEBUG
+  action.suggest: DEBUG
+  service.suggest.NodeClientWithSuggest: DEBUG
+  service.suggest.SuggestService: DEBUG
+  rest.action.suggest.SuggestAction: DEBUG
+  plugin.suggest.SuggestPlugin: DEBUG
 
 appender:
   console:

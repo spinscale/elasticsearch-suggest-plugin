@@ -1,24 +1,22 @@
 package org.elasticsearch.client.action.suggest;
 
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.suggest.SuggestAction;
 import org.elasticsearch.action.suggest.SuggestRequest;
 import org.elasticsearch.action.suggest.SuggestResponse;
+import org.elasticsearch.action.support.BaseRequestBuilder;
 import org.elasticsearch.action.support.broadcast.BroadcastOperationThreading;
-import org.elasticsearch.client.action.support.BaseRequestBuilder;
-import org.elasticsearch.client.node.NodeClientWithSuggest;
+import org.elasticsearch.client.Client;
 
 public class SuggestRequestBuilder extends BaseRequestBuilder<SuggestRequest, SuggestResponse> {
 
-    private NodeClientWithSuggest nodeClient;
-
-    public SuggestRequestBuilder(NodeClientWithSuggest client) {
+    public SuggestRequestBuilder(Client client) {
         super(client, new SuggestRequest());
-        nodeClient = client;
     }
 
     @Override
     protected void doExecute(ActionListener<SuggestResponse> listener) {
-            nodeClient.suggest(request, listener);
+        client.execute(SuggestAction.INSTANCE, request, listener);
     }
 
     public SuggestRequestBuilder term(String term) {

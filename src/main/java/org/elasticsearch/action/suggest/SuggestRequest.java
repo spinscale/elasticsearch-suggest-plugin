@@ -4,10 +4,9 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.elasticsearch.action.ActionRequestValidationException;
-import org.elasticsearch.action.Actions;
+import org.elasticsearch.action.ValidateActions;
 import org.elasticsearch.action.support.broadcast.BroadcastOperationRequest;
 import org.elasticsearch.action.support.broadcast.BroadcastOperationThreading;
-import org.elasticsearch.common.base.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
@@ -65,11 +64,11 @@ public class SuggestRequest extends BroadcastOperationRequest {
 
     @Override public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = super.validate();
-        if (Strings.isNullOrEmpty(field)) {
-            validationException = Actions.addValidationError("No suggest field specified", validationException);
+        if (field == null || field.length() == 0) {
+            validationException = ValidateActions.addValidationError("No suggest field specified", validationException);
         }
-        if (Strings.isNullOrEmpty(term)) {
-            validationException = Actions.addValidationError("No query term specified", validationException);
+        if (term == null || term.length() == 0) {
+            validationException = ValidateActions.addValidationError("No query term specified", validationException);
         }
         return validationException;
     }

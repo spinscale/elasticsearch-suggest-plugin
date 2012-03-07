@@ -3,6 +3,7 @@ package org.elasticsearch.action.suggest;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.support.nodes.TransportNodesOperationAction;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterService;
@@ -29,11 +30,6 @@ public class TransportNodesSuggestRefreshAction extends TransportNodesOperationA
     @Override
     protected String transportAction() {
         return "/indices/suggest/refresh";
-    }
-
-    @Override
-    protected String transportNodeAction() {
-        return "/indices/suggest/refresh/node";
     }
 
     @Override

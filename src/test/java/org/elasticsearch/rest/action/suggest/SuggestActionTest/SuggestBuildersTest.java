@@ -4,8 +4,6 @@ import java.util.List;
 
 import org.elasticsearch.client.action.suggest.SuggestRefreshRequestBuilder;
 import org.elasticsearch.client.action.suggest.SuggestRequestBuilder;
-import org.elasticsearch.client.node.NodeClientWithSuggest;
-import org.elasticsearch.node.internal.InternalNode;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -28,16 +26,12 @@ public class SuggestBuildersTest extends AbstractSuggestTest {
 
     @Override
     public void refreshSuggestIndex() throws Exception {
-        NodeClientWithSuggest client = ((InternalNode) node).injector().getInstance(NodeClientWithSuggest.class);
-
-        SuggestRefreshRequestBuilder builder = new SuggestRefreshRequestBuilder(client);
+        SuggestRefreshRequestBuilder builder = new SuggestRefreshRequestBuilder(node.client());
         builder.execute().actionGet();
     }
 
     private SuggestRequestBuilder getBuilder(String field, String term, Integer size) throws Exception {
-        NodeClientWithSuggest client = ((InternalNode) node).injector().getInstance(NodeClientWithSuggest.class);
-
-        return new SuggestRequestBuilder(client)
+        return new SuggestRequestBuilder(node.client())
             .field(field)
             .term(term)
             .size(size);

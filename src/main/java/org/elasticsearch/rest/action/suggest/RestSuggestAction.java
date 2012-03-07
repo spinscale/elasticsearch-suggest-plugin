@@ -8,11 +8,11 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.suggest.SuggestAction;
 import org.elasticsearch.action.suggest.SuggestRequest;
 import org.elasticsearch.action.suggest.SuggestResponse;
-import org.elasticsearch.client.node.NodeClientWithSuggest;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClientNodesService;
-import org.elasticsearch.client.transport.support.InternalTransportClient;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -29,16 +29,14 @@ import org.elasticsearch.rest.action.support.RestActions;
 import org.elasticsearch.rest.action.support.RestXContentBuilder;
 import org.elasticsearch.service.suggest.SuggestService;
 
-public class SuggestAction extends BaseRestHandler {
+public class RestSuggestAction extends BaseRestHandler {
 
     @Inject SuggestService suggestService;
     @Inject TransportClientNodesService nodesService;
-    private NodeClientWithSuggest nodeClient;
 
-    @Inject public SuggestAction(Settings settings, InternalTransportClient client, NodeClientWithSuggest nodeClient, RestController controller) {
+    @Inject public RestSuggestAction(Settings settings, Client client, RestController controller) {
         super(settings, client);
         controller.registerHandler(POST, "/{index}/{type}/_suggest", this);
-        this.nodeClient = nodeClient;
     }
 
     public void handleRequest(final RestRequest request, final RestChannel channel) {
@@ -54,7 +52,7 @@ public class SuggestAction extends BaseRestHandler {
             suggestRequest.similarity(XContentMapValues.nodeFloatValue(parserMap.get("similarity"), 1.0f));
             suggestRequest.size(XContentMapValues.nodeIntegerValue(parserMap.get("size"), 10));
 
-            nodeClient.suggest(suggestRequest, new ActionListener<SuggestResponse>() {
+            client.execute(SuggestAction.INSTANCE, suggestRequest, new ActionListener<SuggestResponse>() {
                 public void onResponse(SuggestResponse response) {
                     try {
                         XContentBuilder builder = RestXContentBuilder.restContentBuilder(request);

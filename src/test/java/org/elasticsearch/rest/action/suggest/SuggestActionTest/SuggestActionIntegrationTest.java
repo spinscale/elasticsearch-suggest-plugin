@@ -37,6 +37,8 @@ public class SuggestActionIntegrationTest extends AbstractSuggestTest {
         String json = createJSONQuery(field, term, size, similarity);
         Response r = httpClient.preparePost("http://localhost:9200/products/product/_suggest").setBody(json).execute().get();
         assertThat(r.getStatusCode(), is(200));
+        System.out.println("REQ : " + json);
+        System.out.println("RESP: " + r.getResponseBody());
 
         return getSuggestionsFromResponse(r.getResponseBody());
    }

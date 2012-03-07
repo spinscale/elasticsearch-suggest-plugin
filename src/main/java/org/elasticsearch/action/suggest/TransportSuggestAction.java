@@ -12,6 +12,8 @@ import org.elasticsearch.action.support.broadcast.BroadcastShardOperationFailedE
 import org.elasticsearch.action.support.broadcast.TransportBroadcastOperationAction;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.ClusterState;
+import org.elasticsearch.cluster.block.ClusterBlockException;
+import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.routing.GroupShardsIterator;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.common.collect.ImmutableSortedSet;
@@ -40,11 +42,6 @@ public class TransportSuggestAction extends TransportBroadcastOperationAction<Su
     @Override
     protected String transportAction() {
         return "/indices/suggest";
-    }
-
-    @Override
-    protected String transportShardAction() {
-        return "/indices/suggest/shard";
     }
 
     @Override
@@ -116,10 +113,20 @@ public class TransportSuggestAction extends TransportBroadcastOperationAction<Su
     }
 
     @Override
-    protected GroupShardsIterator shards(SuggestRequest request,
-            String[] concreteIndices, ClusterState clusterState) {
+    protected GroupShardsIterator shards(ClusterState clusterState,
+            SuggestRequest request, String[] concreteIndices) {
         logger.trace("Entered TransportSuggestAction.shards()");
         return clusterService.operationRouting().searchShards(clusterState, request.indices(), concreteIndices, null, null, null);
+    }
+
+    @Override
+    protected ClusterBlockException checkGlobalBlock(ClusterState state, SuggestRequest request) {
+        return state.blocks().globalBlockedException(ClusterBlockLevel.METADATA);
+    }
+
+    @Override
+    protected ClusterBlockException checkRequestBlock(ClusterState state, SuggestRequest request, String[] concreteIndices) {
+        return state.blocks().indicesBlockedException(ClusterBlockLevel.METADATA, concreteIndices);
     }
 
 }
