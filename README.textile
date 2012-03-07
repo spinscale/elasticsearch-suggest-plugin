@@ -121,6 +121,7 @@ h2. TODO
 
 h2. Changelog
 
+* 2012-03-07: Updated to work with elasticsearch 0.19.0
 * 2012-02-10: Created SuggestRequestBuilder and SuggestRefreshRequestBuilder classes - results in easy to use request classes (check the examples and tests)
 * 2011-12-29: The refresh interval can now be chosen as time based value like any other elasticsearch configuration
 * 2011-12-29: Instead of having all nodes sleeping the same time and updating the suggester asynchronously, the master node now triggers the update for all slaves
