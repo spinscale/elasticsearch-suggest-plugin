@@ -50,7 +50,7 @@ public class Suggester {
 
         List<String> results = Lists.newArrayListWithExpectedSize(lookupResults.size());
         for (LookupResult lookupResult : lookupResults) {
-            results.add(lookupResult.key);
+            results.add(lookupResult.key.toString());
         }
 
         if (similarity < 1.0f) {
