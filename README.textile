@@ -112,6 +112,7 @@ h2. Thanks
 
 h2. TODO
 
+* Use FSTCompletionLookup instead of deprecated FSTLookup (since Lucene 3.6) - seems to break tests currently
 * Ensure that the _all field can be suggested on as well, see https://github.com/spinscale/elasticsearch-suggest-plugin/issues/1
 * Check Shays response and incorporate comments
 ** Build the service as shard level service like the ShardGetService
@@ -121,6 +122,7 @@ h2. TODO
 
 h2. Changelog
 
+* 2012-05-13: Updated to work with elasticsearch 0.19.3
 * 2012-03-07: Updated to work with elasticsearch 0.19.0
 * 2012-02-10: Created SuggestRequestBuilder and SuggestRefreshRequestBuilder classes - results in easy to use request classes (check the examples and tests)
 * 2011-12-29: The refresh interval can now be chosen as time based value like any other elasticsearch configuration
