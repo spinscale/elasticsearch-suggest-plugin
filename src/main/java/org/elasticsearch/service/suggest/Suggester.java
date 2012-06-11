@@ -12,6 +12,7 @@ import org.apache.lucene.search.spell.HighFrequencyDictionary;
 import org.apache.lucene.search.spell.SpellChecker;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
 import org.apache.lucene.search.suggest.fst.FSTLookup;
+import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
 import org.elasticsearch.common.collect.Lists;
@@ -83,7 +84,10 @@ public class Suggester {
 
                     Structure refreshedStructure = Structure.createStructure(structure.field, structure.shardId, indexShard.searcher().searcher().getIndexReader());
                     if (refreshedStructure != null) {
-                        structures.put(indexField, refreshedStructure);
+                        Structure oldStructure = structures.put(indexField, refreshedStructure);
+                        if (oldStructure != null) {
+                            oldStructure.cleanUpResources();
+                        }
                     } else {
                         toBeRemoved.add(refreshedStructure);
                     }
@@ -97,10 +101,18 @@ public class Suggester {
         }
 
         for (Structure structure : toBeRemoved) {
+            structure.cleanUpResources();
             structures.remove(structure);
         }
 
         logger.trace("Updated [{}] and removed [{}] suggest structures", structures.size(), toBeRemoved.size());
+    }
+
+    public void clean() {
+        for (Structure structure : structures.values()) {
+            structure.cleanUpResources();
+        }
+        structures.clear();
     }
 
     public static class Structure {
@@ -110,12 +122,26 @@ public class Suggester {
         public FSTLookup lookup;
         public SpellChecker spellChecker;
         public ShardId shardId;
+        private IndexReader indexReader;
 
-        public Structure(String field, ShardId shardId, FSTLookup lookup, SpellChecker spellChecker) {
+        public Structure(String field, ShardId shardId, FSTLookup lookup, SpellChecker spellChecker, IndexReader indexReader) {
             this.field = field;
             this.lookup = lookup;
             this.spellChecker = spellChecker;
             this.shardId = shardId;
+            this.indexReader = indexReader;
+        }
+
+        public void cleanUpResources() {
+            try {
+                try {
+                    spellChecker.clearIndex();
+                    spellChecker.close();
+                } catch (AlreadyClosedException e) {}
+                indexReader.close();
+            } catch (IOException e) {
+                logger.error("Error cleaning up resources: [{}]", e, e.getMessage());
+            }
         }
 
         @Override
@@ -134,17 +160,13 @@ public class Suggester {
                 IndexWriterConfig indexWriterConfig = new IndexWriterConfig(Version.LUCENE_35, new WhitespaceAnalyzer(Version.LUCENE_35));
                 spellChecker.indexDictionary(dict, indexWriterConfig, false);
 
-                return new Structure(field, shardId, lookup, spellChecker);
+                return new Structure(field, shardId, lookup, spellChecker, indexReader);
             } catch (IOException e) {
                 logger.error("Error when creating FSTLookup and Spellchecker: [{}]", e, e.getMessage());
             }
 
             return null;
         }
-    }
-
-    public void clean() {
-        structures.clear();
     }
 }
 
