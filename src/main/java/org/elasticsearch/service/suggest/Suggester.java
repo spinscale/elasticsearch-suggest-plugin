@@ -63,7 +63,7 @@ public class Suggester {
     }
 
     public void update() {
-        List<Structure> toBeRemoved = Lists.newArrayList();
+        List<Structure> toBeRemoved = Lists.newArrayList(structures.values());
 
         for (String indexField : structures.keySet()) {
             Structure structure = structures.get(indexField);
@@ -84,12 +84,7 @@ public class Suggester {
 
                     Structure refreshedStructure = Structure.createStructure(structure.field, structure.shardId, indexShard.searcher().searcher().getIndexReader());
                     if (refreshedStructure != null) {
-                        Structure oldStructure = structures.put(indexField, refreshedStructure);
-                        if (oldStructure != null) {
-                            oldStructure.cleanUpResources();
-                        }
-                    } else {
-                        toBeRemoved.add(refreshedStructure);
+                        structures.put(indexField, refreshedStructure);
                     }
                 }
 
@@ -101,8 +96,10 @@ public class Suggester {
         }
 
         for (Structure structure : toBeRemoved) {
+            if (structures.containsValue(structure)) {
+                structures.remove(structure);
+            }
             structure.cleanUpResources();
-            structures.remove(structure);
         }
 
         logger.trace("Updated [{}] and removed [{}] suggest structures", structures.size(), toBeRemoved.size());
@@ -134,13 +131,19 @@ public class Suggester {
 
         public void cleanUpResources() {
             try {
-                try {
-                    spellChecker.clearIndex();
-                    spellChecker.close();
-                } catch (AlreadyClosedException e) {}
-                indexReader.close();
+                spellChecker.clearIndex();
             } catch (IOException e) {
-                logger.error("Error cleaning up resources: [{}]", e, e.getMessage());
+                logger.error("Error clearing spellchecker index [{}]: [{}]", e, this, e.getMessage());
+            } catch (AlreadyClosedException e) {}
+
+            try {
+                spellChecker.close();
+            } catch (IOException e) {
+                logger.error("Error closing spellchecker index [{}]: [{}]", e, this, e.getMessage());
+            } catch (AlreadyClosedException e) {}
+
+            try { indexReader.close(); } catch (IOException e) {
+                logger.error("Error closing index reader [{}]: [{}]", e, this, e.getMessage());
             }
         }
 
