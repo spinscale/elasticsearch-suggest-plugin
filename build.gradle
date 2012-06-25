@@ -2,7 +2,7 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
 
-pluginVersion = '0.0.6'
+pluginVersion = '0.0.7'
 esVersion = '0.19.3'
 luceneVersion = '3.6.0'
 archivesBaseName = "elasticsearch-suggest-" + pluginVersion
