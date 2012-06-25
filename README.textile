@@ -17,7 +17,7 @@ In case you want to contact me, drop me a mail at alexander@reelsen.net
 h2. Installation
 
 If you do not want to work on the repository, just use the standard elasticsearch plugin command (inside your elasticsearch/bin directory)
-<pre><code>bin/plugin -url https://github.com/downloads/spinscale/elasticsearch-suggest-plugin/elasticsearch-suggest-0.0.6-0.19.3.zip -install suggest</code></pre>
+<pre><code>bin/plugin -url https://github.com/downloads/spinscale/elasticsearch-suggest-plugin/elasticsearch-suggest-0.0.7-0.19.3.zip -install suggest</code></pre>
 
 If you want to work on the repository
  * Clone this repo with git clone git://github.com/spinscale/elasticsearch-suggest-plugin.git
@@ -122,6 +122,7 @@ h2. TODO
 
 h2. Changelog
 
+* 2012-06-25: Trying to fix another resource leak, which did not eat up diskspace but still did not close all files
 * 2012-06-11: Fixing bad resoure leak due to not closing index reader properly - this lead to lots of deleted files, which still had open handles, thus taking up space
 * 2012-05-13: Updated to work with elasticsearch 0.19.3
 * 2012-03-07: Updated to work with elasticsearch 0.19.0
