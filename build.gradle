@@ -2,9 +2,9 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
 
-pluginVersion = '0.0.7'
-esVersion = '0.19.3'
-luceneVersion = '3.6.0'
+pluginVersion = '0.0.8'
+esVersion = '0.19.8'
+luceneVersion = '3.6.1'
 archivesBaseName = "elasticsearch-suggest-" + pluginVersion
 
 explodedDistDir = new File(distsDir, 'exploded')
