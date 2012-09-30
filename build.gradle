@@ -95,6 +95,10 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
+tasks.withType(Compile) { 
+    options.compilerArgs << "-Xlint:unchecked" 
+}
+
 artifacts {
     archives sourcesJar
     archives javadocJar

@@ -32,7 +32,7 @@ public class ShardSuggestResponse extends BroadcastShardOperationResponse {
         int size = in.readVInt();
         suggestions = Lists.newArrayListWithCapacity(size);
         for (int i = 0; i < size; i++) {
-            suggestions.add(in.readUTF());
+            suggestions.add(in.readString());
         }
     }
 
@@ -40,7 +40,7 @@ public class ShardSuggestResponse extends BroadcastShardOperationResponse {
         super.writeTo(out);
         out.writeVInt(suggestions.size());
         for (String suggestion : suggestions) {
-            out.writeUTF(suggestion);
+            out.writeString(suggestion);
         }
     }
 }

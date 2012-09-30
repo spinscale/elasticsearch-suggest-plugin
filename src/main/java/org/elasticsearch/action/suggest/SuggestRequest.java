@@ -115,14 +115,14 @@ public class SuggestRequest extends BroadcastOperationRequest {
 
         size = in.readVInt();
         similarity = in.readFloat();
-        field = in.readUTF();
-        term = in.readUTF();
+        field = in.readString();
+        term = in.readString();
 
         int typesSize = in.readVInt();
         if (typesSize > 0) {
             types = new String[typesSize];
             for (int i = 0; i < typesSize; i++) {
-                types[i] = in.readUTF();
+                types[i] = in.readString();
             }
         }
     }
@@ -132,12 +132,12 @@ public class SuggestRequest extends BroadcastOperationRequest {
 
         out.writeInt(size);
         out.writeFloat(similarity);
-        out.writeUTF(field);
-        out.writeUTF(term);
+        out.writeString(field);
+        out.writeString(term);
 
         out.writeVInt(types.length);
         for (String type : types) {
-            out.writeUTF(type);
+            out.writeString(type);
         }
     }
 

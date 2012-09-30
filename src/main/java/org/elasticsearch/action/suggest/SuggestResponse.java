@@ -34,7 +34,7 @@ public class SuggestResponse extends BroadcastOperationResponse {
         int size = in.readVInt();
         suggestions = Lists.newArrayList();
         for (int i = 0; i < size; i++) {
-            suggestions.add(in.readUTF());
+            suggestions.add(in.readString());
         }
     }
 
@@ -42,7 +42,7 @@ public class SuggestResponse extends BroadcastOperationResponse {
         super.writeTo(out);
         out.writeVInt(suggestions.size());
         for (String suggestion: suggestions) {
-            out.writeUTF(suggestion);
+            out.writeString(suggestion);
         }
     }
 }
