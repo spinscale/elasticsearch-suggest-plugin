@@ -11,7 +11,7 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.search.spell.HighFrequencyDictionary;
 import org.apache.lucene.search.spell.SpellChecker;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
-import org.apache.lucene.search.suggest.fst.FSTLookup;
+import org.apache.lucene.search.suggest.fst.FSTCompletionLookup;
 import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
@@ -29,7 +29,7 @@ import org.elasticsearch.indices.IndicesService;
 public class Suggester {
 
     private final ESLogger logger = Loggers.getLogger(getClass());
-    private static final ConcurrentMap<String, Structure> structures = Maps.newConcurrentMap();
+    private static ConcurrentMap<String, Structure> structures = Maps.newConcurrentMap();
     private final IndicesService indicesService;
 
     @Inject public Suggester(IndicesService indicesService) {
@@ -64,17 +64,17 @@ public class Suggester {
     }
 
     public void update() {
-        List<Structure> toBeRemoved = Lists.newArrayList(structures.values());
-
+        ConcurrentMap<String, Structure> newStructures = Maps.newConcurrentMap();
         for (String indexField : structures.keySet()) {
             Structure structure = structures.get(indexField);
 
             IndexShard indexShard = null;
             try {
-                IndexService indexService = indicesService.indexService(structure.shardId.index().name());
+                ShardId shardId = structure.shardId;
+                IndexService indexService = indicesService.indexService(shardId.index().name());
                 // No indexService or no indexshard (due to cluster joins/leaves) means removal from here
-                if (indexService != null && indexService.hasShard(structure.shardId.id())) {
-                    indexShard = indexService.shardSafe(structure.shardId.id());
+                if (indexService != null && indexService.hasShard(shardId.id())) {
+                    indexShard = indexService.shardSafe(shardId.id());
 
                     if (!indexShard.state().equals(IndexShardState.STARTED)) {
                         logger.trace("Index [{}] shard [{}] not started, skipping", indexShard.shardId().index(), indexShard.shardId().id());
@@ -84,7 +84,7 @@ public class Suggester {
                     HighFrequencyDictionary dict = new HighFrequencyDictionary(indexShard.searcher().reader(), structure.field, 0.00001f);
                     Structure refreshedStructure = Structure.createStructure(structure.field, structure.shardId, dict, indexShard.searcher().reader());
                     if (refreshedStructure != null) {
-                        structures.put(indexField, refreshedStructure);
+                        newStructures.put(indexField, refreshedStructure);
                     }
                 }
 
@@ -95,14 +95,13 @@ public class Suggester {
             }
         }
 
-        for (Structure structure : toBeRemoved) {
-            if (structures.containsValue(structure)) {
-                structures.remove(structure);
-            }
+        List<Structure> oldStructures = Lists.newArrayList(structures.values());
+        structures = newStructures;
+        for (Structure structure : oldStructures) {
             structure.cleanUpResources();
         }
 
-        logger.trace("Updated [{}] and removed [{}] suggest structures", structures.size(), toBeRemoved.size());
+        logger.trace("Updated [{}] suggest structures", structures.size());
     }
 
     public void clean() {
@@ -116,12 +115,12 @@ public class Suggester {
         private static ESLogger logger = Loggers.getLogger(Structure.class);
 
         public String field;
-        public FSTLookup lookup;
+        public FSTCompletionLookup lookup;
         public SpellChecker spellChecker;
         public ShardId shardId;
         public IndexReader indexReader;
 
-        public Structure(String field, ShardId shardId, FSTLookup lookup, SpellChecker spellChecker, IndexReader indexReader) {
+        public Structure(String field, ShardId shardId, FSTCompletionLookup lookup, SpellChecker spellChecker, IndexReader indexReader) {
             this.field = field;
             this.lookup = lookup;
             this.spellChecker = spellChecker;
@@ -163,7 +162,7 @@ public class Suggester {
 
         public static Structure createStructure(String field, ShardId shardId, HighFrequencyDictionary dict, IndexReader indexReader) {
             try {
-                FSTLookup lookup = new FSTLookup();
+                FSTCompletionLookup lookup = new FSTCompletionLookup();
                 lookup.build(dict);
 
                 SpellChecker spellChecker = new SpellChecker(new RAMDirectory());
