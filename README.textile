@@ -17,7 +17,7 @@ In case you want to contact me, drop me a mail at alexander@reelsen.net
 h2. Installation
 
 If you do not want to work on the repository, just use the standard elasticsearch plugin command (inside your elasticsearch/bin directory)
-<pre><code>bin/plugin -url https://github.com/downloads/spinscale/elasticsearch-suggest-plugin/elasticsearch-suggest-0.0.8-0.19.8.zip -install suggest</code></pre>
+<pre><code>bin/plugin -url https://github.com/downloads/spinscale/elasticsearch-suggest-plugin/elasticsearch-suggest-0.0.9-0.19.9.zip -install suggest</code></pre>
 
 If you want to work on the repository
  * Clone this repo with git clone git://github.com/spinscale/elasticsearch-suggest-plugin.git
@@ -60,33 +60,21 @@ If you want to refresh your FST suggesters manually instead of waiting for 10 mi
 
 h2. Usage from Java
 
-Inject the NodeClientWithSuggest via Guice and use it
-
 <pre><code>
-private NodeClientWithSuggest client;
+SuggestRequest request = new SuggestRequest(index);
+request.term(term);
+request.field(field);
+request.size(size);
+request.similarity(similarity);
 
-@Inject public ConstructorOfYourClass(NodeClientWithSuggest client) {
-    this.client = client;
-}
-
-public List<String> getMySuggestions(String term, String field, String index, Integer size, Float similarity) {
-    SuggestRequest request = new SuggestRequest(index);
-    request.term(term);
-    request.field(field);
-    request.size(size);
-    request.similarity(similarity);
-
-    SuggestResponse response = client.suggest(request).actionGet()
-
-    return response.sugggestions();
-}
+SuggestResponse response = node.client().execute(SuggestAction.INSTANCE, request).actionGet();
 </code></pre>
 
 Refresh works like this - there is no information in the response:
 
 <pre><code>
-    NodesSuggestRefreshRequest refreshRequest = new NodesSuggestRefreshRequest();
-    NodesSuggestRefreshResponse response = client.suggestRefresh(request).actionGet()
+NodesSuggestRefreshRequest refreshRequest = new NodesSuggestRefreshRequest();
+NodesSuggestRefreshResponse response = node.client().execute(SuggestRefreshAction.INSTANCE, refreshRequest).actionGet();
 </code></pre>
 
 You can also use the included builders
@@ -112,8 +100,9 @@ h2. Thanks
 
 h2. TODO
 
+* Querying by using a TransportClient should work (otherwise pushing it to a maven repo does not make too much sense)
+* Find the current resource leak (open deleted files after lots of merging)
 * Use FSTCompletionLookup instead of deprecated FSTLookup (since Lucene 3.6) - seems to break tests currently
-* Ensure that the _all field can be suggested on as well, see https://github.com/spinscale/elasticsearch-suggest-plugin/issues/1
 * Check Shays response and incorporate comments
 ** Build the service as shard level service like the ShardGetService
 ** https://groups.google.com/group/elasticsearch/browse_thread/thread/7c8693c6640cbc49/d448e8880552e999?lnk=gst#d448e8880552e999
@@ -122,6 +111,7 @@ h2. TODO
 
 h2. Changelog
 
+* 2012-09-30: Updated to elasticsearch 0.19.9. Making TransportClients work again not spitting an exception on startup, when the module is in classpath. Updated this docs.
 * 2012-06-25: Trying to fix another resource leak, which did not eat up diskspace but still did not close all files
 * 2012-06-11: Fixing bad resoure leak due to not closing index reader properly - this lead to lots of deleted files, which still had open handles, thus taking up space
 * 2012-05-13: Updated to work with elasticsearch 0.19.3
