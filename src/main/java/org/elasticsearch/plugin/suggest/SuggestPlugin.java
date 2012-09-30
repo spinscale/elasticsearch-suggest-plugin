@@ -4,7 +4,9 @@ import java.util.Collection;
 
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.component.LifecycleComponent;
+import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Module;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.module.suggest.SuggestModule;
 import org.elasticsearch.plugins.AbstractPlugin;
 import org.elasticsearch.rest.RestModule;
@@ -14,10 +16,19 @@ import org.elasticsearch.service.suggest.SuggestService;
 
 public class SuggestPlugin extends AbstractPlugin {
 
+    private final Settings settings;
+
+    @Inject
+    public SuggestPlugin(Settings settings) {
+        this.settings = settings;
+    }
+
+    @Override
     public String name() {
         return "suggest";
     }
 
+    @Override
     public String description() {
         return "Suggest Plugin";
     }
@@ -30,13 +41,19 @@ public class SuggestPlugin extends AbstractPlugin {
     @SuppressWarnings("rawtypes")
     @Override public Collection<Class<? extends LifecycleComponent>> services() {
         Collection<Class<? extends LifecycleComponent>> services = Lists.newArrayList();
-        services.add(SuggestService.class);
+
+        if (!settings.getAsBoolean("node.client", false)) {
+            services.add(SuggestService.class);
+        }
         return services;
     }
 
     @Override public Collection<Class<? extends Module>> modules() {
         Collection<Class<? extends Module>> modules = Lists.newArrayList();
-        modules.add(SuggestModule.class);
+
+        if (!settings.getAsBoolean("node.client", false)) {
+            modules.add(SuggestModule.class);
+        }
         return modules;
     }
 
