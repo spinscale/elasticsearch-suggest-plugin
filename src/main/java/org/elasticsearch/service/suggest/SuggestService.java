@@ -20,12 +20,12 @@ import org.elasticsearch.index.shard.service.IndexShard;
 
 public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
 
-    private TimeValue suggestRefreshInterval;
+    private final TimeValue suggestRefreshInterval;
     private volatile Thread suggestUpdaterThread;
     private volatile boolean closed;
-    private TransportNodesSuggestRefreshAction suggestRefreshAction;
-    private Suggester suggester;
-    private ClusterService clusterService;
+    private final TransportNodesSuggestRefreshAction suggestRefreshAction;
+    private final Suggester suggester;
+    private final ClusterService clusterService;
 
     @Inject public SuggestService(Settings settings, Suggester suggester, TransportNodesSuggestRefreshAction suggestRefreshAction,
             ClusterService clusterService) {
@@ -41,7 +41,6 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
         logger.info("Suggest component started with refresh interval [{}]", suggestRefreshInterval);
         suggestUpdaterThread = EsExecutors.daemonThreadFactory(settings, "suggest_updater").newThread(new SuggestUpdaterThread());
         suggestUpdaterThread.start();
-
     }
 
     @Override
@@ -60,7 +59,9 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
             return;
         }
         closed = true;
-        suggester.clean();
+        if (suggester != null) {
+            suggester.clean();
+        }
         if (suggestUpdaterThread != null) {
             suggestUpdaterThread.interrupt();
         }
@@ -92,6 +93,7 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
     }
 
     public class SuggestUpdaterThread implements Runnable {
+        @Override
         public void run() {
             while (!closed) {
                 DiscoveryNode node = clusterService.localNode();

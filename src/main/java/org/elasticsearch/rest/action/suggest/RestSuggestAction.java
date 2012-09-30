@@ -1,8 +1,8 @@
 package org.elasticsearch.rest.action.suggest;
 
-import static org.elasticsearch.rest.RestRequest.Method.POST;
-import static org.elasticsearch.rest.RestStatus.OK;
-import static org.elasticsearch.rest.action.support.RestActions.buildBroadcastShardsHeader;
+import static org.elasticsearch.rest.RestRequest.Method.*;
+import static org.elasticsearch.rest.RestStatus.*;
+import static org.elasticsearch.rest.action.support.RestActions.*;
 
 import java.io.IOException;
 import java.util.Map;
@@ -19,12 +19,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
-import org.elasticsearch.rest.BaseRestHandler;
-import org.elasticsearch.rest.RestChannel;
-import org.elasticsearch.rest.RestController;
-import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.rest.XContentRestResponse;
-import org.elasticsearch.rest.XContentThrowableRestResponse;
+import org.elasticsearch.rest.*;
 import org.elasticsearch.rest.action.support.RestActions;
 import org.elasticsearch.rest.action.support.RestXContentBuilder;
 import org.elasticsearch.service.suggest.SuggestService;
@@ -39,11 +34,12 @@ public class RestSuggestAction extends BaseRestHandler {
         controller.registerHandler(POST, "/{index}/{type}/_suggest", this);
     }
 
+    @Override
     public void handleRequest(final RestRequest request, final RestChannel channel) {
         final String[] indices = RestActions.splitIndices(request.param("index"));
 
         try {
-            XContentParser parser = XContentFactory.xContent(request.contentByteArray()).createParser(request.contentByteArray());
+            XContentParser parser = XContentFactory.xContent(request.content()).createParser(request.content());
             Map<String, Object> parserMap = parser.mapAndClose();
 
             SuggestRequest suggestRequest = new SuggestRequest(indices);
@@ -53,6 +49,7 @@ public class RestSuggestAction extends BaseRestHandler {
             suggestRequest.size(XContentMapValues.nodeIntegerValue(parserMap.get("size"), 10));
 
             client.execute(SuggestAction.INSTANCE, suggestRequest, new ActionListener<SuggestResponse>() {
+                @Override
                 public void onResponse(SuggestResponse response) {
                     try {
                         XContentBuilder builder = RestXContentBuilder.restContentBuilder(request);
@@ -67,6 +64,7 @@ public class RestSuggestAction extends BaseRestHandler {
                     }
                 }
 
+                @Override
                 public void onFailure(Throwable e) {
                     try {
                         channel.sendResponse(new XContentThrowableRestResponse(request, e));

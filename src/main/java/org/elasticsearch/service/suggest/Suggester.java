@@ -28,9 +28,9 @@ import org.elasticsearch.indices.IndicesService;
 
 public class Suggester {
 
-    private ESLogger logger = Loggers.getLogger(getClass());
+    private final ESLogger logger = Loggers.getLogger(getClass());
     private static final ConcurrentMap<String, Structure> structures = Maps.newConcurrentMap();
-    private IndicesService indicesService;
+    private final IndicesService indicesService;
 
     @Inject public Suggester(IndicesService indicesService) {
         this.indicesService = indicesService;
@@ -44,7 +44,7 @@ public class Suggester {
         Structure structure = structures.get(indexField);
         if (structure == null) {
             HighFrequencyDictionary dict = new HighFrequencyDictionary(indexReader, field, 0.00001f);
-            structure = Structure.createStructure(field, shardId, dict);
+            structure = Structure.createStructure(field, shardId, dict, indexReader);
             structures.putIfAbsent(indexField, structure);
         }
 
@@ -82,7 +82,7 @@ public class Suggester {
                     }
 
                     HighFrequencyDictionary dict = new HighFrequencyDictionary(indexShard.searcher().reader(), structure.field, 0.00001f);
-                    Structure refreshedStructure = Structure.createStructure(structure.field, structure.shardId, dict);
+                    Structure refreshedStructure = Structure.createStructure(structure.field, structure.shardId, dict, indexShard.searcher().reader());
                     if (refreshedStructure != null) {
                         structures.put(indexField, refreshedStructure);
                     }
@@ -119,12 +119,14 @@ public class Suggester {
         public FSTLookup lookup;
         public SpellChecker spellChecker;
         public ShardId shardId;
+        public IndexReader indexReader;
 
-        public Structure(String field, ShardId shardId, FSTLookup lookup, SpellChecker spellChecker) {
+        public Structure(String field, ShardId shardId, FSTLookup lookup, SpellChecker spellChecker, IndexReader indexReader) {
             this.field = field;
             this.lookup = lookup;
             this.spellChecker = spellChecker;
             this.shardId = shardId;
+            this.indexReader = indexReader;
         }
 
         public void cleanUpResources() {
@@ -139,16 +141,15 @@ public class Suggester {
             } catch (IOException e) {
                 logger.error("Error closing spellchecker index [{}]: [{}]", e, this, e.getMessage());
             } catch (AlreadyClosedException e) {}
-            
-//            try { indexReader.close(); } catch (IOException e) {
-//                logger.error("Error closing index reader [{}]: [{}]", e, this, e.getMessage());
-//            }
-//            
-//            if (indexReader.getRefCount() > 0) {
-//                logger.error("Refcount for indexReader should be 0, but is [{}]. Possible leak. Index [{}] Shard [{}] Field [{}] Reader [{}]",
-//                		indexReader.getRefCount(), shardId.getIndex(), shardId.getId(), field, indexReader.toString());
-//            }
-            
+
+            try {
+                if (!indexReader.isCurrent()) {
+                    IndexReader.openIfChanged(indexReader);
+                }
+            } catch (IOException e) {
+              logger.error("Error reoping index reader [{}]: [{}]", e, this, e.getMessage());
+            }
+
             if (logger.isTraceEnabled()) {
             	logger.trace("Cleaned resources for Index [{}] Shard [{}] Field [{}]",
             			shardId.getIndex(), shardId.getId(), field);
@@ -160,7 +161,7 @@ public class Suggester {
             return shardId.index().name() + "/" + shardId.id() + "/" + field;
         }
 
-        public static Structure createStructure(String field, ShardId shardId, HighFrequencyDictionary dict) {
+        public static Structure createStructure(String field, ShardId shardId, HighFrequencyDictionary dict, IndexReader indexReader) {
             try {
                 FSTLookup lookup = new FSTLookup();
                 lookup.build(dict);
@@ -169,7 +170,7 @@ public class Suggester {
                 IndexWriterConfig indexWriterConfig = new IndexWriterConfig(Version.LUCENE_36, new WhitespaceAnalyzer(Version.LUCENE_36));
                 spellChecker.indexDictionary(dict, indexWriterConfig, false);
 
-                return new Structure(field, shardId, lookup, spellChecker);
+                return new Structure(field, shardId, lookup, spellChecker, indexReader);
             } catch (IOException e) {
                 logger.error("Error when creating FSTLookup and Spellchecker: [{}]", e, e.getMessage());
             }
