@@ -1,8 +1,8 @@
 package org.elasticsearch.rest.action.suggest.SuggestActionTest;
 
 import static org.elasticsearch.rest.action.suggest.SuggestActionTest.NodeTestHelper.*;
-import static org.elasticsearch.rest.action.suggest.SuggestActionTest.ProductTestHelper.createProducts;
-import static org.elasticsearch.rest.action.suggest.SuggestActionTest.ProductTestHelper.indexProducts;
+import static org.elasticsearch.rest.action.suggest.SuggestActionTest.ProductTestHelper.*;
+
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 
@@ -22,7 +22,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 public abstract class AbstractSuggestTest {
 
-    private String clusterName = "SuggestIntegrationTestCluster_" + Math.random();
+    private final String clusterName = "SuggestIntegrationTestCluster_" + Math.random();
     protected Node node;
     protected List<Node> nodes = Lists.newArrayList();
 
@@ -66,6 +66,20 @@ public abstract class AbstractSuggestTest {
         indexProducts(products, node);
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "foo", 10);
+        assertThat(suggestions.toString(), suggestions, hasSize(3));
+        assertThat(suggestions.toString(), suggestions, contains("foo", "foob", "foobar"));
+    }
+
+    @Test
+    public void testThatAllFieldSuggestionsWorks() throws Exception {
+        List<Map<String, Object>> products = createProducts(4);
+        products.get(0).put("ProductName", "foo");
+        products.get(1).put("ProductName", "foob");
+        products.get(2).put("ProductName", "foobar");
+        products.get(3).put("ProductName", "boof");
+        indexProducts(products, node);
+
+        List<String> suggestions = getSuggestions("_all", "foo", 10);
         assertThat(suggestions.toString(), suggestions, hasSize(3));
         assertThat(suggestions.toString(), suggestions, contains("foo", "foob", "foobar"));
     }
