@@ -3,7 +3,6 @@ package org.elasticsearch.action.suggest;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import org.elasticsearch.ElasticSearchException;
-import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.support.nodes.TransportNodesOperationAction;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterService;
@@ -16,8 +15,8 @@ import org.elasticsearch.transport.TransportService;
 
 public class TransportNodesSuggestRefreshAction extends TransportNodesOperationAction<NodesSuggestRefreshRequest, NodesSuggestRefreshResponse, NodeSuggestRefreshRequest, NodeSuggestRefreshResponse> {
 
-    private Suggester suggester;
-    private NodeService nodeService;
+    private final Suggester suggester;
+    private final NodeService nodeService;
 
     @Inject public TransportNodesSuggestRefreshAction(Settings settings,
             ClusterName clusterName, ThreadPool threadPool, ClusterService clusterService,
