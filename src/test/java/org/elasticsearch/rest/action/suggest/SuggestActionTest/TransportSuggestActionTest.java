@@ -2,12 +2,7 @@ package org.elasticsearch.rest.action.suggest.SuggestActionTest;
 
 import java.util.List;
 
-import org.elasticsearch.action.suggest.NodesSuggestRefreshRequest;
-import org.elasticsearch.action.suggest.SuggestRequest;
-import org.elasticsearch.action.suggest.SuggestResponse;
-import org.elasticsearch.action.suggest.TransportNodesSuggestRefreshAction;
-import org.elasticsearch.action.suggest.TransportSuggestAction;
-import org.elasticsearch.node.internal.InternalNode;
+import org.elasticsearch.action.suggest.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -20,9 +15,8 @@ public class TransportSuggestActionTest extends AbstractSuggestTest {
 
     @Override
     public List<String> getSuggestions(String field, String term, Integer size, Float similarity) throws Exception {
-        TransportSuggestAction suggestAction = ((InternalNode) node).injector().getInstance(TransportSuggestAction.class);
-
         SuggestRequest request = new SuggestRequest("products");
+
         request.term(term);
         request.field(field);
 
@@ -33,7 +27,7 @@ public class TransportSuggestActionTest extends AbstractSuggestTest {
             request.similarity(similarity);
         }
 
-        SuggestResponse response = suggestAction.execute(request).actionGet();
+        SuggestResponse response = node.client().execute(SuggestAction.INSTANCE, request).actionGet();
 
         return response.suggestions();
     }
@@ -46,9 +40,8 @@ public class TransportSuggestActionTest extends AbstractSuggestTest {
 
     @Override
     public void refreshSuggestIndex() throws Exception {
-        TransportNodesSuggestRefreshAction refreshAction = ((InternalNode) node).injector().getInstance(TransportNodesSuggestRefreshAction.class);
         NodesSuggestRefreshRequest refreshRequest = new NodesSuggestRefreshRequest();
-        refreshAction.execute(refreshRequest).actionGet();
+        node.client().execute(SuggestRefreshAction.INSTANCE, refreshRequest).actionGet();
     }
 
 }
