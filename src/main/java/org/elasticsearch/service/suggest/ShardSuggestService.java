@@ -87,6 +87,8 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         if (field == null || field.length() == 0) {
             update();
         } else {
+            resetIndexReader();
+
             HighFrequencyDictionary dict = dictCache.getIfPresent(field);
             if (dict != null) dictCache.refresh(field);
 
@@ -159,7 +161,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         }
     }
 
-    private void resetIndexReader() {
+    public void resetIndexReader() {
         try {
             IndexReader oldIndexReader = indexReader;
             indexReader = null;

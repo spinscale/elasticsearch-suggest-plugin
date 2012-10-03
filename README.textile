@@ -56,6 +56,8 @@ If you want to refresh your FST suggesters manually instead of waiting for 10 mi
 
 <pre><code>
 # curl -X POST 'localhost:9200/_suggestRefresh' 
+# curl -X POST 'localhost:9200/products/product/_suggestRefresh' 
+# curl -X POST 'localhost:9200/products/product/_suggestRefresh' -d '{ "field" : "ProductName.suggest" }'
 </code></pre>
 
 h2. Usage from Java
@@ -70,7 +72,7 @@ request.similarity(similarity);
 SuggestResponse response = node.client().execute(SuggestAction.INSTANCE, request).actionGet();
 </code></pre>
 
-Refresh works like this - there is no information in the response:
+Refresh works like this - you can add an index and a field in the suggest refresh request as well, if you want to trigger it externally:
 
 <pre><code>
 SuggestRefreshRequest refreshRequest = new SuggestRefreshRequest();
@@ -93,7 +95,6 @@ List<String> suggestions = new SuggestRequestBuilder(client)
     builder.execute().actionGet();
 </code></pre>
 
-
 h2. Thanks
 
 * Shay for giving feedback
@@ -101,17 +102,14 @@ h2. Thanks
 h2. TODO
 
 * Cleanup of suggester structures on stopping the instance, deleting the shard, moving the shard from one node to another
-* Ensure that transport actions are not loaded twice
-* Allow clearing of fst suggesters at least per index or per field
-* Add tests for refreshing only certain fields or indexes
-* Update documentation for index/field refresh
 * Find and verify the absence of the current resource leak (open deleted files after lots of merging) with the new architecture
 * Make it generelly less hacky
-* Tests: Start nodes in parallel via futures so the tests for clustered environments run faster
 * Publish on maven repo
 
 h2. Changelog
 
+* 2012-10-03: Starting cluster nodes in parallel in tests where several nodes are created (big speedup)
+* 2012-10-03: Added tests for refreshing suggest in memory structures for one index or one field in an index only
 * 2012-10-03: Replaced gradle with maven
 * 2012-10-03: Updated to elasticsearch 0.19.10
 * 2012-10-03: You can use the plugin now with a TransportClient for the first time. Yay!

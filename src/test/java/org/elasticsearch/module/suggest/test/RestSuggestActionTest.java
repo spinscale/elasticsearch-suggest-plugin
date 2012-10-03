@@ -32,9 +32,10 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
     }
 
     @Override
-    public List<String> getSuggestions(String field, String term, Integer size, Float similarity) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
+    public List<String> getSuggestions(String index, String field, String term, Integer size, Float similarity) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
         String json = createJSONQuery(field, term, size, similarity);
-        Response r = httpClient.preparePost("http://localhost:9200/products/product/_suggest").setBody(json).execute().get();
+        String url = "http://localhost:9200/" + index + "/product/_suggest";
+        Response r = httpClient.preparePost(url).setBody(json).execute().get();
         assertThat(r.getStatusCode(), is(200));
 //        System.out.println("REQ : " + json);
 //        System.out.println("RESP: " + r.getResponseBody());
@@ -43,8 +44,8 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
    }
 
     @Override
-    public List<String> getSuggestions(String field, String term, Integer size) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
-        return getSuggestions(field, term, size, null);
+    public List<String> getSuggestions(String index, String field, String term, Integer size) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
+        return getSuggestions(index, field, term, size, null);
     }
 
     @Override
@@ -61,7 +62,9 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
 
     @Override
     public void refreshFieldSuggesters(String index, String field) throws Exception {
-        Response r = httpClient.preparePost("http://localhost:9200/" + index + "/product/" + field + "/_suggestRefresh").execute().get();
+        String jsonBody = String.format("{ \"field\": \"%s\" } ", field);
+
+        Response r = httpClient.preparePost("http://localhost:9200/" + index + "/product/_suggestRefresh").setBody(jsonBody).execute().get();
         assertThat(r.getStatusCode(), is(200));
     }
 

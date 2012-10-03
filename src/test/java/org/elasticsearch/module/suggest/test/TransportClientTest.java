@@ -35,14 +35,14 @@ public class TransportClientTest extends AbstractSuggestTest {
     }
 
     @Override
-    public List<String> getSuggestions(String field, String term, Integer size, Float similarity) throws Exception {
-        SuggestRequestBuilder builder = new SuggestRequestBuilder(client).setIndices("products").field(field).term(term).size(size).similarity(similarity);
+    public List<String> getSuggestions(String index, String field, String term, Integer size, Float similarity) throws Exception {
+        SuggestRequestBuilder builder = new SuggestRequestBuilder(client).setIndices(index).field(field).term(term).size(size).similarity(similarity);
         return builder.execute().actionGet().suggestions();
     }
 
     @Override
-    public List<String> getSuggestions(String field, String term, Integer size) throws Exception {
-        SuggestRequestBuilder builder = new SuggestRequestBuilder(client).setIndices("products").field(field).term(term).size(size);
+    public List<String> getSuggestions(String index, String field, String term, Integer size) throws Exception {
+        SuggestRequestBuilder builder = new SuggestRequestBuilder(client).setIndices(index).field(field).term(term).size(size);
         return builder.execute().actionGet().suggestions();
     }
 

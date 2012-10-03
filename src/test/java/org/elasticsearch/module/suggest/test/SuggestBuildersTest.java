@@ -15,13 +15,13 @@ public class SuggestBuildersTest extends AbstractSuggestTest {
     }
 
     @Override
-    public List<String> getSuggestions(String field, String term, Integer size, Float similarity) throws Exception {
-        return getBuilder(field, term, size).similarity(similarity).execute().actionGet().getSuggestions();
+    public List<String> getSuggestions(String index, String field, String term, Integer size, Float similarity) throws Exception {
+        return getBuilder(index, field, term, size).similarity(similarity).execute().actionGet().getSuggestions();
     }
 
     @Override
-    public List<String> getSuggestions(String field, String term, Integer size) throws Exception {
-        return getBuilder(field, term, size).execute().actionGet().getSuggestions();
+    public List<String> getSuggestions(String index, String field, String term, Integer size) throws Exception {
+        return getBuilder(index, field, term, size).execute().actionGet().getSuggestions();
     }
 
     @Override
@@ -42,8 +42,9 @@ public class SuggestBuildersTest extends AbstractSuggestTest {
         builder.execute().actionGet();
     }
 
-    private SuggestRequestBuilder getBuilder(String field, String term, Integer size) throws Exception {
+    private SuggestRequestBuilder getBuilder(String index, String field, String term, Integer size) throws Exception {
         return new SuggestRequestBuilder(node.client())
+            .setIndices(index)
             .field(field)
             .term(term)
             .size(size);

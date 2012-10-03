@@ -10,6 +10,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.elasticsearch.action.deletebyquery.DeleteByQueryRequest;
 import org.elasticsearch.common.collect.Lists;
@@ -24,6 +27,7 @@ public abstract class AbstractSuggestTest {
     protected final String clusterName = "SuggestTest_" + Math.random();
     protected Node node;
     protected List<Node> nodes = Lists.newArrayList();
+    public static final String DEFAULT_INDEX = "products";
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -34,28 +38,36 @@ public abstract class AbstractSuggestTest {
     }
 
     public AbstractSuggestTest(int shards, int nodeCount) throws Exception {
+        ExecutorService executor = Executors.newFixedThreadPool(nodeCount);
+        List<Future<Node>> nodeFutures = Lists.newArrayList();
+
         for (int i = 0 ; i < nodeCount ; i++) {
-            nodes.add(createNode(clusterName, shards));
+            Future<Node> nodeFuture = executor.submit(createNode(clusterName, shards));
+            nodeFutures.add(nodeFuture);
+        }
+
+        for (Future<Node> nodeFuture : nodeFutures) {
+            nodes.add(nodeFuture.get());
         }
 
         node = nodes.get(0);
+        createIndexWithMapping("products", node);
     }
 
 
     @After
     public void stopNodes() throws Exception {
-        for (Node node : nodes) {
-            node.client().close();
-            node.close();
+        for (Node nodeToStop : nodes) {
+            nodeToStop.client().close();
+            nodeToStop.close();
         }
     }
 
-    abstract public List<String> getSuggestions(String field, String term, Integer size, Float similarity) throws Exception;
-    abstract public List<String> getSuggestions(String field, String term, Integer size) throws Exception;
+    abstract public List<String> getSuggestions(String index, String field, String term, Integer size, Float similarity) throws Exception;
+    abstract public List<String> getSuggestions(String index, String field, String term, Integer size) throws Exception;
     abstract public void refreshAllSuggesters() throws Exception;
     abstract public void refreshIndexSuggesters(String index) throws Exception;
     abstract public void refreshFieldSuggesters(String index, String field) throws Exception;
-
 
     @Test
     public void testThatSimpleSuggestionWorks() throws Exception {
@@ -201,6 +213,56 @@ public abstract class AbstractSuggestTest {
         assertThat(suggestions, contains("kochjacke"));
     }
 
+    @Test
+    public void testThatRefreshingPerIndexWorks() throws Exception {
+        createIndexWithMapping("secondproductsindex", node);
+
+        List<Map<String, Object>> products = createProducts(2);
+        products.get(0).put("ProductName", "autoreifen");
+        products.get(1).put("ProductName", "autorad");
+        indexProducts(products, node);
+        indexProducts(products, "secondproductsindex", node);
+
+        // get suggestions from both indexes to create fst structures
+        getSuggestions("ProductName.suggest", "auto", 10);
+        getSuggestions("secondproductsindex", "ProductName.suggest", "auto", 10);
+
+        // index another product
+        List<Map<String, Object>> newProducts = createProducts(1);
+        newProducts.get(0).put("ProductName", "automatik");
+        indexProducts(newProducts, node);
+        indexProducts(newProducts, "secondproductsindex", node);
+
+        refreshIndexSuggesters("products");
+
+        List<String> suggestionsFromProductIndex = getSuggestions("ProductName.suggest", "auto", 10);
+        List<String> suggestionsFromSecondProductIndex = getSuggestions("secondproductsindex", "ProductName.suggest", "auto", 10);
+        assertSuggestions(suggestionsFromProductIndex, "automatik", "autorad", "autoreifen");
+        assertSuggestions(suggestionsFromSecondProductIndex, "autorad", "autoreifen");
+    }
+
+    @Test
+    public void testThatRefreshingPerIndexFieldWorks() throws Exception {
+        List<Map<String, Object>> products = createProducts(2);
+        products.get(0).put("ProductName", "autoreifen");
+        products.get(1).put("ProductName", "autorad");
+        indexProducts(products, node);
+
+        getSuggestions("ProductName.suggest", "auto", 10);
+        getSuggestions("ProductName.lowercase", "auto", 10);
+
+        List<Map<String, Object>> newProducts = createProducts(1);
+        newProducts.get(0).put("ProductName", "automatik");
+        indexProducts(newProducts, node);
+
+        refreshFieldSuggesters("products", "ProductName.suggest");
+
+        List<String> suggestionsFromSuggestField = getSuggestions("ProductName.suggest", "auto", 10);
+        List<String> suggestionsFromLowercaseField = getSuggestions("ProductName.lowercase", "auto", 10);
+        assertSuggestions(suggestionsFromSuggestField, "automatik", "autorad", "autoreifen");
+        assertSuggestions(suggestionsFromLowercaseField, "autorad", "autoreifen");
+    }
+
 //    @Test
 //    public void performanceTest() throws Exception {
 //        List<Map<String, Object>> products = createProducts(60000);
@@ -221,6 +283,14 @@ public abstract class AbstractSuggestTest {
 //
 //        return end - start;
 //    }
+
+    private List<String> getSuggestions(String field, String term, Integer size) throws Exception {
+        return getSuggestions(DEFAULT_INDEX, field, term, size);
+    }
+
+    private List<String> getSuggestions(String field, String term, Integer size, Float similarity) throws Exception {
+        return getSuggestions(DEFAULT_INDEX, field, term, size, similarity);
+    }
 
     private void assertSuggestions(List<String> suggestions, String ... terms) {
         assertThat(suggestions.toString() + "should have size " + terms.length, suggestions, hasSize(terms.length));

@@ -71,7 +71,7 @@ public class RestSuggestAction extends BaseRestHandler {
 
             });
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             try {
                 channel.sendResponse(new XContentThrowableRestResponse(request, e));
             } catch (IOException e1) {

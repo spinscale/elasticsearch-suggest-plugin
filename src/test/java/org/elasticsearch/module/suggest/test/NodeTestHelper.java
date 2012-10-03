@@ -1,6 +1,7 @@
 package org.elasticsearch.module.suggest.test;
 
 import java.io.IOException;
+import java.util.concurrent.Callable;
 
 import org.apache.commons.io.IOUtils;
 import org.elasticsearch.action.admin.indices.exists.IndicesExistsResponse;
@@ -12,28 +13,35 @@ import org.elasticsearch.node.NodeBuilder;
 
 public class NodeTestHelper {
 
-    public static Node createNode(String clusterName, int numberOfShards) throws IOException {
-        Builder settingsBuilder = ImmutableSettings.settingsBuilder();
-        String config = IOUtils.toString(NodeTestHelper.class.getResourceAsStream("/elasticsearch.yml"));
-        settingsBuilder = settingsBuilder.loadFromSource(config);
+    public static Callable<Node> createNode(final String clusterName, final int numberOfShards) throws IOException {
+        return new Callable<Node>() {
 
-        settingsBuilder.put("gateway.type", "none");
-        settingsBuilder.put("cluster.name", clusterName);
-        settingsBuilder.put("index.number_of_shards", numberOfShards);
-        settingsBuilder.put("index.number_of_replicas", 0);
+            @Override
+            public Node call() throws Exception {
+                Builder settingsBuilder = ImmutableSettings.settingsBuilder();
+                String config = IOUtils.toString(NodeTestHelper.class.getResourceAsStream("/elasticsearch.yml"));
+                settingsBuilder = settingsBuilder.loadFromSource(config);
 
-        LogConfigurator.configure(settingsBuilder.build());
+                settingsBuilder.put("gateway.type", "none");
+                settingsBuilder.put("cluster.name", clusterName);
+                settingsBuilder.put("index.number_of_shards", numberOfShards);
+                settingsBuilder.put("index.number_of_replicas", 0);
 
-        Node node = NodeBuilder.nodeBuilder().settings(settingsBuilder.build()).node();
+                LogConfigurator.configure(settingsBuilder.build());
 
-        IndicesExistsResponse existsResponse = node.client().admin().indices().prepareExists("products").execute().actionGet();
+                Node node = NodeBuilder.nodeBuilder().settings(settingsBuilder.build()).node();
+                return node;
+            }
+        };
+    }
+
+    public static void createIndexWithMapping(String index, Node node) throws IOException {
+        IndicesExistsResponse existsResponse = node.client().admin().indices().prepareExists(index).execute().actionGet();
         if (!existsResponse.exists()) {
             String mapping = IOUtils.toString(NodeTestHelper.class.getResourceAsStream("/product.json"));
-            node.client().admin().indices().prepareCreate("products").execute().actionGet();
-            node.client().admin().indices().preparePutMapping("products").setType("product").setSource(mapping).execute().actionGet();
+            node.client().admin().indices().prepareCreate(index).execute().actionGet();
+            node.client().admin().indices().preparePutMapping(index).setType("product").setSource(mapping).execute().actionGet();
         }
-
-        return node;
     }
 
 }

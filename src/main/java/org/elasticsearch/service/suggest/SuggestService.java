@@ -12,6 +12,7 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.indices.IndicesService;
 
 public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
 
@@ -20,12 +21,14 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
     private volatile boolean closed;
     private final TransportSuggestRefreshAction suggestRefreshAction;
     private final ClusterService clusterService;
+    private final IndicesService indicesService;
 
     @Inject public SuggestService(Settings settings, TransportSuggestRefreshAction suggestRefreshAction,
-            ClusterService clusterService) {
+            ClusterService clusterService, IndicesService indicesService) {
         super(settings);
         this.suggestRefreshAction = suggestRefreshAction;
         this.clusterService = clusterService;
+        this.indicesService = indicesService;
         suggestRefreshInterval = settings.getAsTime("suggest.refresh_interval", TimeValue.timeValueMinutes(10));
     }
 
@@ -47,7 +50,6 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
         closeAll();
     }
 
-    // TODO: clean up all shard suggest service resources
     private void closeAll() {
         if (closed) {
             return;
@@ -56,6 +58,15 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
         if (suggestUpdaterThread != null) {
             suggestUpdaterThread.interrupt();
         }
+        // TODO: for each index -> for each shard -> resetIndexReader
+//        for (Iterator<IndexService> it = indicesService.iterator(); it.hasNext(); ) {
+//            IndexService indexService = it.next();
+//            for (Iterator<IndexShard> shardServiceIterator = indexService.iterator(); it.hasNext(); ) {
+//                IndexShard indexShard  = shardServiceIterator.next();
+//                ShardSuggestService suggestShardService = indexService.shardInjectorSafe(indexShard.shardId().id()).getInstance(ShardSuggestService.class);
+//                suggestShardService.resetIndexReader();
+//            }
+//        }
     }
 
     public class SuggestUpdaterThread implements Runnable {

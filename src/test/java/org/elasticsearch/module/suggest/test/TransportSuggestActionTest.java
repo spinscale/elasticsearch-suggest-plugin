@@ -14,8 +14,8 @@ public class TransportSuggestActionTest extends AbstractSuggestTest {
     }
 
     @Override
-    public List<String> getSuggestions(String field, String term, Integer size, Float similarity) throws Exception {
-        SuggestRequest request = new SuggestRequest("products");
+    public List<String> getSuggestions(String index, String field, String term, Integer size, Float similarity) throws Exception {
+        SuggestRequest request = new SuggestRequest(index);
 
         request.term(term);
         request.field(field);
@@ -33,9 +33,9 @@ public class TransportSuggestActionTest extends AbstractSuggestTest {
     }
 
     @Override
-    public List<String> getSuggestions(String field, String term, Integer size)
+    public List<String> getSuggestions(String index, String field, String term, Integer size)
             throws Exception {
-        return getSuggestions(field, term, size, null);
+        return getSuggestions(index, field, term, size, null);
     }
 
     @Override
