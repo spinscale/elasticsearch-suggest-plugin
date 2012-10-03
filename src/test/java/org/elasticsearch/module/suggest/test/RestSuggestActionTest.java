@@ -18,11 +18,11 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
 
 @RunWith(value = Parameterized.class)
-public class SuggestActionIntegrationTest extends AbstractSuggestTest {
+public class RestSuggestActionTest extends AbstractSuggestTest {
 
     private final AsyncHttpClient httpClient = new AsyncHttpClient();
 
-    public SuggestActionIntegrationTest(int shards, int nodeCount) throws Exception {
+    public RestSuggestActionTest(int shards, int nodeCount) throws Exception {
         super(shards, nodeCount);
     }
 
@@ -48,11 +48,22 @@ public class SuggestActionIntegrationTest extends AbstractSuggestTest {
     }
 
     @Override
-    public void refreshSuggestIndex() throws Exception {
+    public void refreshAllSuggesters() throws Exception {
         Response r = httpClient.preparePost("http://localhost:9200/_suggestRefresh").execute().get();
         assertThat(r.getStatusCode(), is(200));
     }
 
+    @Override
+    public void refreshIndexSuggesters(String index) throws Exception {
+        Response r = httpClient.preparePost("http://localhost:9200/"+ index + "/product/_suggestRefresh").execute().get();
+        assertThat(r.getStatusCode(), is(200));
+    }
+
+    @Override
+    public void refreshFieldSuggesters(String index, String field) throws Exception {
+        Response r = httpClient.preparePost("http://localhost:9200/" + index + "/product/" + field + "/_suggestRefresh").execute().get();
+        assertThat(r.getStatusCode(), is(200));
+    }
 
     private String createJSONQuery(String field, String term, Integer size, Float similarity) {
         StringBuilder query = new StringBuilder("{");

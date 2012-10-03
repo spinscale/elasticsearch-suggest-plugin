@@ -47,8 +47,20 @@ public class TransportClientTest extends AbstractSuggestTest {
     }
 
     @Override
-    public void refreshSuggestIndex() throws Exception {
+    public void refreshAllSuggesters() throws Exception {
         SuggestRefreshRequestBuilder builder = new SuggestRefreshRequestBuilder(client);
+        builder.execute().actionGet();
+    }
+
+    @Override
+    public void refreshIndexSuggesters(String index) throws Exception {
+        SuggestRefreshRequestBuilder builder = new SuggestRefreshRequestBuilder(client).setIndices(index);
+        builder.execute().actionGet();
+    }
+
+    @Override
+    public void refreshFieldSuggesters(String index, String field) throws Exception {
+        SuggestRefreshRequestBuilder builder = new SuggestRefreshRequestBuilder(client).setIndices(index).setField(field);
         builder.execute().actionGet();
     }
 }

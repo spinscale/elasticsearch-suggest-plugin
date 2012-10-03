@@ -39,8 +39,21 @@ public class TransportSuggestActionTest extends AbstractSuggestTest {
     }
 
     @Override
-    public void refreshSuggestIndex() throws Exception {
+    public void refreshAllSuggesters() throws Exception {
         SuggestRefreshRequest refreshRequest = new SuggestRefreshRequest();
+        node.client().execute(SuggestRefreshAction.INSTANCE, refreshRequest).actionGet();
+    }
+
+    @Override
+    public void refreshIndexSuggesters(String index) throws Exception {
+        SuggestRefreshRequest refreshRequest = new SuggestRefreshRequest(index);
+        node.client().execute(SuggestRefreshAction.INSTANCE, refreshRequest).actionGet();
+    }
+
+    @Override
+    public void refreshFieldSuggesters(String index, String field) throws Exception {
+        SuggestRefreshRequest refreshRequest = new SuggestRefreshRequest(index);
+        refreshRequest.field(field);
         node.client().execute(SuggestRefreshAction.INSTANCE, refreshRequest).actionGet();
     }
 

@@ -33,10 +33,6 @@ public abstract class AbstractSuggestTest {
         return Arrays.asList(data);
     }
 
-    public AbstractSuggestTest() throws Exception {
-        node = createNode(clusterName, 1);
-    }
-
     public AbstractSuggestTest(int shards, int nodeCount) throws Exception {
         for (int i = 0 ; i < nodeCount ; i++) {
             nodes.add(createNode(clusterName, shards));
@@ -56,7 +52,9 @@ public abstract class AbstractSuggestTest {
 
     abstract public List<String> getSuggestions(String field, String term, Integer size, Float similarity) throws Exception;
     abstract public List<String> getSuggestions(String field, String term, Integer size) throws Exception;
-    abstract public void refreshSuggestIndex() throws Exception;
+    abstract public void refreshAllSuggesters() throws Exception;
+    abstract public void refreshIndexSuggesters(String index) throws Exception;
+    abstract public void refreshFieldSuggesters(String index, String field) throws Exception;
 
 
     @Test
@@ -178,13 +176,13 @@ public abstract class AbstractSuggestTest {
         products = createProducts(1);
         products.get(0).put("ProductName", "Kochjacke PaulinPanzer");
         indexProducts(products, node);
-        refreshSuggestIndex();
+        refreshAllSuggesters();
 
         suggestions = getSuggestions("ProductName.suggest", "kochjacke paulin", 10);
         assertSuggestions(suggestions, "kochjacke paulinator", "kochjacke pauline", "kochjacke paulinpanzer");
 
         cleanIndex();
-        refreshSuggestIndex();
+        refreshAllSuggesters();
         suggestions = getSuggestions("ProductName.suggest", "kochjacke paulin", 10);
         assertThat(suggestions.size(), is(0));
     }
