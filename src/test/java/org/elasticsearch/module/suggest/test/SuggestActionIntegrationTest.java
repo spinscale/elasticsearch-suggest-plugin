@@ -1,8 +1,7 @@
 package org.elasticsearch.module.suggest.test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.Matchers.*;
 
 import java.io.IOException;
 import java.util.List;
@@ -21,7 +20,7 @@ import com.ning.http.client.Response;
 @RunWith(value = Parameterized.class)
 public class SuggestActionIntegrationTest extends AbstractSuggestTest {
 
-    private AsyncHttpClient httpClient = new AsyncHttpClient();
+    private final AsyncHttpClient httpClient = new AsyncHttpClient();
 
     public SuggestActionIntegrationTest(int shards, int nodeCount) throws Exception {
         super(shards, nodeCount);
@@ -37,8 +36,8 @@ public class SuggestActionIntegrationTest extends AbstractSuggestTest {
         String json = createJSONQuery(field, term, size, similarity);
         Response r = httpClient.preparePost("http://localhost:9200/products/product/_suggest").setBody(json).execute().get();
         assertThat(r.getStatusCode(), is(200));
-        System.out.println("REQ : " + json);
-        System.out.println("RESP: " + r.getResponseBody());
+//        System.out.println("REQ : " + json);
+//        System.out.println("RESP: " + r.getResponseBody());
 
         return getSuggestionsFromResponse(r.getResponseBody());
    }

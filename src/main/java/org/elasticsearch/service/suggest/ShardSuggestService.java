@@ -53,7 +53,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
                 new CacheLoader<String, HighFrequencyDictionary>() {
                     @Override
                     public HighFrequencyDictionary load(String field) throws Exception {
-                        return new HighFrequencyDictionary(createOrGetIndexReader(field), field, 0.00001f);
+                        return new HighFrequencyDictionary(createOrGetIndexReader(), field, 0.00001f);
                     }
                 }
         );
@@ -170,20 +170,24 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
     }
 
     // this does not look thread safe and nice...
-    private IndexReader createOrGetIndexReader(String field) {
+    private IndexReader createOrGetIndexReader() {
+        boolean indexReaderAcquired = false;
         try {
             if (indexReader == null) {
                 lock.lock();
                 if (indexReader == null) {
                     indexReader = indexShard.searcher().reader();
                     indexReader.incRef();
+                    indexReaderAcquired = true;
                 }
                 lock.unlock();
             }
 
             return indexReader;
         } finally {
-            indexShard.searcher().release();
+            if (indexReaderAcquired) {
+                indexShard.searcher().release();
+            }
         }
     }
 }

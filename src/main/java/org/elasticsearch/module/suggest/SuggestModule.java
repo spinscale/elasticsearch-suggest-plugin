@@ -12,8 +12,8 @@ public class SuggestModule extends AbstractModule {
 
     @Override
     protected void configure() {
-//        bind(TransportSuggestAction.class).asEagerSingleton();
-//        bind(TransportSuggestRefreshAction.class).asEagerSingleton();
+        bind(TransportSuggestAction.class).asEagerSingleton();
+        bind(TransportSuggestRefreshAction.class).asEagerSingleton();
 
         MapBinder<GenericAction, TransportAction> transportActionsBinder =
             MapBinder.newMapBinder(binder(), GenericAction.class, TransportAction.class);
@@ -24,6 +24,5 @@ public class SuggestModule extends AbstractModule {
         MapBinder<String, GenericAction> actionsBinder = MapBinder.newMapBinder(binder(), String.class, GenericAction.class);
         actionsBinder.addBinding(SuggestAction.NAME).toInstance(SuggestAction.INSTANCE);
         actionsBinder.addBinding(SuggestRefreshAction.NAME).toInstance(SuggestRefreshAction.INSTANCE);
-
     }
 }

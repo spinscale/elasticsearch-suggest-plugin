@@ -2,12 +2,12 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
 
-pluginVersion = '0.1'
-esVersion = '0.19.10'
-luceneVersion = '3.6.1'
-archivesBaseName = "elasticsearch-suggest-" + pluginVersion
+project.pluginVersion = '0.1'
+project.esVersion = '0.19.10'
+project.luceneVersion = '3.6.1'
 
-explodedDistDir = new File(distsDir, 'exploded')
+project.explodedDistDir = new File(distsDir, 'exploded')
+
 
 // TODO: Possibly make implementation date dynamic?
 manifest.mainAttributes("Implementation-Title": "ElasticSearch::Plugins::Suggest", "Implementation-Version": rootProject.version, "Implementation-Date": "2011")
@@ -31,11 +31,11 @@ repositories {
 }
 
 dependencies {
-    compile group: 'org.elasticsearch', name: 'elasticsearch', version: esVersion, transitive: true
-    compile "org.apache.lucene:lucene-misc:" + luceneVersion
-    compile "org.apache.lucene:lucene-spellchecker:" + luceneVersion
-    distLib "org.apache.lucene:lucene-misc:" + luceneVersion
-    distLib "org.apache.lucene:lucene-spellchecker:" + luceneVersion
+    compile group: 'org.elasticsearch', name: 'elasticsearch', version: project.esVersion, transitive: true
+    compile "org.apache.lucene:lucene-misc:" + project.luceneVersion
+    compile "org.apache.lucene:lucene-spellchecker:" + project.luceneVersion
+    distLib "org.apache.lucene:lucene-misc:" + project.luceneVersion
+    distLib "org.apache.lucene:lucene-spellchecker:" + project.luceneVersion
     testCompile "org.hamcrest:hamcrest-core:1.2"
     testCompile "org.hamcrest:hamcrest-library:1.2"
     testCompile "junit:junit-dep:4.8.2"
@@ -45,32 +45,32 @@ dependencies {
 }
 
 task explodedDist(dependsOn: [jar], description: 'Builds the plugin zip file') << {
-    [explodedDistDir]*.mkdirs()
+    [project.explodedDistDir]*.mkdirs()
 
     copy {
         from configurations.distLib
-        into explodedDistDir
+        into project.explodedDistDir
     }
 
     // remove elasticsearch files (compile above adds the elasticsearch one)
-    ant.delete { fileset(dir: explodedDistDir, includes: "elasticsearch-*.jar") }
+    ant.delete { fileset(dir: project.explodedDistDir, includes: "elasticsearch-*.jar") }
 
     copy {
         from libsDir
-        into explodedDistDir
+        into project.explodedDistDir
     }
 
-    ant.delete { fileset(dir: explodedDistDir, includes: "elasticsearch-*-javadoc.jar") }
-    ant.delete { fileset(dir: explodedDistDir, includes: "elasticsearch-*-sources.jar") }
+    ant.delete { fileset(dir: project.explodedDistDir, includes: "elasticsearch-*-javadoc.jar") }
+    ant.delete { fileset(dir: project.explodedDistDir, includes: "elasticsearch-*-sources.jar") }
 }
 
 task zip(type: Zip, dependsOn: ['explodedDist']) {
-    from(explodedDistDir) {
+    from(project.explodedDistDir) {
     }
 }
 
 task release(dependsOn: [zip]) << {
-    ant.delete(dir: explodedDistDir)
+    ant.delete(dir: project.explodedDistDir)
     copy {
         from distsDir
         into(new File(rootProject.distsDir, "plugins/suggest"))

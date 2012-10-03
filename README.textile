@@ -100,7 +100,9 @@ h2. Thanks
 
 h2. TODO
 
+* Use maven instead of gradle to be on par with the other plugins
 * Cleanup of suggester structures on stopping the instance, deleting the shard, moving the shard from one node to another
+* Ensure that transport actions are not loaded twice
 * Allow clearing of fst suggesters at least per index or per field
 * Add tests for refreshing only certain fields or indexes
 * Update documentation for index/field refresh
