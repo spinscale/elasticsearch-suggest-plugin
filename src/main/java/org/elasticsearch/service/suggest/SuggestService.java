@@ -7,6 +7,7 @@ import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.StopWatch;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
+import org.elasticsearch.common.component.Lifecycle;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
@@ -62,8 +63,9 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
         public void run() {
             while (!closed) {
                 DiscoveryNode node = clusterService.localNode();
+                boolean isClusterStarted = clusterService.lifecycleState().equals(Lifecycle.State.STARTED);
 
-                if (node != null && node.isMasterNode()) {
+                if (isClusterStarted && node != null && node.isMasterNode()) {
                     StopWatch sw = new StopWatch().start();
                     suggestRefreshAction.execute(new SuggestRefreshRequest()).actionGet();
                     logger.info("Suggest update took [{}], next update in [{}]", sw.stop().totalTime(), suggestRefreshInterval);
