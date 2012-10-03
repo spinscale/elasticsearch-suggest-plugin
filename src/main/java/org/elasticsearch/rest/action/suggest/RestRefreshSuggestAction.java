@@ -15,9 +15,9 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.*;
 import org.elasticsearch.rest.action.support.RestActions;
 
-public class RefreshSuggestAction extends BaseRestHandler {
+public class RestRefreshSuggestAction extends BaseRestHandler {
 
-    @Inject public RefreshSuggestAction(Settings settings, Client client, RestController controller) {
+    @Inject public RestRefreshSuggestAction(Settings settings, Client client, RestController controller) {
         super(settings, client);
         controller.registerHandler(POST, "/_suggestRefresh", this);
         controller.registerHandler(POST, "/{index}/{type}/_suggestRefresh", this); // TODO: only refresh per index here

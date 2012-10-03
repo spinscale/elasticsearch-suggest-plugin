@@ -12,7 +12,7 @@ import org.elasticsearch.module.suggest.SuggestClientModule;
 import org.elasticsearch.module.suggest.SuggestModule;
 import org.elasticsearch.plugins.AbstractPlugin;
 import org.elasticsearch.rest.RestModule;
-import org.elasticsearch.rest.action.suggest.RefreshSuggestAction;
+import org.elasticsearch.rest.action.suggest.RestRefreshSuggestAction;
 import org.elasticsearch.rest.action.suggest.RestSuggestAction;
 import org.elasticsearch.service.suggest.SuggestService;
 
@@ -37,7 +37,7 @@ public class SuggestPlugin extends AbstractPlugin {
 
     public void onModule(RestModule restModule) {
         restModule.addRestAction(RestSuggestAction.class);
-        restModule.addRestAction(RefreshSuggestAction.class);
+        restModule.addRestAction(RestRefreshSuggestAction.class);
     }
 
     @SuppressWarnings("rawtypes")
