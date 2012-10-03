@@ -19,7 +19,11 @@ public class SuggestRequest extends BroadcastOperationRequest {
     private float similarity = 1.0f;
     private String term;
 
-    SuggestRequest() {
+    public SuggestRequest() {
+    }
+
+    public SuggestRequest(String... indices) {
+        super(indices);
     }
 
     public int size() {
@@ -52,14 +56,6 @@ public class SuggestRequest extends BroadcastOperationRequest {
 
     public void term(String term) {
         this.term = term;
-    }
-
-    /**
-     * Constructs a new count request against the provided indices. No indices provided means it will
-     * run against all indices.
-     */
-    public SuggestRequest(String... indices) {
-        super(indices);
     }
 
     @Override public ActionRequestValidationException validate() {
@@ -130,7 +126,7 @@ public class SuggestRequest extends BroadcastOperationRequest {
     @Override public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
 
-        out.writeInt(size);
+        out.writeVInt(size);
         out.writeFloat(similarity);
         out.writeString(field);
         out.writeString(term);

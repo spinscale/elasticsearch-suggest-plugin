@@ -1,13 +1,8 @@
 package org.elasticsearch.service.suggest;
 
-import java.io.IOException;
-import java.util.List;
-
-import org.apache.lucene.index.IndexReader;
 import org.elasticsearch.ElasticSearchException;
-import org.elasticsearch.action.suggest.NodesSuggestRefreshRequest;
-import org.elasticsearch.action.suggest.ShardSuggestRequest;
-import org.elasticsearch.action.suggest.TransportNodesSuggestRefreshAction;
+import org.elasticsearch.action.suggest.SuggestRefreshRequest;
+import org.elasticsearch.action.suggest.TransportSuggestRefreshAction;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.StopWatch;
@@ -16,21 +11,18 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
-import org.elasticsearch.index.shard.service.IndexShard;
 
 public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
 
     private final TimeValue suggestRefreshInterval;
     private volatile Thread suggestUpdaterThread;
     private volatile boolean closed;
-    private final TransportNodesSuggestRefreshAction suggestRefreshAction;
-    private final Suggester suggester;
+    private final TransportSuggestRefreshAction suggestRefreshAction;
     private final ClusterService clusterService;
 
-    @Inject public SuggestService(Settings settings, Suggester suggester, TransportNodesSuggestRefreshAction suggestRefreshAction,
+    @Inject public SuggestService(Settings settings, TransportSuggestRefreshAction suggestRefreshAction,
             ClusterService clusterService) {
         super(settings);
-        this.suggester = suggester;
         this.suggestRefreshAction = suggestRefreshAction;
         this.clusterService = clusterService;
         suggestRefreshInterval = settings.getAsTime("suggest.refresh_interval", TimeValue.timeValueMinutes(10));
@@ -54,41 +46,14 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
         closeAll();
     }
 
+    // TODO: clean up all shard suggest service resources
     private void closeAll() {
         if (closed) {
             return;
         }
         closed = true;
-        if (suggester != null) {
-            suggester.clean();
-        }
         if (suggestUpdaterThread != null) {
             suggestUpdaterThread.interrupt();
-        }
-    }
-
-    public List<String> suggest(IndexShard indexShard, ShardSuggestRequest request) throws ElasticSearchException {
-        return suggest(indexShard, request.field(), request.term(), request.size(), request.similarity());
-    }
-
-    public List<String> suggest(IndexShard indexShard, String field, String term, int limit, Float similarity) throws ElasticSearchException {
-        try {
-            StopWatch shardWatch = new StopWatch().start();
-
-            IndexReader indexReader = indexShard.searcher().searcher().getIndexReader();
-            List<String> results = suggester.getSuggestions(indexShard.shardId(), field, term, limit, similarity, indexReader);
-
-            shardWatch.stop();
-            if (logger.isDebugEnabled()) {
-                logger.debug("Suggested {} results {} for term [{}] in index [{}] shard [{}], duration [{}]", results.size(),
-                        results, term, indexShard.shardId().index().name(), indexShard.shardId().id(), shardWatch.totalTime());
-            }
-
-            return results;
-        } catch (IOException e) {
-            throw new ElasticSearchException("Problem with suggest", e);
-        } finally {
-            indexShard.searcher().release();
         }
     }
 
@@ -97,11 +62,10 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
         public void run() {
             while (!closed) {
                 DiscoveryNode node = clusterService.localNode();
-                DiscoveryNode masterNode = clusterService.state().nodes().masterNode();
 
-                if (node != null && node.equals(masterNode)) {
+                if (node != null && node.isMasterNode()) {
                     StopWatch sw = new StopWatch().start();
-                    suggestRefreshAction.execute(new NodesSuggestRefreshRequest()).actionGet();
+                    suggestRefreshAction.execute(new SuggestRefreshRequest()).actionGet();
                     logger.info("Suggest update took [{}], next update in [{}]", sw.stop().totalTime(), suggestRefreshInterval);
                 } else {
                     if (node != null) {

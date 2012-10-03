@@ -1,4 +1,4 @@
-package org.elasticsearch.rest.action.suggest.SuggestActionTest;
+package org.elasticsearch.module.suggest.test;
 
 import java.util.List;
 

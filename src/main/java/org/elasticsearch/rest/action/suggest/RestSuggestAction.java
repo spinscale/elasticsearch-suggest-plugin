@@ -12,7 +12,6 @@ import org.elasticsearch.action.suggest.SuggestAction;
 import org.elasticsearch.action.suggest.SuggestRequest;
 import org.elasticsearch.action.suggest.SuggestResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.transport.TransportClientNodesService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -22,14 +21,11 @@ import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.rest.*;
 import org.elasticsearch.rest.action.support.RestActions;
 import org.elasticsearch.rest.action.support.RestXContentBuilder;
-import org.elasticsearch.service.suggest.SuggestService;
 
 public class RestSuggestAction extends BaseRestHandler {
 
-    @Inject SuggestService suggestService;
-    @Inject TransportClientNodesService nodesService;
-
-    @Inject public RestSuggestAction(Settings settings, Client client, RestController controller) {
+    @Inject
+    public RestSuggestAction(Settings settings, Client client, RestController controller) {
         super(settings, client);
         controller.registerHandler(POST, "/{index}/{type}/_suggest", this);
     }

@@ -1,0 +1,54 @@
+package org.elasticsearch.module.suggest.test;
+
+import java.io.IOException;
+import java.util.List;
+
+import org.elasticsearch.client.action.suggest.SuggestRefreshRequestBuilder;
+import org.elasticsearch.client.action.suggest.SuggestRequestBuilder;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
+@RunWith(value = Parameterized.class)
+public class TransportClientTest extends AbstractSuggestTest {
+
+    public TransportClientTest(int shards, int nodeCount) throws Exception {
+        super(shards, nodeCount);
+    }
+
+    private TransportClient client;
+
+    @Before
+    public void startElasticSearch() throws IOException {
+        Settings settings = ImmutableSettings.settingsBuilder().put("cluster.name", clusterName).put("node.client", true).build();
+        client = new TransportClient(settings).addTransportAddress(new InetSocketTransportAddress("localhost", 9300));
+    }
+
+    @After
+    public void closeClient() throws Exception {
+        client.close();
+    }
+
+    @Override
+    public List<String> getSuggestions(String field, String term, Integer size, Float similarity) throws Exception {
+        SuggestRequestBuilder builder = new SuggestRequestBuilder(client).setIndices("products").field(field).term(term).size(size).similarity(similarity);
+        return builder.execute().actionGet().suggestions();
+    }
+
+    @Override
+    public List<String> getSuggestions(String field, String term, Integer size) throws Exception {
+        SuggestRequestBuilder builder = new SuggestRequestBuilder(client).setIndices("products").field(field).term(term).size(size);
+        return builder.execute().actionGet().suggestions();
+    }
+
+    @Override
+    public void refreshSuggestIndex() throws Exception {
+        SuggestRefreshRequestBuilder builder = new SuggestRefreshRequestBuilder(client);
+        builder.execute().actionGet();
+    }
+}

@@ -1,6 +1,6 @@
 h1. Suggester Plugin for Elasticsearch
 
-This little plugin uses the FSTSuggeser from lucene to create suggestions from a certain field for a specified term instead of returning index data.
+This little plugin uses the FSTSuggester from lucene to create suggestions from a certain field for a specified term instead of returning index data.
 
 THIS IS NOT PRODUCTION READY! DO NOT USE IT.
 
@@ -17,7 +17,7 @@ In case you want to contact me, drop me a mail at alexander@reelsen.net
 h2. Installation
 
 If you do not want to work on the repository, just use the standard elasticsearch plugin command (inside your elasticsearch/bin directory)
-<pre><code>bin/plugin -url https://github.com/downloads/spinscale/elasticsearch-suggest-plugin/elasticsearch-suggest-0.0.9-0.19.9.zip -install suggest</code></pre>
+<pre><code>bin/plugin -url https://github.com/downloads/spinscale/elasticsearch-suggest-plugin/elasticsearch-suggest-0.1-0.19.10.zip -install suggest</code></pre>
 
 If you want to work on the repository
  * Clone this repo with git clone git://github.com/spinscale/elasticsearch-suggest-plugin.git
@@ -73,8 +73,8 @@ SuggestResponse response = node.client().execute(SuggestAction.INSTANCE, request
 Refresh works like this - there is no information in the response:
 
 <pre><code>
-NodesSuggestRefreshRequest refreshRequest = new NodesSuggestRefreshRequest();
-NodesSuggestRefreshResponse response = node.client().execute(SuggestRefreshAction.INSTANCE, refreshRequest).actionGet();
+SuggestRefreshRequest refreshRequest = new SuggestRefreshRequest();
+SuggestRefreshResponse response = node.client().execute(SuggestRefreshAction.INSTANCE, refreshRequest).actionGet();
 </code></pre>
 
 You can also use the included builders
@@ -100,17 +100,21 @@ h2. Thanks
 
 h2. TODO
 
-* Querying by using a TransportClient should work (otherwise pushing it to a maven repo does not make too much sense)
-* Find the current resource leak (open deleted files after lots of merging)
-* Use FSTCompletionLookup instead of deprecated FSTLookup (since Lucene 3.6) - seems to break tests currently
-* Check Shays response and incorporate comments
-** Build the service as shard level service like the ShardGetService
-** https://groups.google.com/group/elasticsearch/browse_thread/thread/7c8693c6640cbc49/d448e8880552e999?lnk=gst#d448e8880552e999
+* Cleanup of suggester structures on stopping the instance, deleting the shard, moving the shard from one node to another
 * Allow clearing of fst suggesters at least per index or per field
+* Add tests for refreshing only certain fields or indexes
+* Update documentation for index/field refresh
+* Find and verify the absence of the current resource leak (open deleted files after lots of merging) with the new architecture
 * Make it generelly less hacky
+* Tests: Start nodes in parallel via futures so the tests for clustered environments run faster
+* Publish on maven repo
 
 h2. Changelog
 
+* 2012-10-03: Updated to elasticsearch 0.19.10
+* 2012-10-03: You can use the plugin now with a TransportClient for the first time. Yay!
+* 2012-10-03: Using the FSTCompletionLookup now instead of the deprecated FSTLookup
+* 2012-10-03: Pretty much a core rewrite today (having tests is great, even if they run 10 minutes). The suggest service is now implemented as service on shard level - no more central Suggester structures. The whole implementation is much cleaner and adheres way better to the whole elasticsearch architecture instead of being cowboy coded together - at least that is what I think.
 * 2012-09-30: Updated to elasticsearch 0.19.9. Making TransportClients work again not spitting an exception on startup, when the module is in classpath. Updated this docs.
 * 2012-06-25: Trying to fix another resource leak, which did not eat up diskspace but still did not close all files
 * 2012-06-11: Fixing bad resoure leak due to not closing index reader properly - this lead to lots of deleted files, which still had open handles, thus taking up space

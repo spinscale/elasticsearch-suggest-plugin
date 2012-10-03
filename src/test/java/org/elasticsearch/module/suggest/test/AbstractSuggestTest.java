@@ -1,7 +1,7 @@
-package org.elasticsearch.rest.action.suggest.SuggestActionTest;
+package org.elasticsearch.module.suggest.test;
 
-import static org.elasticsearch.rest.action.suggest.SuggestActionTest.NodeTestHelper.*;
-import static org.elasticsearch.rest.action.suggest.SuggestActionTest.ProductTestHelper.*;
+import static org.elasticsearch.module.suggest.test.NodeTestHelper.*;
+import static org.elasticsearch.module.suggest.test.ProductTestHelper.*;
 
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
@@ -16,13 +16,12 @@ import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.node.Node;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.Parameterized.Parameters;
 
 public abstract class AbstractSuggestTest {
 
-    private final String clusterName = "SuggestIntegrationTestCluster_" + Math.random();
+    protected final String clusterName = "SuggestTest_" + Math.random();
     protected Node node;
     protected List<Node> nodes = Lists.newArrayList();
 
@@ -32,6 +31,10 @@ public abstract class AbstractSuggestTest {
 //        Object[][] data = new Object[][] { { 1,1 } };
         Object[][] data = new Object[][] { { 1, 1 }, { 4, 1 }, { 10, 1 }, { 4, 4 } };
         return Arrays.asList(data);
+    }
+
+    public AbstractSuggestTest() throws Exception {
+        node = createNode(clusterName, 1);
     }
 
     public AbstractSuggestTest(int shards, int nodeCount) throws Exception {
@@ -98,7 +101,6 @@ public abstract class AbstractSuggestTest {
         assertThat(suggestions.toString(), suggestions, contains("foob", "fooba"));
     }
 
-    @Ignore("Did not yet investigate why this test does not work, the only difference is the productname of the first product, which matches the searchterm")
     @Test
     public void testThatSimpleSuggestionShouldSupportLimitWithConcreteWord() throws Exception {
         List<Map<String, Object>> products = createProducts(3);
@@ -110,7 +112,7 @@ public abstract class AbstractSuggestTest {
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "foo", 2);
         assertThat(suggestions + " is not correct", suggestions, hasSize(2));
-        assertThat(suggestions, contains("foob", "fooba"));
+        assertThat(suggestions, contains("foo", "fooba"));
     }
 
     @Test

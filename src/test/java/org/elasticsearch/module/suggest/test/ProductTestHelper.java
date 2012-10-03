@@ -1,4 +1,4 @@
-package org.elasticsearch.rest.action.suggest.SuggestActionTest;
+package org.elasticsearch.module.suggest.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;

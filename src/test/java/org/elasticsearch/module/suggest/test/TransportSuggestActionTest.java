@@ -1,4 +1,4 @@
-package org.elasticsearch.rest.action.suggest.SuggestActionTest;
+package org.elasticsearch.module.suggest.test;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ public class TransportSuggestActionTest extends AbstractSuggestTest {
 
     @Override
     public void refreshSuggestIndex() throws Exception {
-        NodesSuggestRefreshRequest refreshRequest = new NodesSuggestRefreshRequest();
+        SuggestRefreshRequest refreshRequest = new SuggestRefreshRequest();
         node.client().execute(SuggestRefreshAction.INSTANCE, refreshRequest).actionGet();
     }
 

@@ -4,7 +4,7 @@ import org.elasticsearch.action.Action;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.action.suggest.SuggestRefreshRequestBuilder;
 
-public class SuggestRefreshAction extends Action<NodesSuggestRefreshRequest, NodesSuggestRefreshResponse, SuggestRefreshRequestBuilder> {
+public class SuggestRefreshAction extends Action<SuggestRefreshRequest, SuggestRefreshResponse, SuggestRefreshRequestBuilder> {
 
     public static final SuggestRefreshAction INSTANCE = new SuggestRefreshAction();
     public static final String NAME = "suggestRefresh";
@@ -19,8 +19,8 @@ public class SuggestRefreshAction extends Action<NodesSuggestRefreshRequest, Nod
     }
 
     @Override
-    public NodesSuggestRefreshResponse newResponse() {
-        return new NodesSuggestRefreshResponse();
+    public SuggestRefreshResponse newResponse() {
+        return new SuggestRefreshResponse();
     }
 
 }

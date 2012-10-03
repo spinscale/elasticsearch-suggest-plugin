@@ -1,23 +1,19 @@
 package org.elasticsearch.rest.action.suggest;
 
-import static org.elasticsearch.rest.RestRequest.Method.POST;
-import static org.elasticsearch.rest.RestStatus.OK;
+import static org.elasticsearch.rest.RestRequest.Method.*;
+import static org.elasticsearch.rest.RestStatus.*;
 
 import java.io.IOException;
 
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.suggest.NodesSuggestRefreshRequest;
-import org.elasticsearch.action.suggest.NodesSuggestRefreshResponse;
 import org.elasticsearch.action.suggest.SuggestRefreshAction;
+import org.elasticsearch.action.suggest.SuggestRefreshRequest;
+import org.elasticsearch.action.suggest.SuggestRefreshResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.rest.BaseRestHandler;
-import org.elasticsearch.rest.RestChannel;
-import org.elasticsearch.rest.RestController;
-import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.rest.StringRestResponse;
-import org.elasticsearch.rest.XContentThrowableRestResponse;
+import org.elasticsearch.rest.*;
+import org.elasticsearch.rest.action.support.RestActions;
 
 public class RefreshSuggestAction extends BaseRestHandler {
 
@@ -25,13 +21,21 @@ public class RefreshSuggestAction extends BaseRestHandler {
         super(settings, client);
         controller.registerHandler(POST, "/_suggestRefresh", this);
         controller.registerHandler(POST, "/{index}/{type}/_suggestRefresh", this); // TODO: only refresh per index here
+        controller.registerHandler(POST, "/{index}/{type}/{field}/_suggestRefresh", this); // TODO: only refresh per index field here
     }
 
+    @Override
     public void handleRequest(final RestRequest request, final RestChannel channel) {
+        final String[] indices = RestActions.splitIndices(request.param("index"));
+        final String field = request.param("field");
 
-        client.execute(SuggestRefreshAction.INSTANCE, new NodesSuggestRefreshRequest(), new ActionListener<NodesSuggestRefreshResponse>() {
+        SuggestRefreshRequest suggestRefreshRequest = new SuggestRefreshRequest(indices);
+        suggestRefreshRequest.field(field);
 
-            public void onResponse(NodesSuggestRefreshResponse response) {
+        client.execute(SuggestRefreshAction.INSTANCE, suggestRefreshRequest, new ActionListener<SuggestRefreshResponse>() {
+
+            @Override
+            public void onResponse(SuggestRefreshResponse response) {
                 try {
                     channel.sendResponse(new StringRestResponse(OK));
                 } catch (Exception e) {
@@ -39,6 +43,7 @@ public class RefreshSuggestAction extends BaseRestHandler {
                 }
             }
 
+            @Override
             public void onFailure(Throwable e) {
                 try {
                     channel.sendResponse(new XContentThrowableRestResponse(request, e));

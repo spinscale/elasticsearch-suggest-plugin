@@ -7,6 +7,8 @@ import org.elasticsearch.common.component.LifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Module;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.module.suggest.ShardSuggestModule;
+import org.elasticsearch.module.suggest.SuggestClientModule;
 import org.elasticsearch.module.suggest.SuggestModule;
 import org.elasticsearch.plugins.AbstractPlugin;
 import org.elasticsearch.rest.RestModule;
@@ -42,7 +44,7 @@ public class SuggestPlugin extends AbstractPlugin {
     @Override public Collection<Class<? extends LifecycleComponent>> services() {
         Collection<Class<? extends LifecycleComponent>> services = Lists.newArrayList();
 
-        if (!settings.getAsBoolean("node.client", false)) {
+        if (!isClient()) {
             services.add(SuggestService.class);
         }
         return services;
@@ -50,11 +52,22 @@ public class SuggestPlugin extends AbstractPlugin {
 
     @Override public Collection<Class<? extends Module>> modules() {
         Collection<Class<? extends Module>> modules = Lists.newArrayList();
-
-        if (!settings.getAsBoolean("node.client", false)) {
+        if (isClient()) {
+            modules.add(SuggestClientModule.class);
+        } else {
             modules.add(SuggestModule.class);
         }
         return modules;
     }
 
+    @Override
+    public Collection<Class<? extends Module>> shardModules() {
+        Collection<Class<? extends Module>> modules = Lists.newArrayList();
+        modules.add(ShardSuggestModule.class);
+        return modules;
+    }
+
+    private boolean isClient() {
+        return settings.getAsBoolean("node.client", false);
+    }
 }
