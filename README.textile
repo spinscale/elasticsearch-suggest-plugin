@@ -21,7 +21,7 @@ If you do not want to work on the repository, just use the standard elasticsearc
 
 If you want to work on the repository
  * Clone this repo with git clone git://github.com/spinscale/elasticsearch-suggest-plugin.git
- * Run: <code>mvn clean package</code> - this does not run any unit tests, as they take some time. If you want to run them, better run <code>mvn clean package -DskipTests=true</code>
+ * Run: <code>mvn clean package -DskipTests=true</code> - this does not run any unit tests, as they take some time. If you want to run them, better run <code>mvn clean package</code>
  * Install the plugin: <code>/path/to/elasticsearch/bin/plugin -install elasticsearch-suggest -url file:///$PWD/build/distributions/elasticsearch-suggest-$version.zip</code>
 
 
