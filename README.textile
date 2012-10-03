@@ -21,7 +21,7 @@ If you do not want to work on the repository, just use the standard elasticsearc
 
 If you want to work on the repository
  * Clone this repo with git clone git://github.com/spinscale/elasticsearch-suggest-plugin.git
- * Run: <code>gradle clean assemble zip</code> - this does not run any unit tests, as they take some time. If you want to run them, better run <code>gradle clean build zip</code>
+ * Run: <code>mvn clean package</code> - this does not run any unit tests, as they take some time. If you want to run them, better run <code>mvn clean package -DskipTests=true</code>
  * Install the plugin: <code>/path/to/elasticsearch/bin/plugin -install elasticsearch-suggest -url file:///$PWD/build/distributions/elasticsearch-suggest-$version.zip</code>
 
 
@@ -100,7 +100,6 @@ h2. Thanks
 
 h2. TODO
 
-* Use maven instead of gradle to be on par with the other plugins
 * Cleanup of suggester structures on stopping the instance, deleting the shard, moving the shard from one node to another
 * Ensure that transport actions are not loaded twice
 * Allow clearing of fst suggesters at least per index or per field
@@ -113,6 +112,7 @@ h2. TODO
 
 h2. Changelog
 
+* 2012-10-03: Replaced gradle with maven
 * 2012-10-03: Updated to elasticsearch 0.19.10
 * 2012-10-03: You can use the plugin now with a TransportClient for the first time. Yay!
 * 2012-10-03: Using the FSTCompletionLookup now instead of the deprecated FSTLookup
