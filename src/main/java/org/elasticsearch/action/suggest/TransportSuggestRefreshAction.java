@@ -14,6 +14,7 @@ import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.routing.GroupShardsIterator;
 import org.elasticsearch.cluster.routing.ShardRouting;
+import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.service.IndexService;
@@ -53,7 +54,7 @@ public class TransportSuggestRefreshAction extends TransportBroadcastOperationAc
     protected SuggestRefreshResponse newResponse(SuggestRefreshRequest request, AtomicReferenceArray shardsResponses, ClusterState clusterState) {
         int successfulShards = 0;
         int failedShards = 0;
-        List<ShardOperationFailedException> shardFailures = null;
+        List<ShardOperationFailedException> shardFailures = Lists.newArrayList();
 
         for (int i = 0; i < shardsResponses.length(); i++) {
             Object shardResponse = shardsResponses.get(i);
