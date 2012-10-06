@@ -1,10 +1,13 @@
 package org.elasticsearch.service.suggest;
 
+import java.util.Iterator;
+
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.suggest.SuggestRefreshRequest;
 import org.elasticsearch.action.suggest.TransportSuggestRefreshAction;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.StopWatch;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.component.Lifecycle;
@@ -12,6 +15,10 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.index.service.IndexService;
+import org.elasticsearch.index.shard.ShardId;
+import org.elasticsearch.index.shard.service.IndexShard;
+import org.elasticsearch.indices.IndicesLifecycle;
 import org.elasticsearch.indices.IndicesService;
 
 public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
@@ -37,6 +44,29 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
         logger.info("Suggest component started with refresh interval [{}]", suggestRefreshInterval);
         suggestUpdaterThread = EsExecutors.daemonThreadFactory(settings, "suggest_updater").newThread(new SuggestUpdaterThread());
         suggestUpdaterThread.start();
+
+        // When the instance is shut down or the index is deleted
+        indicesService.indicesLifecycle().addListener(new IndicesLifecycle.Listener() {
+            public void beforeIndexClosed(IndexService indexService, boolean delete) {
+                for (Iterator<IndexShard> shardServiceIterator = indexService.iterator(); shardServiceIterator.hasNext(); ) {
+                    IndexShard indexShard  = shardServiceIterator.next();
+                    ShardSuggestService suggestShardService = indexService.shardInjectorSafe(indexShard.shardId().id()).getInstance(ShardSuggestService.class);
+                    suggestShardService.shutDown();
+                }
+            }
+        });
+
+        // when the shard is deleted (or moved to another cluster instance)
+        // using this in the above case fails, because i cannot get the indexService anymore at beforeIndexShardClosed()
+        indicesService.indicesLifecycle().addListener(new IndicesLifecycle.Listener() {
+            public void beforeIndexShardClosed(ShardId shardId, @Nullable IndexShard indexShard, boolean delete) {
+                IndexService indexService = indicesService.indexService(shardId.index().name());
+                if (indexService != null) {
+                    ShardSuggestService suggestShardService = indexService.shardInjectorSafe(indexShard.shardId().id()).getInstance(ShardSuggestService.class);
+                    suggestShardService.shutDown();
+                }
+            }
+        });
     }
 
     @Override
@@ -58,15 +88,6 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
         if (suggestUpdaterThread != null) {
             suggestUpdaterThread.interrupt();
         }
-        // TODO: for each index -> for each shard -> resetIndexReader
-//        for (Iterator<IndexService> it = indicesService.iterator(); it.hasNext(); ) {
-//            IndexService indexService = it.next();
-//            for (Iterator<IndexShard> shardServiceIterator = indexService.iterator(); it.hasNext(); ) {
-//                IndexShard indexShard  = shardServiceIterator.next();
-//                ShardSuggestService suggestShardService = indexService.shardInjectorSafe(indexShard.shardId().id()).getInstance(ShardSuggestService.class);
-//                suggestShardService.resetIndexReader();
-//            }
-//        }
     }
 
     public class SuggestUpdaterThread implements Runnable {

@@ -22,7 +22,7 @@ If you do not want to work on the repository, just use the standard elasticsearc
 If you want to work on the repository
  * Clone this repo with git clone git://github.com/spinscale/elasticsearch-suggest-plugin.git
  * Run: <code>mvn clean package -DskipTests=true</code> - this does not run any unit tests, as they take some time. If you want to run them, better run <code>mvn clean package</code>
- * Install the plugin: <code>/path/to/elasticsearch/bin/plugin -install elasticsearch-suggest -url file:///$PWD/build/distributions/elasticsearch-suggest-$version.zip</code>
+ * Install the plugin: <code>/path/to/elasticsearch/bin/plugin -install elasticsearch-suggest -url file:///$PWD/target/releases/elasticsearch-suggest-$version.zip</code>
 
 
 h2. Usage
@@ -108,6 +108,7 @@ h2. TODO
 
 h2. Changelog
 
+* 2012-10-06: Shutting down the shard suggest service clean in case the instance is stopped or a shard is moved
 * 2012-10-03: Starting cluster nodes in parallel in tests where several nodes are created (big speedup)
 * 2012-10-03: Added tests for refreshing suggest in memory structures for one index or one field in an index only
 * 2012-10-03: Replaced gradle with maven

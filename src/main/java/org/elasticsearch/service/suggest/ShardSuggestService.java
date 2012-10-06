@@ -1,10 +1,7 @@
 package org.elasticsearch.service.suggest;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -93,13 +90,34 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
             if (dict != null) dictCache.refresh(field);
 
             SpellChecker spellChecker = spellCheckerCache.getIfPresent(field);
-            if (spellChecker != null) spellCheckerCache.refresh(field);
+            if (spellChecker != null) {
+                spellCheckerCache.refresh(field);
+                try {
+                    spellChecker.close();
+                } catch (IOException e) {
+                    logger.error("Could not close spellchecker in indexshard [{}] for field [{}]", e, indexShard, field);
+                }
+            }
 
             FSTCompletionLookup lookup = lookupCache.getIfPresent(field);
             if (lookup != null) lookupCache.refresh(field);
         }
 
         return new ShardSuggestRefreshResponse(shardId.index().name(), shardId.id());
+    }
+
+    public void shutDown() {
+        resetIndexReader();
+        dictCache.invalidateAll();
+        for (Map.Entry<String, SpellChecker> entry : spellCheckerCache.asMap().entrySet()) {
+            try {
+                entry.getValue().close();
+            } catch (IOException e) {
+                logger.error("Could not close spellchecker in indexshard [{}] for field [{}]", e, indexShard, entry.getKey());
+            }
+        }
+        spellCheckerCache.invalidateAll();
+        lookupCache.invalidateAll();
     }
 
     public void update() {
@@ -111,8 +129,9 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
 
         try {
             for (String field : spellCheckerCache.asMap().keySet()) {
-                spellCheckerCache.getUnchecked(field).close();
+                SpellChecker oldSpellchecker = spellCheckerCache.getUnchecked(field);
                 spellCheckerCache.refresh(field);
+                oldSpellchecker.close();
             }
         } catch (IOException e ) {
             logger.error("Error refreshing spell checker cache [{}]", e, shardId);
@@ -165,7 +184,9 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         try {
             IndexReader oldIndexReader = indexReader;
             indexReader = null;
-            oldIndexReader.decRef();
+            if (oldIndexReader != null) {
+                oldIndexReader.decRef();
+            }
         } catch (IOException e ) {
             logger.error("Error resetting index reader [{}]", e, shardId);
         }
