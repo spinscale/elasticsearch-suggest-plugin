@@ -71,24 +71,18 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
 
     @Override
     protected void doStop() throws ElasticSearchException {
-        logger.info("Suggest component stopped");
-        closeAll();
-    }
-
-    @Override
-    protected void doClose() throws ElasticSearchException {
-        closeAll();
-    }
-
-    private void closeAll() {
         if (closed) {
             return;
         }
-        closed = true;
         if (suggestUpdaterThread != null) {
             suggestUpdaterThread.interrupt();
         }
+        closed = true;
+        logger.info("Suggest component stopped");
     }
+
+    @Override
+    protected void doClose() throws ElasticSearchException {}
 
     public class SuggestUpdaterThread implements Runnable {
         @Override
