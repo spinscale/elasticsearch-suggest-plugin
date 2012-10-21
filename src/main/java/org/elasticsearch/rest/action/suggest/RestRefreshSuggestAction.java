@@ -24,6 +24,7 @@ public class RestRefreshSuggestAction extends BaseRestHandler {
     @Inject public RestRefreshSuggestAction(Settings settings, Client client, RestController controller) {
         super(settings, client);
         controller.registerHandler(POST, "/_suggestRefresh", this);
+        controller.registerHandler(POST, "/{index}/_suggestRefresh", this);
         controller.registerHandler(POST, "/{index}/{type}/_suggestRefresh", this);
     }
 

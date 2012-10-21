@@ -27,6 +27,7 @@ public class RestSuggestAction extends BaseRestHandler {
     @Inject
     public RestSuggestAction(Settings settings, Client client, RestController controller) {
         super(settings, client);
+        controller.registerHandler(POST, "/{index}/_suggest", this);
         controller.registerHandler(POST, "/{index}/{type}/_suggest", this);
     }
 

@@ -114,6 +114,7 @@ h2. TODO
 
 h2. Changelog
 
+* 2012-10-21: The REST urls can now be used without specifiying a type (which is unused at the moment anyway). You can use now the $index/_suggest and $index/_suggestRefresh urls
 * 2012-10-21: Allowing to set <code>suggest.refresh_disabled = true</code> in order to deactivate automatic refreshing of the suggest index
 * 2012-10-06: Shutting down the shard suggest service clean in case the instance is stopped or a shard is moved
 * 2012-10-03: Starting cluster nodes in parallel in tests where several nodes are created (big speedup)
