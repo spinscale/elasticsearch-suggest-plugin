@@ -24,6 +24,7 @@ import org.elasticsearch.indices.IndicesService;
 public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
 
     private final TimeValue suggestRefreshInterval;
+    private final boolean suggestRefreshDisabled;
     private volatile Thread suggestUpdaterThread;
     private volatile boolean closed;
     private final TransportSuggestRefreshAction suggestRefreshAction;
@@ -36,14 +37,19 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
         this.suggestRefreshAction = suggestRefreshAction;
         this.clusterService = clusterService;
         this.indicesService = indicesService;
+        suggestRefreshDisabled = settings.getAsBoolean("suggest.refresh_disabled", false);
         suggestRefreshInterval = settings.getAsTime("suggest.refresh_interval", TimeValue.timeValueMinutes(10));
     }
 
     @Override
     protected void doStart() throws ElasticSearchException {
-        logger.info("Suggest component started with refresh interval [{}]", suggestRefreshInterval);
-        suggestUpdaterThread = EsExecutors.daemonThreadFactory(settings, "suggest_updater").newThread(new SuggestUpdaterThread());
-        suggestUpdaterThread.start();
+        if (suggestRefreshDisabled) {
+            logger.info("Suggest component started with out refreshing automatically");
+        } else {
+            suggestUpdaterThread = EsExecutors.daemonThreadFactory(settings, "suggest_updater").newThread(new SuggestUpdaterThread());
+            suggestUpdaterThread.start();
+            logger.info("Suggest component started with refresh interval [{}]", suggestRefreshInterval);
+        }
 
         // When the instance is shut down or the index is deleted
         indicesService.indicesLifecycle().addListener(new IndicesLifecycle.Listener() {

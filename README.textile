@@ -101,13 +101,13 @@ h2. Thanks
 
 h2. TODO
 
-* Cleanup of suggester structures on stopping the instance, deleting the shard, moving the shard from one node to another
 * Find and verify the absence of the current resource leak (open deleted files after lots of merging) with the new architecture
 * Make it generelly less hacky
 * Publish on maven repo
 
 h2. Changelog
 
+* 2012-10-21: Allowing to set <code>suggest.refresh_disabled = true</code> in order to deactivate automatic refreshing of the suggest index
 * 2012-10-06: Shutting down the shard suggest service clean in case the instance is stopped or a shard is moved
 * 2012-10-03: Starting cluster nodes in parallel in tests where several nodes are created (big speedup)
 * 2012-10-03: Added tests for refreshing suggest in memory structures for one index or one field in an index only
