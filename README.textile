@@ -52,6 +52,13 @@ suggest:
 
 In this case the suggest indexes are refreshed every 10 minutes. This is also the default. You can use values like "10s", "10ms" or "10m" as with most other time based configuration settings in elasticsearch.
 
+If you want to deactivate automatic refresh completely, put this in your elasticsearch configuration
+
+<pre><code>
+suggest:
+  refresh_disabled: true
+</code></pre>
+
 If you want to refresh your FST suggesters manually instead of waiting for 10 minutes just issue a POST request to the "/_suggestRefresh" URL.
 
 <pre><code>
