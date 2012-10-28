@@ -23,7 +23,7 @@
     </parent>
 
     <properties>
-        <elasticsearch.version>0.19.10</elasticsearch.version>
+        <elasticsearch.version>0.19.11</elasticsearch.version>
         <lucene.version>3.6.1</lucene.version>
     </properties>
 
