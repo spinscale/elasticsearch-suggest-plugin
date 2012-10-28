@@ -1,10 +1,5 @@
 package org.elasticsearch.service.suggest;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 import org.apache.lucene.analysis.WhitespaceAnalyzer;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -26,17 +21,23 @@ import org.elasticsearch.common.collect.Collections2;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.settings.IndexSettings;
 import org.elasticsearch.index.shard.AbstractIndexShardComponent;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.shard.service.IndexShard;
 
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
+
 public class ShardSuggestService extends AbstractIndexShardComponent {
 
     private final IndexShard indexShard;
 
-    private final Lock lock = new ReentrantLock();
+    private final ReentrantLock lock = new ReentrantLock();
     private IndexReader indexReader;
+    private Engine.Searcher indexSearcher;
     private final LoadingCache<String, FSTCompletionLookup> lookupCache;
     private final LoadingCache<String, HighFrequencyDictionary> dictCache;
     private final LoadingCache<String, SpellChecker> spellCheckerCache;
@@ -185,32 +186,44 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
             IndexReader oldIndexReader = indexReader;
             indexReader = null;
             if (oldIndexReader != null) {
-                oldIndexReader.decRef();
+                IndexReader maybeNewIndexReader = oldIndexReader.reopen();
+                oldIndexReader.close();
+                if (!maybeNewIndexReader.equals(oldIndexReader)) maybeNewIndexReader.close();
             }
         } catch (IOException e ) {
             logger.error("Error resetting index reader [{}]", e, shardId);
+        }
+
+        try {
+            Engine.Searcher oldIndexSearcher = indexSearcher;
+            indexSearcher = null;
+            if (oldIndexSearcher != null) {
+                oldIndexSearcher.reader().close();
+                oldIndexSearcher.release();
+            }
+        } catch (IOException e ) {
+            logger.error("Error resetting index searcher [{}]", e, shardId);
         }
     }
 
     // this does not look thread safe and nice...
     private IndexReader createOrGetIndexReader() {
-        boolean indexReaderAcquired = false;
         try {
-            if (indexReader == null) {
+            if (indexSearcher == null) {
                 lock.lock();
-                if (indexReader == null) {
-                    indexReader = indexShard.searcher().reader();
-                    indexReader.incRef();
-                    indexReaderAcquired = true;
+                if (indexSearcher == null) {
+                    indexReader = indexShard.searcher().reader().clone(true);
+                    indexSearcher = indexShard.searcher();
                 }
+            }
+        } catch (IOException e) {
+            logger.error("Error cloning index reader: [{}]", e, e.getMessage());
+        } finally {
+            if (lock.isLocked()) {
                 lock.unlock();
             }
-
-            return indexReader;
-        } finally {
-            if (indexReaderAcquired) {
-                indexShard.searcher().release();
-            }
         }
+
+        return indexReader;
     }
 }
