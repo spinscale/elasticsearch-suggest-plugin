@@ -10,29 +10,17 @@
     <packaging>jar</packaging>
     <description>Lucene FSTSuggester implementation for ElasticSearch</description>
     <inceptionYear>2011</inceptionYear>
+    <url>https://github.com/spinscale/elasticsearch-suggest-plugin/</url>
     <scm>
         <connection>scm:git:git@github.com/spinscale/elasticsearch-suggest-plugin.git</connection>
         <developerConnection>scm:git:git@github.com/spinscale/elasticsearch-suggest-plugin.git</developerConnection>
         <url>https://github.com/spinscale/elasticsearch-suggest-plugin</url>
     </scm>
 
-    <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>7</version>
-    </parent>
-
     <properties>
         <elasticsearch.version>0.19.11</elasticsearch.version>
         <lucene.version>3.6.1</lucene.version>
     </properties>
-
-    <repositories>
-        <repository>
-            <id>sonatype</id>
-            <url>http://oss.sonatype.org/content/repositories/releases/</url>
-        </repository>
-    </repositories>
 
     <dependencies>
         <dependency>
@@ -151,4 +139,34 @@
             </plugin>
         </plugins>
     </build>
+
+    <!-- stuff that has to be here for the sonatype release but is not specific for the build -->
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>alr</id>
+            <name>Alexander Reelsen</name>
+            <email>alr@spinscale.de</email>
+            <url>http://spinscale.github.com/</url>
+            <timezone>+1</timezone>
+        </developer>
+    </developers>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/spinscale/elasticsearch-suggest-plugin/issues/</url>
+    </issueManagement>
 </project>
