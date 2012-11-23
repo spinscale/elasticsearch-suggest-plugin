@@ -12,7 +12,7 @@
     <url>https://github.com/spinscale/elasticsearch-suggest-plugin/</url>
     <scm>
         <connection>scm:git:git://github.com/spinscale/elasticsearch-suggest-plugin.git</connection>
-        <developerConnection>scm:git:git@github.com/spinscale/elasticsearch-suggest-plugin.git</developerConnection>
+        <developerConnection>scm:git:git@github.com:spinscale/elasticsearch-suggest-plugin.git</developerConnection>
         <url>https://github.com/spinscale/elasticsearch-suggest-plugin</url>
     </scm>
 
