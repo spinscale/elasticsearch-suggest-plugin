@@ -1,11 +1,11 @@
 package org.elasticsearch.module.suggest.test;
 
-import java.util.List;
-
 import org.elasticsearch.client.action.suggest.SuggestRefreshRequestBuilder;
 import org.elasticsearch.client.action.suggest.SuggestRequestBuilder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.util.List;
 
 @RunWith(value = Parameterized.class)
 public class SuggestBuildersTest extends AbstractSuggestTest {

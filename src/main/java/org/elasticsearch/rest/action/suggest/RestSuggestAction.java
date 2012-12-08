@@ -1,12 +1,5 @@
 package org.elasticsearch.rest.action.suggest;
 
-import static org.elasticsearch.rest.RestRequest.Method.*;
-import static org.elasticsearch.rest.RestStatus.*;
-import static org.elasticsearch.rest.action.support.RestActions.*;
-
-import java.io.IOException;
-import java.util.Map;
-
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.suggest.SuggestAction;
 import org.elasticsearch.action.suggest.SuggestRequest;
@@ -21,6 +14,13 @@ import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.rest.*;
 import org.elasticsearch.rest.action.support.RestActions;
 import org.elasticsearch.rest.action.support.RestXContentBuilder;
+
+import java.io.IOException;
+import java.util.Map;
+
+import static org.elasticsearch.rest.RestRequest.Method.POST;
+import static org.elasticsearch.rest.RestStatus.OK;
+import static org.elasticsearch.rest.action.support.RestActions.buildBroadcastShardsHeader;
 
 public class RestSuggestAction extends BaseRestHandler {
 

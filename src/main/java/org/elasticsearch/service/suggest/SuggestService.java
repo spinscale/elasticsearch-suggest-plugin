@@ -68,7 +68,7 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
             public void beforeIndexShardClosed(ShardId shardId, @Nullable IndexShard indexShard, boolean delete) {
                 IndexService indexService = indicesService.indexService(shardId.index().name());
                 if (indexService != null) {
-                    ShardSuggestService suggestShardService = indexService.shardInjectorSafe(indexShard.shardId().id()).getInstance(ShardSuggestService.class);
+                    ShardSuggestService suggestShardService = indexService.shardInjectorSafe(shardId.id()).getInstance(ShardSuggestService.class);
                     suggestShardService.shutDown();
                 }
             }
