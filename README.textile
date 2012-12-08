@@ -29,22 +29,22 @@ If you want to work on the repository
 Alternatively you can now use this plugin via maven and include it via the sonatype repo likes this in your pom.xml (or any other dependency manager)
 
 <pre><code>
-&lt;repositories&gt;
-  &lt;repository&gt;
-    &lt;id&gt;Sonatype&lt;/id&gt;
-    &lt;name&gt;Sonatype&lt;/name&gt;
-    &lt;url&gt;http://oss.sonatype.org/content/repositories/releases/&lt;/url&gt;
-  &lt;/repository&gt;
-&lt;/repositories&gt;
+<repositories>
+  <repository>
+    <id>Sonatype</id>
+    <name>Sonatype</name>
+    <url>http://oss.sonatype.org/content/repositories/releases/</url>
+  </repository>
+</repositories>
 
-&lt;dependencies&gt;
-  &lt;dependency&gt;
-    &lt;groupId&gt;de.spinscale&lt;/groupId&gt;
-    &lt;artifactId&gt;elasticsearch-suggest-plugin&lt;/artifactId&gt;
-    &lt;version&gt;0.19.12-0.2&lt;/version&gt;
-  &lt;/dependency&gt;
+<dependencies>
+  <dependency>
+    <groupId>de.spinscale</groupId>
+    <artifactId>elasticsearch-suggest-plugin</artifactId>
+    <version>0.19.12-0.2</version>
+  </dependency>
   ...
-&lt;dependencies&gt;
+<dependencies>
 </code></pre>
 
 h2. Usage
