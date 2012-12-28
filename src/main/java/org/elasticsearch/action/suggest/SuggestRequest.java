@@ -70,28 +70,6 @@ public class SuggestRequest extends BroadcastOperationRequest {
     }
 
     /**
-     * Controls the operation threading model.
-     */
-    @Override public SuggestRequest operationThreading(BroadcastOperationThreading operationThreading) {
-        super.operationThreading(operationThreading);
-        return this;
-    }
-
-    /**
-     * Should the listener be called on a separate thread if needed.
-     */
-    @Override public SuggestRequest listenerThreaded(boolean threadedListener) {
-        super.listenerThreaded(threadedListener);
-        return this;
-    }
-
-    @Override
-    public SuggestRequest indices(String... indices) {
-        this.indices = indices;
-        return this;
-    }
-
-    /**
      * The types of documents the query will run against. Defaults to all types.
      */
     String[] types() {

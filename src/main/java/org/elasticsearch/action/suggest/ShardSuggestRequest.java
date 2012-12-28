@@ -18,7 +18,7 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
     public ShardSuggestRequest() {}
 
     public ShardSuggestRequest(String index, int shardId, SuggestRequest request) {
-        super(index, shardId);
+        super(index, shardId, request);
         size = request.size();
         field = request.field();
         term = request.term();

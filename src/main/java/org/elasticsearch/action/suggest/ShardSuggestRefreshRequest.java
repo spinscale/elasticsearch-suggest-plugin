@@ -14,7 +14,7 @@ public class ShardSuggestRefreshRequest extends BroadcastShardOperationRequest {
     public ShardSuggestRefreshRequest() {}
 
     public ShardSuggestRefreshRequest(String index, int shardId, SuggestRefreshRequest request) {
-        super(index, shardId);
+        super(index, shardId, request);
         field = request.field();
     }
 

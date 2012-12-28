@@ -1,15 +1,15 @@
 package org.elasticsearch.module.suggest.test;
 
-import java.io.IOException;
-import java.util.concurrent.Callable;
-
 import org.apache.commons.io.IOUtils;
-import org.elasticsearch.action.admin.indices.exists.IndicesExistsResponse;
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.common.logging.log4j.LogConfigurator;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.ImmutableSettings.Builder;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
+
+import java.io.IOException;
+import java.util.concurrent.Callable;
 
 public class NodeTestHelper {
 
@@ -29,8 +29,7 @@ public class NodeTestHelper {
 
                 LogConfigurator.configure(settingsBuilder.build());
 
-                Node node = NodeBuilder.nodeBuilder().settings(settingsBuilder.build()).node();
-                return node;
+                return NodeBuilder.nodeBuilder().settings(settingsBuilder.build()).node();
             }
         };
     }
