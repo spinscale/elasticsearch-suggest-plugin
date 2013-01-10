@@ -17,9 +17,7 @@ In case you want to contact me, drop me a mail at alexander@reelsen.net
 h2. Installation
 
 If you do not want to work on the repository, just use the standard elasticsearch plugin command (inside your elasticsearch/bin directory)
-<pre><code>bin/plugin -url https://github.com/downloads/spinscale/elasticsearch-suggest-plugin/elasticsearch-plugin-suggest-0.19.12-0.2.zip -install suggest</code></pre>
-If you want to use the last version, enter (might not work as it is work in progress)
-<pre><code>bin/plugin -install spinscale/elasticsearch-suggest-plugin</code></pre>
+<pre><code>bin/plugin -install de.spinscale/elasticsearch-plugin-suggest/0.20.2-0.3</code></pre>
 
 If you want to work on the repository
  * Clone this repo with git clone git://github.com/spinscale/elasticsearch-suggest-plugin.git
