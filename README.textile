@@ -2,14 +2,10 @@ h1. Suggester Plugin for Elasticsearch
 
 This little plugin uses the FSTSuggester from lucene to create suggestions from a certain field for a specified term instead of returning index data.
 
-THIS IS NOT PRODUCTION READY! DO NOT USE IT.
-
 This is my first attempt with elasticsearch. I am not too deep into elasticsearch internals, nor I have deep knowledge about lucene. So please forgive this code.
 Feel free to comment, improve and help - I am thankful for any insights, no matter whether you want to help with elasticsearch, lucene or my other flaws I will have done for sure.
 
 Oh and in case you have not read it above:
-
-THIS IS NOT PRODUCTION READY! DO NOT USE IT.
 
 In case you want to contact me, drop me a mail at alexander@reelsen.net
 
@@ -62,6 +58,8 @@ Fire up curl like this, in case you have a products index and the right fields -
 </code></pre>
 
 As you can see, this queries the products index for the field ProductName.suggest with the specified term and size
+
+You can also use HTTP GET for getting suggestions - even with the <code>callback</code> and the <code>source</code> parameters like in any normal elasticsearch search.
 
 You might want to check out the included unit test as well. I use a shingle filter in my examples, take a look at the files in src/test/resources directory.
 
@@ -127,6 +125,7 @@ List<String> suggestions = new SuggestRequestBuilder(client)
 h2. Thanks
 
 * Shay for giving feedback
+* David for pushing me to get it into the maven repo
 
 h2. TODO
 
@@ -136,6 +135,7 @@ h2. TODO
 
 h2. Changelog
 
+* 2013-01-18: Support for HTTP GET, together with JSONP and the source parameter.
 * 2012-10-21: The REST urls can now be used without specifiying a type (which is unused at the moment anyway). You can use now the $index/_suggest and $index/_suggestRefresh urls
 * 2012-10-21: Allowing to set <code>suggest.refresh_disabled = true</code> in order to deactivate automatic refreshing of the suggest index
 * 2012-10-06: Shutting down the shard suggest service clean in case the instance is stopped or a shard is moved

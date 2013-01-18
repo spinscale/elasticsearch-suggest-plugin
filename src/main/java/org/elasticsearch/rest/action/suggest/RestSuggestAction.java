@@ -1,5 +1,10 @@
 package org.elasticsearch.rest.action.suggest;
 
+import static org.elasticsearch.rest.RestRequest.Method.*;
+import static org.elasticsearch.rest.RestStatus.OK;
+import static org.elasticsearch.rest.action.support.RestActions.buildBroadcastShardsHeader;
+
+import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.suggest.SuggestAction;
 import org.elasticsearch.action.suggest.SuggestRequest;
@@ -18,15 +23,13 @@ import org.elasticsearch.rest.action.support.RestXContentBuilder;
 import java.io.IOException;
 import java.util.Map;
 
-import static org.elasticsearch.rest.RestRequest.Method.POST;
-import static org.elasticsearch.rest.RestStatus.OK;
-import static org.elasticsearch.rest.action.support.RestActions.buildBroadcastShardsHeader;
-
 public class RestSuggestAction extends BaseRestHandler {
 
     @Inject
     public RestSuggestAction(Settings settings, Client client, RestController controller) {
         super(settings, client);
+        controller.registerHandler(GET, "/{index}/_suggest", this);
+        controller.registerHandler(GET, "/{index}/{type}/_suggest", this);
         controller.registerHandler(POST, "/{index}/_suggest", this);
         controller.registerHandler(POST, "/{index}/{type}/_suggest", this);
     }
@@ -36,8 +39,17 @@ public class RestSuggestAction extends BaseRestHandler {
         final String[] indices = RestActions.splitIndices(request.param("index"));
 
         try {
-            XContentParser parser = XContentFactory.xContent(request.content()).createParser(request.content());
-            Map<String, Object> parserMap = parser.mapAndClose();
+            Map<String, Object> parserMap = null;
+            if (request.hasContent()) {
+                XContentParser parser = XContentFactory.xContent(request.content()).createParser(request.content());
+                parserMap = parser.mapAndClose();
+            } else if (request.hasParam("source")) {
+                String source = request.param("source");
+                XContentParser parser = XContentFactory.xContent(source).createParser(source);
+                parserMap = parser.mapAndClose();
+            } else {
+                handleException(channel, request, new ElasticSearchException("Please provide body data or source parameter"));
+            }
 
             SuggestRequest suggestRequest = new SuggestRequest(indices);
             suggestRequest.field(XContentMapValues.nodeStringValue(parserMap.get("field"), ""));
@@ -63,22 +75,21 @@ public class RestSuggestAction extends BaseRestHandler {
 
                 @Override
                 public void onFailure(Throwable e) {
-                    try {
-                        channel.sendResponse(new XContentThrowableRestResponse(request, e));
-                    } catch (IOException e1) {
-                        logger.error("Failed to send failure response", e1);
-                    }
+                    handleException(channel, request, e);
                 }
 
             });
 
         } catch (IOException e) {
-            try {
-                channel.sendResponse(new XContentThrowableRestResponse(request, e));
-            } catch (IOException e1) {
-                logger.error("Failed to send failure response", e1);
-            }
+            handleException(channel, request, e);
         }
+    }
 
+    final void handleException(final RestChannel channel, final RestRequest request, final Throwable e) {
+        try {
+            channel.sendResponse(new XContentThrowableRestResponse(request, e));
+        } catch (IOException e1) {
+            logger.error("Failed to send failure response", e1);
+        }
     }
 }
