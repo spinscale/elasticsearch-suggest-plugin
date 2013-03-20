@@ -227,9 +227,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
                     // logger.info("1 shard {} : ref count {}", shardId, indexReader.getRefCount());
                     Engine.Searcher indexSearcher = indexShard.searcher();
                     indexReader = indexSearcher.reader();
-                    logger.info("2 shard {} : ref count {} with indexReader {}", shardId, indexReader.getRefCount(), indexReader);
-                    boolean result = indexSearcher.release();
-                    logger.info("3 shard {} : ref count {}  with indexReader {} and result {}", shardId, indexReader.getRefCount(), indexReader, result);
+                    indexSearcher.release();
                 }
             }
         } finally {
