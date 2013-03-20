@@ -9,6 +9,19 @@ Oh and in case you have not read it above:
 
 In case you want to contact me, drop me a mail at alexander@reelsen.net
 
+h2. Breaking changes for elasticsearch 0.90 
+
+Because elasticsearch now comes with its own suggest API (not based on in-memory automatons per shard), big parts of this plugin needs to be changed.
+
+h3. REST endpoints have been moved
+
+Both REST endpoints have been moved. The <code>/_suggest</code> endpoint now resides at <code>__suggest</code>. Refreshing has changed from <code>_suggestRefresh</code> to <code>__suggestRefresh</code>.
+I do not like this renaming either, but I have not yet got the ieda of a better name.
+I am totally open for better names. This is a WIP until elasticsearch 1.0 is released.
+
+h3. Package names have been moved
+
+Everything is now in the <code>de.spinscale</code> package name space in order to avoid clashes.
 
 h2. Installation
 
@@ -17,6 +30,7 @@ If you do not want to work on the repository, just use the standard elasticsearc
 
 If you want to work on the repository
  * Clone this repo with git clone git://github.com/spinscale/elasticsearch-suggest-plugin.git
+ * Checkout the tag (find out via <code>git tag</code>) you want to build with (possibly master is not for your elasticsearch version)
  * Run: <code>mvn clean package -DskipTests=true</code> - this does not run any unit tests, as they take some time. If you want to run them, better run <code>mvn clean package</code>
  * Install the plugin: <code>/path/to/elasticsearch/bin/plugin -install elasticsearch-suggest -url file:///$PWD/target/releases/elasticsearch-suggest-$version.zip</code>
 
@@ -48,7 +62,7 @@ h2. Usage
 Fire up curl like this, in case you have a products index and the right fields - if not, read below how to setup a clean elasticsearch in order to support suggestions.
 
 <pre><code>
-# curl -X POST 'localhost:9200/products1/product/_suggest?pretty=1' -d '{ "field": "ProductName.suggest", "term": "tischwäsche", "size": "10"  }'
+# curl -X POST 'localhost:9200/products1/product/__suggest?pretty=1' -d '{ "field": "ProductName.suggest", "term": "tischwäsche", "size": "10"  }'
 {
   "suggest" : [ "tischwäsche", "tischwäsche 100", 
     "tischwäsche aberdeen", "tischwäsche acryl", "tischwäsche ambiente", 
@@ -79,12 +93,12 @@ suggest:
   refresh_disabled: true
 </code></pre>
 
-If you want to refresh your FST suggesters manually instead of waiting for 10 minutes just issue a POST request to the "/_suggestRefresh" URL.
+If you want to refresh your FST suggesters manually instead of waiting for 10 minutes just issue a POST request to the "/__suggestRefresh" URL.
 
 <pre><code>
-# curl -X POST 'localhost:9200/_suggestRefresh' 
-# curl -X POST 'localhost:9200/products/product/_suggestRefresh' 
-# curl -X POST 'localhost:9200/products/product/_suggestRefresh' -d '{ "field" : "ProductName.suggest" }'
+# curl -X POST 'localhost:9200/__suggestRefresh' 
+# curl -X POST 'localhost:9200/products/product/__suggestRefresh' 
+# curl -X POST 'localhost:9200/products/product/__suggestRefresh' -d '{ "field" : "ProductName.suggest" }'
 </code></pre>
 
 h2. Usage from Java
@@ -130,11 +144,10 @@ h2. Thanks
 h2. TODO
 
 * Find and verify the absence of the current resource leak (open deleted files after lots of merging) with the new architecture
-* Make it generelly less hacky
-* Publish on maven repo
 
 h2. Changelog
 
+* 2013-03-20: Moved to own package namespaces, changed REST endpoints in order to be compatible with elasticsearch 0.90
 * 2013-01-18: Support for HTTP GET, together with JSONP and the source parameter.
 * 2012-10-21: The REST urls can now be used without specifiying a type (which is unused at the moment anyway). You can use now the $index/_suggest and $index/_suggestRefresh urls
 * 2012-10-21: Allowing to set <code>suggest.refresh_disabled = true</code> in order to deactivate automatic refreshing of the suggest index

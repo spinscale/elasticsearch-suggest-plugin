@@ -3,6 +3,10 @@ discovery:
   zen:
     multicast.enabled: false
 
+bulk.udp.enabled: false
+
+gateway.type: none
+
 http:
   max_content_length: 100000
 
