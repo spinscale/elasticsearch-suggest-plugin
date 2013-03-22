@@ -29,6 +29,11 @@ public class SuggestRequestBuilder extends ActionRequestBuilder<SuggestRequest, 
         return this;
     }
 
+    public SuggestRequestBuilder suggestType(String suggestType) {
+        request.suggestType(suggestType);
+        return this;
+    }
+
     public SuggestRequestBuilder similarity(float similarity) {
         request.similarity(similarity);
         return this;

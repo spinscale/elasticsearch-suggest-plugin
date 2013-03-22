@@ -14,6 +14,7 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
     private float similarity = 1.0f;
     private String term;
     private String[] types = Strings.EMPTY_ARRAY;
+    private String suggestType = "fst";
 
     public ShardSuggestRequest() {}
 
@@ -24,6 +25,7 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
         term = request.term();
         similarity = request.similarity();
         types = request.types();
+        suggestType = request.suggestType();
     }
 
     public int size() {
@@ -58,39 +60,36 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
         this.term = term;
     }
 
+    public String suggestType() {
+        return suggestType;
+    }
+
+    public void suggestType(String suggestType) {
+        this.suggestType = suggestType;
+    }
+
     public String[] types() {
         return types;
     }
 
     @Override public void readFrom(StreamInput in) throws IOException {
         super.readFrom(in);
-
         size = in.readVInt();
         similarity = in.readFloat();
         field = in.readString();
         term = in.readString();
-
-        int typesSize = in.readVInt();
-        if (typesSize > 0) {
-            types = new String[typesSize];
-            for (int i = 0; i < typesSize; i++) {
-                types[i] = in.readString();
-            }
-        }
+        suggestType = in.readString();
+        types = in.readStringArray();
     }
 
     @Override public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
-
         out.writeVInt(size);
         out.writeFloat(similarity);
         out.writeString(field);
         out.writeString(term);
-
-        out.writeVInt(types.length);
-        for (String type : types) {
-            out.writeString(type);
-        }
+        out.writeString(suggestType);
+        out.writeStringArrayNullable(types);
     }
 
 }

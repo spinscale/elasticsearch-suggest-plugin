@@ -32,11 +32,12 @@ public abstract class AbstractSuggestTest {
     protected List<Node> nodes = Lists.newArrayList();
     protected ExecutorService executor;
     public static final String DEFAULT_INDEX = "products";
+    public static final String DEFAULT_TYPE  = "product";
 
     @Parameters
     public static Collection<Object[]> data() {
         // first argument: number of shards, second argument: number of nodes
-//        Object[][] data = new Object[][] { { 4,4 } };
+//        Object[][] data = new Object[][] { { 1,1 } };
         Object[][] data = new Object[][] { { 1, 1 }, { 4, 1 }, { 10, 1 }, { 4, 4 } };
         return Arrays.asList(data);
     }
@@ -64,21 +65,15 @@ public abstract class AbstractSuggestTest {
     @After
     public void stopNodes() throws Exception {
         node.client().admin().indices().prepareDelete("products").execute().actionGet();
-        for (Node nodeToStop : nodes) {
-            nodeToStop.client().close();
-            nodeToStop.close();
-        }
-        /*
+
         for (Node nodeToStop : nodes) {
             executor.submit(stopNode(nodeToStop));
         }
         executor.shutdown();
-        executor.awaitTermination(10, TimeUnit.MINUTES); // TODO: FIXME TO SECONDS
-        */
+        executor.awaitTermination(1, TimeUnit.MINUTES); // maybe there are freaky long gc runs, so wait
     }
 
-    abstract public List<String> getSuggestions(String index, String field, String term, Integer size, Float similarity) throws Exception;
-    abstract public List<String> getSuggestions(String index, String field, String term, Integer size) throws Exception;
+    abstract public List<String> getSuggestions(SuggestionQuery suggestionQuery) throws Exception;
     abstract public void refreshAllSuggesters() throws Exception;
     abstract public void refreshIndexSuggesters(String index) throws Exception;
     abstract public void refreshFieldSuggesters(String index, String field) throws Exception;
@@ -238,8 +233,10 @@ public abstract class AbstractSuggestTest {
         indexProducts(products, "secondproductsindex", node);
 
         // get suggestions from both indexes to create fst structures
-        getSuggestions("ProductName.suggest", "auto", 10);
-        getSuggestions("secondproductsindex", "ProductName.suggest", "auto", 10);
+        SuggestionQuery productsQuery = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.suggest", "auto");
+        getSuggestions(productsQuery);
+        SuggestionQuery secondProductsIndexQuery = new SuggestionQuery("secondproductsindex", DEFAULT_TYPE, "ProductName.suggest", "auto");
+        getSuggestions(secondProductsIndexQuery);
 
         // index another product
         List<Map<String, Object>> newProducts = createProducts(1);
@@ -250,8 +247,8 @@ public abstract class AbstractSuggestTest {
         refreshIndexSuggesters("products");
 
         List<String> suggestionsFromProductIndex = getSuggestions("ProductName.suggest", "auto", 10);
-        List<String> suggestionsFromSecondProductIndex = getSuggestions("secondproductsindex", "ProductName.suggest", "auto", 10);
         assertSuggestions(suggestionsFromProductIndex, "automatik", "autorad", "autoreifen");
+        List<String> suggestionsFromSecondProductIndex = getSuggestions(secondProductsIndexQuery);
         assertSuggestions(suggestionsFromSecondProductIndex, "autorad", "autoreifen");
     }
 
@@ -277,6 +274,25 @@ public abstract class AbstractSuggestTest {
         assertSuggestions(suggestionsFromLowercaseField, "autorad", "autoreifen");
     }
 
+    @Test
+    public void testThatAnalyzingSuggesterWorks() throws Exception {
+        List<Map<String, Object>> products = createProducts(5);
+        products.get(0).put("ProductName", "BMW 318");
+        products.get(1).put("ProductName", "BMW 528");
+        products.get(2).put("ProductName", "BMW M3");
+        products.get(3).put("ProductName", "the BMW 320");
+        products.get(4).put("ProductName", "VW Jetta");
+        indexProducts(products, node);
+
+        SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b").suggestType("full").size(10);
+        List<String> suggestions = getSuggestions(query);
+
+        assertSuggestions(suggestions, "BMW 318", "BMW 528", "BMW M3");
+    }
+    // TODO: Find out if the usage of the analyzing suggester is correct.. right now I dont think so
+    // TODO work also with stopwords
+    // TODO Add FuzzySuggester
+
 //    @Test
 //    public void performanceTest() throws Exception {
 //        List<Map<String, Object>> products = createProducts(60000);
@@ -299,20 +315,19 @@ public abstract class AbstractSuggestTest {
 //    }
 
     private List<String> getSuggestions(String field, String term, Integer size) throws Exception {
-        return getSuggestions(DEFAULT_INDEX, field, term, size);
+        return getSuggestions(new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, field, term).size(size));
     }
 
     private List<String> getSuggestions(String field, String term, Integer size, Float similarity) throws Exception {
-        return getSuggestions(DEFAULT_INDEX, field, term, size, similarity);
+        return getSuggestions(new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, field, term).size(size).similarity(similarity));
     }
 
     private void assertSuggestions(List<String> suggestions, String ... terms) {
-        assertThat(suggestions.toString() + "should have size " + terms.length, suggestions, hasSize(terms.length));
+        assertThat(suggestions.toString() + " should have size " + terms.length, suggestions, hasSize(terms.length));
         assertThat("Suggestions are: " + suggestions, suggestions, contains(terms));
     }
 
     private void cleanIndex() {
         node.client().deleteByQuery(new DeleteByQueryRequest("products").types("product").query(QueryBuilders.matchAllQuery())).actionGet();
     }
-
 }

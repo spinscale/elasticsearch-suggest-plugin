@@ -29,18 +29,11 @@ public class ShardSuggestResponse extends BroadcastShardOperationResponse {
 
     @Override public void readFrom(StreamInput in) throws IOException {
         super.readFrom(in);
-        int size = in.readVInt();
-        suggestions = Lists.newArrayListWithCapacity(size);
-        for (int i = 0; i < size; i++) {
-            suggestions.add(in.readString());
-        }
+        suggestions = (List<String>) in.readGenericValue();
     }
 
     @Override public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
-        out.writeVInt(suggestions.size());
-        for (String suggestion : suggestions) {
-            out.writeString(suggestion);
-        }
+        out.writeGenericValue(suggestions);
     }
 }

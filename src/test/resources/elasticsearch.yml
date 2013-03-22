@@ -30,3 +30,8 @@ index:
         type: custom
         tokenizer: standard
         filter: [standard, lowercase, shingle]
+
+      keyword_lowercase_analyzer:
+        type: custom
+        tokenizer: keyword
+        filter: [lowercase]

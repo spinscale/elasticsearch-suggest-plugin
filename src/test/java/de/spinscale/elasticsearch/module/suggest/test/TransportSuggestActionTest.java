@@ -1,10 +1,10 @@
 package de.spinscale.elasticsearch.module.suggest.test;
 
-import java.util.List;
-
 import de.spinscale.elasticsearch.action.suggest.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.util.List;
 
 @RunWith(value = Parameterized.class)
 public class TransportSuggestActionTest extends AbstractSuggestTest {
@@ -14,28 +14,25 @@ public class TransportSuggestActionTest extends AbstractSuggestTest {
     }
 
     @Override
-    public List<String> getSuggestions(String index, String field, String term, Integer size, Float similarity) throws Exception {
-        SuggestRequest request = new SuggestRequest(index);
+    public List<String> getSuggestions(SuggestionQuery suggestionQuery) throws Exception {
+        SuggestRequest request = new SuggestRequest(suggestionQuery.index);
 
-        request.term(term);
-        request.field(field);
+        request.term(suggestionQuery.term);
+        request.field(suggestionQuery.field);
 
-        if (size != null) {
-            request.size(size);
+        if (suggestionQuery.size != null) {
+            request.size(suggestionQuery.size);
         }
-        if (similarity != null && similarity > 0.0 && similarity < 1.0) {
-            request.similarity(similarity);
+        if (suggestionQuery.similarity != null && suggestionQuery.similarity > 0.0 && suggestionQuery.similarity < 1.0) {
+            request.similarity(suggestionQuery.similarity);
+        }
+        if (suggestionQuery.suggestType != null) {
+            request.suggestType(suggestionQuery.suggestType);
         }
 
         SuggestResponse response = node.client().execute(SuggestAction.INSTANCE, request).actionGet();
 
         return response.suggestions();
-    }
-
-    @Override
-    public List<String> getSuggestions(String index, String field, String term, Integer size)
-            throws Exception {
-        return getSuggestions(index, field, term, size, null);
     }
 
     @Override

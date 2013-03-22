@@ -10,6 +10,7 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.search.spell.HighFrequencyDictionary;
 import org.apache.lucene.search.spell.SpellChecker;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
+import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
 import org.apache.lucene.search.suggest.fst.FSTCompletionLookup;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
@@ -26,6 +27,7 @@ import org.elasticsearch.index.settings.IndexSettings;
 import org.elasticsearch.index.shard.AbstractIndexShardComponent;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.shard.service.IndexShard;
+import org.elasticsearch.indices.analysis.IndicesAnalysisService;
 
 import java.io.IOException;
 import java.util.*;
@@ -38,12 +40,14 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
     private final ReentrantLock lock = new ReentrantLock();
     private IndexReader indexReader;
     private final LoadingCache<String, FSTCompletionLookup> lookupCache;
+    private final LoadingCache<String, AnalyzingSuggester> analyzingSuggesterCache;
     private final LoadingCache<String, HighFrequencyDictionary> dictCache;
     private final LoadingCache<String, SpellChecker> spellCheckerCache;
     private final LoadingCache<String, RAMDirectory> ramDirectoryCache;
 
     @Inject
-    public ShardSuggestService(ShardId shardId, @IndexSettings Settings indexSettings, IndexShard indexShard) {
+    public ShardSuggestService(ShardId shardId, @IndexSettings Settings indexSettings, IndexShard indexShard,
+                               final IndicesAnalysisService indicesAnalysisService) {
         super(shardId, indexSettings);
         this.indexShard = indexShard;
 
@@ -84,6 +88,17 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
                         FSTCompletionLookup lookup = new FSTCompletionLookup();
                         lookup.build(dictCache.getUnchecked(field));
                         return lookup;
+                    }
+                }
+        );
+
+        analyzingSuggesterCache = CacheBuilder.newBuilder().build(
+                new CacheLoader<String, AnalyzingSuggester>() {
+                    @Override
+                    public AnalyzingSuggester load(String field) throws Exception {
+                        AnalyzingSuggester analyzingSuggester = new AnalyzingSuggester(indicesAnalysisService.analyzer("standard"));
+                        analyzingSuggester.build(dictCache.getUnchecked(field));
+                        return analyzingSuggester;
                     }
                 }
         );
@@ -164,21 +179,16 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
     }
 
     public ShardSuggestResponse suggest(ShardSuggestRequest shardSuggestRequest) {
-        String field = shardSuggestRequest.field();
-        String term = shardSuggestRequest.term();
-        int limit = shardSuggestRequest.size();
-
-        List<String> suggestions = Lists.newArrayList(getSuggestions(field, term, limit));
-
-        float similarity = shardSuggestRequest.similarity();
-        if (similarity < 1.0f && suggestions.size() < limit) {
-            suggestions.addAll(getSimilarSuggestions(field, term, limit, similarity));
-        }
-
+        List<String> suggestions = Lists.newArrayList(getSuggestions(shardSuggestRequest));
         return new ShardSuggestResponse(shardId.index().name(), shardId.id(), suggestions);
     }
 
-    private Collection<String> getSimilarSuggestions(String field, String term, int limit, float similarity) {
+    private Collection<String> getSimilarSuggestions(ShardSuggestRequest shardSuggestRequest) {
+        String field = shardSuggestRequest.field();
+        String term = shardSuggestRequest.term();
+        Integer limit = shardSuggestRequest.size();
+        Float similarity = shardSuggestRequest.similarity();
+
         try {
             String[] suggestSimilar = spellCheckerCache.getUnchecked(field).suggestSimilar(term, limit, similarity);
             return Arrays.asList(suggestSimilar);
@@ -189,9 +199,28 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         return Collections.emptyList();
     }
 
-    private Collection<String> getSuggestions(String field, String term, int limit) {
-        List<LookupResult> lookupResults = lookupCache.getUnchecked(field).lookup(term, true, limit + 1);
-        return Collections2.transform(lookupResults, new LookupResultToStringFunction());
+    private Collection<String> getSuggestions(ShardSuggestRequest shardSuggestRequest) {
+        if ("full".equals(shardSuggestRequest.suggestType())) {
+            // FieldMapper fieldMapper = mapperService.smartName(shardSuggestRequest.field(), shardSuggestRequest.types()).mapper();
+            // Analyzer indexAnalyzer = fieldMapper.indexAnalyzer() != null ? fieldMapper.indexAnalyzer() : new StandardAnalyzer(Version.LUCENE_41);
+            // Analyzer searchAnalyzer = fieldMapper.searchAnalyzer() != null ? fieldMapper.searchAnalyzer() : new StandardAnalyzer(Version.LUCENE_41);;
+            //AnalyzingSuggester analyzingSuggester = new AnalyzingSuggester(indexAnalyzer, searchAnalyzer);
+
+            List<LookupResult> lookupResults = analyzingSuggesterCache.getUnchecked(shardSuggestRequest.field())
+                    .lookup(shardSuggestRequest.term(), false, shardSuggestRequest.size());
+            return Collections2.transform(lookupResults, new LookupResultToStringFunction());
+        }
+
+        List<LookupResult> lookupResults = lookupCache.getUnchecked(shardSuggestRequest.field()).lookup(shardSuggestRequest.term(), true, shardSuggestRequest.size() + 1);
+        Collection<String> suggestions = Collections2.transform(lookupResults, new LookupResultToStringFunction());
+
+        float similarity = shardSuggestRequest.similarity();
+        if (similarity < 1.0f && suggestions.size() < shardSuggestRequest.size()) {
+            suggestions = Lists.newArrayList(suggestions);
+            suggestions.addAll(getSimilarSuggestions(shardSuggestRequest));
+        }
+
+        return suggestions;
     }
 
     private class LookupResultToStringFunction implements Function<LookupResult, String> {
@@ -206,7 +235,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         IndexReader currentIndexReader = currentIndexSearcher.reader();
         currentIndexSearcher.release();
 
-        // if this index reader is now used in the current index searcher, we need to decrease the old refcount
+        // if this index reader is not used in the current index searcher, we need to decrease the old refcount
         if (indexReader != null && indexReader.getRefCount() > 0 && !indexReader.equals(currentIndexReader)) {
             try {
                 indexReader.decRef();

@@ -15,13 +15,23 @@ public class SuggestBuildersTest extends AbstractSuggestTest {
     }
 
     @Override
-    public List<String> getSuggestions(String index, String field, String term, Integer size, Float similarity) throws Exception {
-        return getBuilder(index, field, term, size).similarity(similarity).execute().actionGet().getSuggestions();
-    }
+    public List<String> getSuggestions(SuggestionQuery suggestionQuery) throws Exception {
+        SuggestRequestBuilder builder = new SuggestRequestBuilder(node.client())
+                .setIndices(suggestionQuery.index)
+                .field(suggestionQuery.field)
+                .term(suggestionQuery.term);
 
-    @Override
-    public List<String> getSuggestions(String index, String field, String term, Integer size) throws Exception {
-        return getBuilder(index, field, term, size).execute().actionGet().getSuggestions();
+        if (suggestionQuery.size != null) {
+            builder.size(suggestionQuery.size);
+        }
+        if (suggestionQuery.similarity != null && suggestionQuery.similarity > 0.0 && suggestionQuery.similarity < 1.0) {
+            builder.similarity(suggestionQuery.similarity);
+        }
+        if (suggestionQuery.suggestType != null) {
+            builder.suggestType(suggestionQuery.suggestType);
+        }
+
+        return builder.execute().actionGet().suggestions();
     }
 
     @Override
@@ -40,13 +50,5 @@ public class SuggestBuildersTest extends AbstractSuggestTest {
     public void refreshFieldSuggesters(String index, String field) throws Exception {
         SuggestRefreshRequestBuilder builder = new SuggestRefreshRequestBuilder(node.client()).setIndices(index).setField(field);
         builder.execute().actionGet();
-    }
-
-    private SuggestRequestBuilder getBuilder(String index, String field, String term, Integer size) throws Exception {
-        return new SuggestRequestBuilder(node.client())
-            .setIndices(index)
-            .field(field)
-            .term(term)
-            .size(size);
     }
 }

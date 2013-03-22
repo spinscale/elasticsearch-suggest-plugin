@@ -17,6 +17,7 @@ public class SuggestRequest extends BroadcastOperationRequest {
     private String field;
     private float similarity = 1.0f;
     private String term;
+    private String suggestType = "fst";
 
     public SuggestRequest() {
     }
@@ -57,6 +58,14 @@ public class SuggestRequest extends BroadcastOperationRequest {
         this.term = term;
     }
 
+    public void suggestType(String suggestType) {
+        this.suggestType = suggestType;
+    }
+
+    public String suggestType() {
+        return suggestType;
+    }
+
     @Override public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = super.validate();
         if (field == null || field.length() == 0) {
@@ -68,16 +77,10 @@ public class SuggestRequest extends BroadcastOperationRequest {
         return validationException;
     }
 
-    /**
-     * The types of documents the query will run against. Defaults to all types.
-     */
     String[] types() {
         return types;
     }
 
-    /**
-     * The types of documents the query will run against. Defaults to all types.
-     */
     public SuggestRequest types(String... types) {
         this.types = types;
         return this;
@@ -85,36 +88,26 @@ public class SuggestRequest extends BroadcastOperationRequest {
 
     @Override public void readFrom(StreamInput in) throws IOException {
         super.readFrom(in);
-
         size = in.readVInt();
         similarity = in.readFloat();
         field = in.readString();
         term = in.readString();
-
-        int typesSize = in.readVInt();
-        if (typesSize > 0) {
-            types = new String[typesSize];
-            for (int i = 0; i < typesSize; i++) {
-                types[i] = in.readString();
-            }
-        }
+        suggestType = in.readString();
+        types = in.readStringArray();
     }
 
     @Override public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
-
         out.writeVInt(size);
         out.writeFloat(similarity);
         out.writeString(field);
         out.writeString(term);
-
-        out.writeVInt(types.length);
-        for (String type : types) {
-            out.writeString(type);
-        }
+        out.writeString(suggestType);
+        out.writeStringArray(types);
     }
 
     @Override public String toString() {
-        return String.format("[%s] %s, field[%s], term[%s], size[%s], similarity[%s]", Arrays.toString(indices), Arrays.toString(types), field, term, size, similarity);
+        return String.format("[%s] %s, field[%s], term[%s], size[%s], similarity[%s], suggestType[%s]", Arrays.toString(indices), Arrays.toString(types), field, term, size, similarity, suggestType);
     }
+
 }

@@ -54,7 +54,7 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
         // When the instance is shut down or the index is deleted
         indicesService.indicesLifecycle().addListener(new IndicesLifecycle.Listener() {
             @Override
-            public void beforeIndexClosed(IndexService indexService, boolean delete) {
+            public void beforeIndexClosed(IndexService indexService) {
                 for (Iterator<IndexShard> shardServiceIterator = indexService.iterator(); shardServiceIterator.hasNext(); ) {
                     IndexShard indexShard  = shardServiceIterator.next();
                     ShardSuggestService suggestShardService = indexService.shardInjectorSafe(indexShard.shardId().id()).getInstance(ShardSuggestService.class);
@@ -67,7 +67,7 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
         // using this in the above case fails, because i cannot get the indexService anymore at beforeIndexShardClosed()
         indicesService.indicesLifecycle().addListener(new IndicesLifecycle.Listener() {
             @Override
-            public void beforeIndexShardClosed(ShardId shardId, @Nullable IndexShard indexShard, boolean delete) {
+            public void beforeIndexShardClosed(ShardId shardId, @Nullable IndexShard indexShard) {
                 IndexService indexService = indicesService.indexService(shardId.index().name());
                 if (indexService != null) {
                     ShardSuggestService suggestShardService = indexService.shardInjectorSafe(shardId.id()).getInstance(ShardSuggestService.class);

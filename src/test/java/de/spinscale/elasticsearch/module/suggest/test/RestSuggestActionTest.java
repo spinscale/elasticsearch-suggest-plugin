@@ -1,21 +1,20 @@
 package de.spinscale.elasticsearch.module.suggest.test;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.is;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.Response;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.junit.After;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.Response;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 @RunWith(value = Parameterized.class)
 public class RestSuggestActionTest extends AbstractSuggestTest {
@@ -32,20 +31,16 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
     }
 
     @Override
-    public List<String> getSuggestions(String index, String field, String term, Integer size, Float similarity) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
-        String json = createJSONQuery(field, term, size, similarity);
-        String url = "http://localhost:9200/" + index + "/product/__suggest";
+    public List<String> getSuggestions(SuggestionQuery suggestionQuery) throws Exception {
+        String json = createJSONQuery(suggestionQuery);
+
+        String url = "http://localhost:9200/" + suggestionQuery.index + "/" + suggestionQuery.type + "/__suggest";
         Response r = httpClient.preparePost(url).setBody(json).execute().get();
         assertThat(r.getStatusCode(), is(200));
 //        System.out.println("REQ : " + json);
 //        System.out.println("RESP: " + r.getResponseBody());
 
         return getSuggestionsFromResponse(r.getResponseBody());
-   }
-
-    @Override
-    public List<String> getSuggestions(String index, String field, String term, Integer size) throws IllegalArgumentException, InterruptedException, ExecutionException, IOException {
-        return getSuggestions(index, field, term, size, null);
     }
 
     @Override
@@ -68,15 +63,18 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
         assertThat(r.getStatusCode(), is(200));
     }
 
-    private String createJSONQuery(String field, String term, Integer size, Float similarity) {
+    private String createJSONQuery(SuggestionQuery suggestionQuery) {
         StringBuilder query = new StringBuilder("{");
-        query.append(String.format("\"field\": \"%s\", ", field));
-        query.append(String.format("\"term\": \"%s\"", term));
-        if (size != null) {
-            query.append(String.format(", \"size\": \"%s\"", size));
+        query.append(String.format("\"field\": \"%s\", ", suggestionQuery.field));
+        query.append(String.format("\"term\": \"%s\"", suggestionQuery.term));
+        if (suggestionQuery.size != null) {
+            query.append(String.format(", \"size\": \"%s\"", suggestionQuery.size));
         }
-        if (similarity != null && similarity > 0.0 && similarity < 1.0) {
-            query.append(String.format(", \"similarity\": \"%s\"", similarity));
+        if (suggestionQuery.suggestType != null) {
+            query.append(String.format(", \"type\": \"%s\"", suggestionQuery.suggestType));
+        }
+        if (suggestionQuery.similarity != null && suggestionQuery.similarity > 0.0 && suggestionQuery.similarity < 1.0) {
+            query.append(String.format(", \"similarity\": \"%s\"", suggestionQuery.similarity));
         }
         query.append("}");
 

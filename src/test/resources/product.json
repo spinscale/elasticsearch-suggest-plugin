@@ -7,9 +7,11 @@
             "ProductName" : {
                 "type" : "multi_field",
                 "fields" : {
-                    "ProductName":  { "type": "string", "index": "not_analyzed" },
+                    "ProductName":  { "type": "string", "index": "not_analyzed", "store": "yes" },
+                    "standard":     { "type": "string" },
                     "suggest" :     { "type": "string", "analyzer": "suggest_analyzer" },
-                    "lowercase" :   { "type": "string", "analyzer": "lowercase_analyzer" }
+                    "lowercase" :   { "type": "string", "analyzer": "lowercase_analyzer" },
+                    "keyword" :     { "type": "string", "analyzer": "keyword" }
                 }
             }
         }
