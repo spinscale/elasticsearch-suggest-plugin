@@ -7,6 +7,8 @@ import static org.hamcrest.Matchers.*;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
+import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.node.Node;
@@ -24,6 +26,7 @@ public class RestGetSuggestActionTest {
 
     private final AsyncHttpClient httpClient = new AsyncHttpClient();
     private Node node;
+    private int port;
 
     @Before
     public void startNode() throws Exception {
@@ -36,6 +39,9 @@ public class RestGetSuggestActionTest {
         createIndexWithMapping("products", node);
         indexProducts(products, node);
         refreshAllSuggesters();
+
+        NodesInfoResponse response = node.client().admin().cluster().prepareNodesInfo().setHttp(true).execute().actionGet();
+        port = ((InetSocketTransportAddress) response.getNodes()[0].getHttp().address().boundAddress()).address().getPort();
     }
 
     @After
@@ -49,7 +55,7 @@ public class RestGetSuggestActionTest {
     @Ignore("AsyncHttpClient does not allow body in GET requests - need to change")
     @Test
     public void testThatSuggestionsShouldWorkWithGetRequestBody() throws Exception {
-        String response = httpClient.prepareGet("http://localhost:9200/products/product/__suggest").
+        String response = httpClient.prepareGet("http://localhost:" + port + "/products/product/__suggest").
                 setBody(createJSONQuery("ProductName.suggest", "foo")).
                 execute().get().getResponseBody();
         List<String> suggestions = getSuggestionsFromResponse(response);
@@ -60,13 +66,13 @@ public class RestGetSuggestActionTest {
     public void testThatSuggestionsShouldWorkWithCallbackAndGetRequestParameter() throws Exception {
         String query = URLEncoder.encode(createJSONQuery("ProductName.suggest", "foobar"), "UTF8");
         String queryString = "callback=mycallback&source=" + query;
-        String response = httpClient.prepareGet("http://localhost:9200/products/product/__suggest?" + queryString).
+        String response = httpClient.prepareGet("http://localhost:" + port + "/products/product/__suggest?" + queryString).
                 execute().get().getResponseBody();
         assertThat(response, is("mycallback({\"suggestions\":[\"foobar\"],\"_shards\":{\"total\":1,\"successful\":1,\"failed\":0}});"));
     }
 
     private void refreshAllSuggesters() throws Exception {
-        Response r = httpClient.preparePost("http://localhost:9200/__suggestRefresh").execute().get();
+        Response r = httpClient.preparePost("http://localhost:" + port + "/__suggestRefresh").execute().get();
         assertThat(r.getStatusCode(), is(200));
     }
 

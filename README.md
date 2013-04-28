@@ -148,11 +148,11 @@ builder.execute().actionGet();
 ## TODO
 
 * Find and verify the absence of the current resource leak (open deleted files after lots of merging) with the new architecture
+* Allow to set a "analyzer" flag instead of setting index and query analyzer, as this is going to be sufficient in most cases
+* Create a `__suggestStats` endpoint, which shows the current size of the fst and it the duration it took for the creation
+* Add FuzzySuggester
 * Update documentation, talk about analyzing suggester and fst suggester and `setEnablePositionIncrements` for stopwords
 * Create the FST structure only on the primary shard and send it to the replica over the wire as byte array
-* Create a `__suggestStats` endpoint, which shows the current size of the fst and it the duration it took for the creation
-* Make sure the tests use the ports provided by the started JVM (especially the rest tests)
-* Allow to set a "analyzer" flag instead of setting index and query analyzer, as this is going to be sufficient in most cases
 
 ## Changelog
 

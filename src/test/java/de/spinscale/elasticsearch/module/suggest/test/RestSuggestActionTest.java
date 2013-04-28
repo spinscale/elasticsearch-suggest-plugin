@@ -6,7 +6,9 @@ import static org.hamcrest.Matchers.is;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
+import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.junit.After;
@@ -21,9 +23,12 @@ import java.util.Map;
 public class RestSuggestActionTest extends AbstractSuggestTest {
 
     private final AsyncHttpClient httpClient = new AsyncHttpClient();
+    private final int port;
 
     public RestSuggestActionTest(int shards, int nodeCount) throws Exception {
         super(shards, nodeCount);
+        NodesInfoResponse response = node.client().admin().cluster().prepareNodesInfo().setHttp(true).execute().actionGet();
+        port = ((InetSocketTransportAddress) response.getNodes()[0].getHttp().address().boundAddress()).address().getPort();
     }
 
     @After
@@ -35,7 +40,7 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
     public List<String> getSuggestions(SuggestionQuery suggestionQuery) throws Exception {
         String json = createJSONQuery(suggestionQuery);
 
-        String url = "http://localhost:9200/" + suggestionQuery.index + "/" + suggestionQuery.type + "/__suggest";
+        String url = "http://localhost:" + port + "/" + suggestionQuery.index + "/" + suggestionQuery.type + "/__suggest";
         Response r = httpClient.preparePost(url).setBody(json).execute().get();
         assertThat(r.getStatusCode(), is(200));
 //        System.out.println("REQ : " + json);
@@ -46,13 +51,13 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
 
     @Override
     public void refreshAllSuggesters() throws Exception {
-        Response r = httpClient.preparePost("http://localhost:9200/__suggestRefresh").execute().get();
+        Response r = httpClient.preparePost("http://localhost:" + port + "/__suggestRefresh").execute().get();
         assertThat(r.getStatusCode(), is(200));
     }
 
     @Override
     public void refreshIndexSuggesters(String index) throws Exception {
-        Response r = httpClient.preparePost("http://localhost:9200/"+ index + "/product/__suggestRefresh").execute().get();
+        Response r = httpClient.preparePost("http://localhost:" + port + "/"+ index + "/product/__suggestRefresh").execute().get();
         assertThat(r.getStatusCode(), is(200));
     }
 
@@ -60,7 +65,7 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
     public void refreshFieldSuggesters(String index, String field) throws Exception {
         String jsonBody = String.format("{ \"field\": \"%s\" } ", field);
 
-        Response r = httpClient.preparePost("http://localhost:9200/" + index + "/product/__suggestRefresh").setBody(jsonBody).execute().get();
+        Response r = httpClient.preparePost("http://localhost:"+ port +"/" + index + "/product/__suggestRefresh").setBody(jsonBody).execute().get();
         assertThat(r.getStatusCode(), is(200));
     }
 
