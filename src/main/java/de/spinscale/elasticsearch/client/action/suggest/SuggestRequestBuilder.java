@@ -48,4 +48,14 @@ public class SuggestRequestBuilder extends ActionRequestBuilder<SuggestRequest, 
         request.indices(indices);
         return this;
     }
+
+    public SuggestRequestBuilder queryAnalyzer(String queryAnalyzer) {
+        request.queryAnalyzer(queryAnalyzer);
+        return this;
+    }
+
+    public SuggestRequestBuilder indexAnalyzer(String indexAnalyzer) {
+        request.indexAnalyzer(indexAnalyzer);
+        return this;
+    }
 }

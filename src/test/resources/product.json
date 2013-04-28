@@ -1,17 +1,36 @@
 {
-    "product": {
-        "properties": {
-            "ProductId":            { "type": "string", "index": "not_analyzed" },
-            "Description":          { "type": "string", "index": "not_analyzed" },
+    "mappings" : {
+        "product": {
+            "properties": {
+                "ProductId":            { "type": "string", "index": "not_analyzed" },
+                "Description":          { "type": "string", "index": "not_analyzed" },
 
-            "ProductName" : {
-                "type" : "multi_field",
-                "fields" : {
-                    "ProductName":  { "type": "string", "index": "not_analyzed", "store": "yes" },
-                    "standard":     { "type": "string" },
-                    "suggest" :     { "type": "string", "analyzer": "suggest_analyzer" },
-                    "lowercase" :   { "type": "string", "analyzer": "lowercase_analyzer" },
-                    "keyword" :     { "type": "string", "analyzer": "keyword" }
+                "ProductName" : {
+                    "type" : "multi_field",
+                    "fields" : {
+                        "ProductName":  { "type": "string", "index": "not_analyzed", "store": "yes" },
+                        "standard":     { "type": "string" },
+                        "suggest" :     { "type": "string", "analyzer": "suggest_analyzer" },
+                        "lowercase" :   { "type": "string", "analyzer": "lowercase_analyzer" },
+                        "keyword" :     { "type": "string", "analyzer": "keyword" }
+                    }
+                }
+            }
+        }
+    },
+    "settings" : {
+        "analysis" : {
+            "analyzer" : {
+                "suggest_analyzer_stopwords" : {
+                    "type" : "custom",
+                    "tokenizer" : "standard",
+                    "filter" : [ "standard", "lowercase", "stopword_no_position_increment" ]
+                }
+            },
+            "filter" : {
+                "stopword_no_position_increment" : {
+                    "type" : "stop",
+                    "enable_position_increments" : false
                 }
             }
         }

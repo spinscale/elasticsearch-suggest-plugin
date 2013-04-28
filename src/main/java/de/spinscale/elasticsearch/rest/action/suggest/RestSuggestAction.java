@@ -54,6 +54,8 @@ public class RestSuggestAction extends BaseRestHandler {
             SuggestRequest suggestRequest = new SuggestRequest(indices);
             suggestRequest.field(XContentMapValues.nodeStringValue(parserMap.get("field"), ""));
             suggestRequest.suggestType(XContentMapValues.nodeStringValue(parserMap.get("type"), ""));
+            suggestRequest.indexAnalyzer(XContentMapValues.nodeStringValue(parserMap.get("indexAnalyzer"), ""));
+            suggestRequest.queryAnalyzer(XContentMapValues.nodeStringValue(parserMap.get("queryAnalyzer"), ""));
             suggestRequest.term(XContentMapValues.nodeStringValue(parserMap.get("term"), ""));
             suggestRequest.similarity(XContentMapValues.nodeFloatValue(parserMap.get("similarity"), 1.0f));
             suggestRequest.size(XContentMapValues.nodeIntegerValue(parserMap.get("size"), 10));

@@ -1,6 +1,7 @@
 package de.spinscale.elasticsearch.module.suggest.test;
 
 import de.spinscale.elasticsearch.action.suggest.*;
+import org.elasticsearch.common.Strings;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -28,6 +29,12 @@ public class TransportSuggestActionTest extends AbstractSuggestTest {
         }
         if (suggestionQuery.suggestType != null) {
             request.suggestType(suggestionQuery.suggestType);
+        }
+        if (Strings.hasLength(suggestionQuery.indexAnalyzer)) {
+            request.indexAnalyzer(suggestionQuery.indexAnalyzer);
+        }
+        if (Strings.hasLength(suggestionQuery.queryAnalyzer)) {
+            request.queryAnalyzer(suggestionQuery.queryAnalyzer);
         }
 
         SuggestResponse response = node.client().execute(SuggestAction.INSTANCE, request).actionGet();

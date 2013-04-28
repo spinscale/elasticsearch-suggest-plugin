@@ -4,7 +4,9 @@ import de.spinscale.elasticsearch.action.suggest.ShardSuggestRefreshRequest;
 import de.spinscale.elasticsearch.action.suggest.ShardSuggestRefreshResponse;
 import de.spinscale.elasticsearch.action.suggest.ShardSuggestRequest;
 import de.spinscale.elasticsearch.action.suggest.ShardSuggestResponse;
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.search.spell.HighFrequencyDictionary;
@@ -22,7 +24,10 @@ import org.elasticsearch.common.collect.Collections2;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.index.analysis.AnalysisService;
 import org.elasticsearch.index.engine.Engine;
+import org.elasticsearch.index.mapper.FieldMapper;
+import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.settings.IndexSettings;
 import org.elasticsearch.index.shard.AbstractIndexShardComponent;
 import org.elasticsearch.index.shard.ShardId;
@@ -40,16 +45,18 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
     private final ReentrantLock lock = new ReentrantLock();
     private IndexReader indexReader;
     private final LoadingCache<String, FSTCompletionLookup> lookupCache;
-    private final LoadingCache<String, AnalyzingSuggester> analyzingSuggesterCache;
+    private final LoadingCache<FieldType, AnalyzingSuggester> analyzingSuggesterCache;
     private final LoadingCache<String, HighFrequencyDictionary> dictCache;
     private final LoadingCache<String, SpellChecker> spellCheckerCache;
     private final LoadingCache<String, RAMDirectory> ramDirectoryCache;
+    private final AnalysisService analysisService;
 
     @Inject
     public ShardSuggestService(ShardId shardId, @IndexSettings Settings indexSettings, IndexShard indexShard,
-                               final IndicesAnalysisService indicesAnalysisService) {
+                               final AnalysisService analysisService, final MapperService mapperService) {
         super(shardId, indexSettings);
         this.indexShard = indexShard;
+        this.analysisService = analysisService;
 
         ramDirectoryCache = CacheBuilder.newBuilder().build(
                 new CacheLoader<String, RAMDirectory>() {
@@ -93,11 +100,31 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         );
 
         analyzingSuggesterCache = CacheBuilder.newBuilder().build(
-                new CacheLoader<String, AnalyzingSuggester>() {
+                new CacheLoader<FieldType, AnalyzingSuggester>() {
                     @Override
-                    public AnalyzingSuggester load(String field) throws Exception {
-                        AnalyzingSuggester analyzingSuggester = new AnalyzingSuggester(indicesAnalysisService.analyzer("standard"));
-                        analyzingSuggester.build(dictCache.getUnchecked(field));
+                    public AnalyzingSuggester load(FieldType fieldType) throws Exception {
+                        FieldMapper fieldMapper = mapperService.smartName(fieldType.field(), fieldType.types()).mapper();
+
+                        Analyzer queryAnalyzer = fieldMapper.searchAnalyzer();
+                        if (fieldType.queryAnalyzer != null) {
+                            // TODO: not found case
+                            queryAnalyzer = analysisService.analyzer(fieldType.queryAnalyzer).analyzer();
+                        }
+                        if (queryAnalyzer == null) {
+                            queryAnalyzer = new StandardAnalyzer(Version.LUCENE_42);
+                        }
+
+                        Analyzer indexAnalyzer = fieldMapper.searchAnalyzer();
+                        if (fieldType.indexAnalyzer != null) {
+                            // TODO: not found case
+                            indexAnalyzer = analysisService.analyzer(fieldType.indexAnalyzer).analyzer();
+                        }
+                        if (indexAnalyzer == null) {
+                            indexAnalyzer = new StandardAnalyzer(Version.LUCENE_42);
+                        }
+
+                        AnalyzingSuggester analyzingSuggester = new AnalyzingSuggester(indexAnalyzer, queryAnalyzer);
+                        analyzingSuggester.build(dictCache.getUnchecked(fieldType.field()));
                         return analyzingSuggester;
                     }
                 }
@@ -206,8 +233,24 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
             // Analyzer searchAnalyzer = fieldMapper.searchAnalyzer() != null ? fieldMapper.searchAnalyzer() : new StandardAnalyzer(Version.LUCENE_41);;
             //AnalyzingSuggester analyzingSuggester = new AnalyzingSuggester(indexAnalyzer, searchAnalyzer);
 
-            List<LookupResult> lookupResults = analyzingSuggesterCache.getUnchecked(shardSuggestRequest.field())
-                    .lookup(shardSuggestRequest.term(), false, shardSuggestRequest.size());
+            List<LookupResult> lookupResults = Lists.newArrayList();
+            if (shardSuggestRequest.types().length > 0) {
+                lookupResults.addAll(analyzingSuggesterCache.getUnchecked(new FieldType(shardSuggestRequest))
+                        .lookup(shardSuggestRequest.term(), false, shardSuggestRequest.size()));
+
+                // TODO: CHECK IF THE LIST MUST BE BELOW SIZE.. I DO NOT THINK THAT, AS THIS IS A SHARD
+                /*
+                if (lookupResults.size() >= shardSuggestRequest.size()) {
+                    lookupResults = lookupResults.subList(0, shardSuggestRequest.size());
+                    break;
+                }
+                */
+            } else {
+                lookupResults.addAll(analyzingSuggesterCache.getUnchecked(new FieldType(shardSuggestRequest))
+                        .lookup(shardSuggestRequest.term(), false, shardSuggestRequest.size()));
+
+            }
+
             return Collections2.transform(lookupResults, new LookupResultToStringFunction());
         }
 
@@ -266,5 +309,36 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         }
 
         return indexReader;
+    }
+
+    public static class FieldType {
+
+        private String field;
+        private List<String> types = Lists.newArrayList();
+        private String queryAnalyzer;
+        private String indexAnalyzer;
+
+        public FieldType(ShardSuggestRequest shardSuggestRequest) {
+            this.field = shardSuggestRequest.field();
+            this.types = Arrays.asList(shardSuggestRequest.types());
+            this.queryAnalyzer = shardSuggestRequest.queryAnalyzer();
+            this.indexAnalyzer = shardSuggestRequest.indexAnalyzer();
+        }
+
+        public String field() {
+            return field;
+        }
+
+        public String[] types() {
+            return types.toArray(new String[]{});
+        }
+
+        public String queryAnalyzer() {
+            return queryAnalyzer;
+        }
+
+        public String indexAnalyzer() {
+            return indexAnalyzer;
+        }
     }
 }

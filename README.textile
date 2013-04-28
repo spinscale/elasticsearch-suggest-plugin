@@ -138,15 +138,23 @@ List<String> suggestions = new SuggestRequestBuilder(client)
 
 h2. Thanks
 
-* Shay for giving feedback
-* David for pushing me to get it into the maven repo
+* Shay (@kimchy) for giving feedback
+* David (@dadoonet) for pushing me to get it into the maven repo
+* Adrien (@jpountz) for helping me to understand the the AnalyzingSuggester details and having the idea for only creating the FST on the primary shard
 
 h2. TODO
 
 * Find and verify the absence of the current resource leak (open deleted files after lots of merging) with the new architecture
+* Update documentation, talk about analyzing suggester and fst suggester and setEnablePositionIncrements for stopwords
+* Create the FST structure only on the primary shard and send it to the replica over the wire as byte array
+* Create a __suggestStats endpoint, which shows the current size of the fst and it the duration it took for the creation
+* Make sure the tests use the ports provided by the started JVM (especially the rest tests)
+* Port this textile document to markdown
+* Allow to set a "analyzer" flag instead of setting index and query analyzer, as this is going to be sufficient in most cases
 
 h2. Changelog
 
+* 2013-04-28: Added support for the analyzing suggester and stopwords
 * 2013-03-20: Moved to own package namespaces, changed REST endpoints in order to be compatible with elasticsearch 0.90
 * 2013-01-18: Support for HTTP GET, together with JSONP and the source parameter.
 * 2012-10-21: The REST urls can now be used without specifiying a type (which is unused at the moment anyway). You can use now the $index/_suggest and $index/_suggestRefresh urls

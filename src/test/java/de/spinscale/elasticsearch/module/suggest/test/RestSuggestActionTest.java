@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.is;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.junit.After;
@@ -75,6 +76,12 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
         }
         if (suggestionQuery.similarity != null && suggestionQuery.similarity > 0.0 && suggestionQuery.similarity < 1.0) {
             query.append(String.format(", \"similarity\": \"%s\"", suggestionQuery.similarity));
+        }
+        if (Strings.hasLength(suggestionQuery.indexAnalyzer)) {
+            query.append(String.format(", \"indexAnalyzer\": \"%s\"", suggestionQuery.indexAnalyzer));
+        }
+        if (Strings.hasLength(suggestionQuery.queryAnalyzer)) {
+            query.append(String.format(", \"queryAnalyzer\": \"%s\"", suggestionQuery.queryAnalyzer));
         }
         query.append("}");
 

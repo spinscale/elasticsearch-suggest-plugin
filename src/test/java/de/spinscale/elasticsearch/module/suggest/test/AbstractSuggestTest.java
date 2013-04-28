@@ -21,6 +21,7 @@ import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.node.Node;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.Parameterized.Parameters;
 import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
@@ -284,14 +285,36 @@ public abstract class AbstractSuggestTest {
         products.get(4).put("ProductName", "VW Jetta");
         indexProducts(products, node);
 
-        SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b").suggestType("full").size(10);
+        SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b")
+                .suggestType("full").analyzer("standard").size(10);
         List<String> suggestions = getSuggestions(query);
 
         assertSuggestions(suggestions, "BMW 318", "BMW 528", "BMW M3");
     }
-    // TODO: Find out if the usage of the analyzing suggester is correct.. right now I dont think so
-    // TODO work also with stopwords
-    // TODO Add FuzzySuggester
+
+    @Test
+    public void testThatAnalyzingSuggesterSupportsStopWords() throws Exception {
+        List<Map<String, Object>> products = createProducts(5);
+        products.get(0).put("ProductName", "BMW 318");
+        products.get(1).put("ProductName", "BMW 528");
+        products.get(2).put("ProductName", "BMW M3");
+        products.get(3).put("ProductName", "the BMW 320");
+        products.get(4).put("ProductName", "VW Jetta");
+        indexProducts(products, node);
+
+        SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b")
+                .suggestType("full").analyzer("suggest_analyzer_stopwords").size(10);
+        List<String> suggestions = getSuggestions(query);
+
+        assertSuggestions(suggestions, "BMW 318", "BMW 528", "BMW M3", "the BMW 320");
+    }
+
+    @Ignore
+    @Test
+    public void testThatFuzzySuggesterWorks() throws Exception {
+        // TODO: test that wild typos
+        throw new RuntimeException("Not yte implemented");
+    }
 
 //    @Test
 //    public void performanceTest() throws Exception {

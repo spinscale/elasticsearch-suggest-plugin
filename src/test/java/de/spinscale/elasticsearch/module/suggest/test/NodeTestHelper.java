@@ -1,6 +1,10 @@
 package de.spinscale.elasticsearch.module.suggest.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
 import org.apache.commons.io.IOUtils;
+import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.common.logging.log4j.LogConfigurator;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -50,9 +54,8 @@ public class NodeTestHelper {
         if (existsResponse.isExists()) {
             node.client().admin().indices().prepareDelete(index).execute().actionGet();
         }
-        String mapping = IOUtils.toString(NodeTestHelper.class.getResourceAsStream("/product.json"));
-        node.client().admin().indices().prepareCreate(index).execute().actionGet();
-        node.client().admin().indices().preparePutMapping(index).setType("product").setSource(mapping).execute().actionGet();
+        String settings = IOUtils.toString(NodeTestHelper.class.getResourceAsStream("/product.json"));
+        CreateIndexResponse createIndexResponse = node.client().admin().indices().prepareCreate(index).setSource(settings).execute().actionGet();
+        assertThat(createIndexResponse.isAcknowledged(), is(true));
     }
-
 }

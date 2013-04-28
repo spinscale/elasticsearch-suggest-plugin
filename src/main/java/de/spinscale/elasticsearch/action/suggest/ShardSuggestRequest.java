@@ -15,6 +15,8 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
     private String term;
     private String[] types = Strings.EMPTY_ARRAY;
     private String suggestType = "fst";
+    private String queryAnalyzer;
+    private String indexAnalyzer;
 
     public ShardSuggestRequest() {}
 
@@ -26,6 +28,8 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
         similarity = request.similarity();
         types = request.types();
         suggestType = request.suggestType();
+        queryAnalyzer = request.queryAnalyzer();
+        indexAnalyzer = request.indexAnalyzer();
     }
 
     public int size() {
@@ -72,6 +76,22 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
         return types;
     }
 
+    public String queryAnalyzer() {
+        return queryAnalyzer;
+    }
+
+    public void queryAnalyzer(String queryAnalyzer) {
+        this.queryAnalyzer = queryAnalyzer;
+    }
+
+    public String indexAnalyzer() {
+        return indexAnalyzer;
+    }
+
+    public void indexAnalyzer(String indexAnalyzer) {
+        this.indexAnalyzer = indexAnalyzer;
+    }
+
     @Override public void readFrom(StreamInput in) throws IOException {
         super.readFrom(in);
         size = in.readVInt();
@@ -79,6 +99,8 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
         field = in.readString();
         term = in.readString();
         suggestType = in.readString();
+        queryAnalyzer = in.readOptionalString();
+        indexAnalyzer = in.readOptionalString();
         types = in.readStringArray();
     }
 
@@ -89,6 +111,8 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
         out.writeString(field);
         out.writeString(term);
         out.writeString(suggestType);
+        out.writeOptionalString(queryAnalyzer);
+        out.writeOptionalString(indexAnalyzer);
         out.writeStringArrayNullable(types);
     }
 

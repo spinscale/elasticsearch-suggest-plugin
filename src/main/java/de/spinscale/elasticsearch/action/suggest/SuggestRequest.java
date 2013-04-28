@@ -18,6 +18,8 @@ public class SuggestRequest extends BroadcastOperationRequest {
     private float similarity = 1.0f;
     private String term;
     private String suggestType = "fst";
+    private String queryAnalyzer;
+    private String indexAnalyzer;
 
     public SuggestRequest() {
     }
@@ -66,6 +68,22 @@ public class SuggestRequest extends BroadcastOperationRequest {
         return suggestType;
     }
 
+    public String queryAnalyzer() {
+        return queryAnalyzer;
+    }
+
+    public void queryAnalyzer(String queryAnalyzer) {
+        this.queryAnalyzer = queryAnalyzer;
+    }
+
+    public String indexAnalyzer() {
+        return indexAnalyzer;
+    }
+
+    public void indexAnalyzer(String indexAnalyzer) {
+        this.indexAnalyzer = indexAnalyzer;
+    }
+
     @Override public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = super.validate();
         if (field == null || field.length() == 0) {
@@ -93,6 +111,8 @@ public class SuggestRequest extends BroadcastOperationRequest {
         field = in.readString();
         term = in.readString();
         suggestType = in.readString();
+        queryAnalyzer = in.readOptionalString();
+        indexAnalyzer = in.readOptionalString();
         types = in.readStringArray();
     }
 
@@ -103,11 +123,14 @@ public class SuggestRequest extends BroadcastOperationRequest {
         out.writeString(field);
         out.writeString(term);
         out.writeString(suggestType);
+        out.writeOptionalString(queryAnalyzer);
+        out.writeOptionalString(indexAnalyzer);
         out.writeStringArray(types);
     }
 
     @Override public String toString() {
-        return String.format("[%s] %s, field[%s], term[%s], size[%s], similarity[%s], suggestType[%s]", Arrays.toString(indices), Arrays.toString(types), field, term, size, similarity, suggestType);
+        return String.format("[%s] %s, field[%s], term[%s], size[%s], similarity[%s], suggestType[%s], indexAnalyzer[%s], queryAnalyzer[%s]",
+                Arrays.toString(indices), Arrays.toString(types), field, term, size, similarity, suggestType, indexAnalyzer, queryAnalyzer);
     }
 
 }

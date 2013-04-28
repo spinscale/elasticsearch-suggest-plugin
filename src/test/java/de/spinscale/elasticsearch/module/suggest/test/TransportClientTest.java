@@ -6,6 +6,7 @@ import java.util.List;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestRefreshRequestBuilder;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
@@ -49,6 +50,12 @@ public class TransportClientTest extends AbstractSuggestTest {
         }
         if (suggestionQuery.suggestType != null) {
             builder.suggestType(suggestionQuery.suggestType);
+        }
+        if (Strings.hasLength(suggestionQuery.queryAnalyzer)) {
+            builder.queryAnalyzer(suggestionQuery.queryAnalyzer);
+        }
+        if (Strings.hasLength(suggestionQuery.indexAnalyzer)) {
+            builder.indexAnalyzer(suggestionQuery.indexAnalyzer);
         }
 
         return builder.execute().actionGet().suggestions();

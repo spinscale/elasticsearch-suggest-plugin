@@ -2,6 +2,7 @@ package de.spinscale.elasticsearch.module.suggest.test;
 
 import de.spinscale.elasticsearch.client.action.suggest.SuggestRefreshRequestBuilder;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestRequestBuilder;
+import org.elasticsearch.common.Strings;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -29,6 +30,12 @@ public class SuggestBuildersTest extends AbstractSuggestTest {
         }
         if (suggestionQuery.suggestType != null) {
             builder.suggestType(suggestionQuery.suggestType);
+        }
+        if (Strings.hasLength(suggestionQuery.indexAnalyzer)) {
+            builder.indexAnalyzer(suggestionQuery.indexAnalyzer);
+        }
+        if (Strings.hasLength(suggestionQuery.queryAnalyzer)) {
+            builder.queryAnalyzer(suggestionQuery.queryAnalyzer);
         }
 
         return builder.execute().actionGet().suggestions();
