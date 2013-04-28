@@ -88,6 +88,9 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
         if (Strings.hasLength(suggestionQuery.queryAnalyzer)) {
             query.append(String.format(", \"queryAnalyzer\": \"%s\"", suggestionQuery.queryAnalyzer));
         }
+        if (Strings.hasLength(suggestionQuery.analyzer)) {
+            query.append(String.format(", \"analyzer\": \"%s\"", suggestionQuery.analyzer));
+        }
         query.append("}");
 
         return query.toString();

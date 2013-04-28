@@ -2,6 +2,7 @@ package de.spinscale.elasticsearch.module.suggest.test;
 
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 import java.util.Map;
@@ -32,12 +33,12 @@ public class ProductTestHelper {
             indexRequest.source(product);
             bulkRequest.add(indexRequest);
         }
+        bulkRequest.refresh(true);
         BulkResponse response = node.client().bulk(bulkRequest).actionGet();
         if (response.hasFailures()) {
-            Assert.fail("Error in creating products: " + response.buildFailureMessage());
+            fail("Error in creating products: " + response.buildFailureMessage());
         }
 
-        refreshIndex(index, node);
         assertDocumentCountAfterIndexing(index, products.size() + currentCount, node);
     }
 

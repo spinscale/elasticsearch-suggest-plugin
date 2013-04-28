@@ -36,6 +36,9 @@ public class TransportSuggestActionTest extends AbstractSuggestTest {
         if (Strings.hasLength(suggestionQuery.queryAnalyzer)) {
             request.queryAnalyzer(suggestionQuery.queryAnalyzer);
         }
+        if (Strings.hasLength(suggestionQuery.analyzer)) {
+            request.analyzer(suggestionQuery.analyzer);
+        }
 
         SuggestResponse response = node.client().execute(SuggestAction.INSTANCE, request).actionGet();
 

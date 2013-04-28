@@ -84,6 +84,11 @@ public class SuggestRequest extends BroadcastOperationRequest {
         this.indexAnalyzer = indexAnalyzer;
     }
 
+    public void analyzer(String analyzer) {
+        indexAnalyzer(analyzer);
+        queryAnalyzer(analyzer);
+    }
+
     @Override public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = super.validate();
         if (field == null || field.length() == 0) {
@@ -132,5 +137,4 @@ public class SuggestRequest extends BroadcastOperationRequest {
         return String.format("[%s] %s, field[%s], term[%s], size[%s], similarity[%s], suggestType[%s], indexAnalyzer[%s], queryAnalyzer[%s]",
                 Arrays.toString(indices), Arrays.toString(types), field, term, size, similarity, suggestType, indexAnalyzer, queryAnalyzer);
     }
-
 }

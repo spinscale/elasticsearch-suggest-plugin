@@ -58,4 +58,10 @@ public class SuggestRequestBuilder extends ActionRequestBuilder<SuggestRequest, 
         request.indexAnalyzer(indexAnalyzer);
         return this;
     }
+
+    public SuggestRequestBuilder analyzer(String analyzer) {
+        request.indexAnalyzer(analyzer);
+        request.queryAnalyzer(analyzer);
+        return this;
+    }
 }

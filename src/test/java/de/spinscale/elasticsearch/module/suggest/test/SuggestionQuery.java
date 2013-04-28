@@ -11,6 +11,7 @@ public class SuggestionQuery {
     public String queryAnalyzer;
     public Integer size;
     public Float similarity;
+    public String analyzer;
 
     public SuggestionQuery(String index, String type, String field, String term) {
         this.index = index;
@@ -35,8 +36,7 @@ public class SuggestionQuery {
     }
 
     public SuggestionQuery analyzer(String analyzer) {
-        indexAnalyzer(analyzer);
-        queryAnalyzer(analyzer);
+        this.analyzer = analyzer;
         return this;
     }
 

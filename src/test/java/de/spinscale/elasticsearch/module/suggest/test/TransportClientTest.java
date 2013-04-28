@@ -57,6 +57,9 @@ public class TransportClientTest extends AbstractSuggestTest {
         if (Strings.hasLength(suggestionQuery.indexAnalyzer)) {
             builder.indexAnalyzer(suggestionQuery.indexAnalyzer);
         }
+        if (Strings.hasLength(suggestionQuery.analyzer)) {
+            builder.analyzer(suggestionQuery.analyzer);
+        }
 
         return builder.execute().actionGet().suggestions();
     }

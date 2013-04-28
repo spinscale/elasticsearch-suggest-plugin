@@ -37,6 +37,9 @@ public class SuggestBuildersTest extends AbstractSuggestTest {
         if (Strings.hasLength(suggestionQuery.queryAnalyzer)) {
             builder.queryAnalyzer(suggestionQuery.queryAnalyzer);
         }
+        if (Strings.hasLength(suggestionQuery.analyzer)) {
+            builder.analyzer(suggestionQuery.analyzer);
+        }
 
         return builder.execute().actionGet().suggestions();
     }

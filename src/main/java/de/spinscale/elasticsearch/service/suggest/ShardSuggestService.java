@@ -16,6 +16,7 @@ import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
 import org.apache.lucene.search.suggest.fst.FSTCompletionLookup;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.base.Function;
 import org.elasticsearch.common.cache.CacheBuilder;
 import org.elasticsearch.common.cache.CacheLoader;
@@ -49,14 +50,12 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
     private final LoadingCache<String, HighFrequencyDictionary> dictCache;
     private final LoadingCache<String, SpellChecker> spellCheckerCache;
     private final LoadingCache<String, RAMDirectory> ramDirectoryCache;
-    private final AnalysisService analysisService;
 
     @Inject
     public ShardSuggestService(ShardId shardId, @IndexSettings Settings indexSettings, IndexShard indexShard,
                                final AnalysisService analysisService, final MapperService mapperService) {
         super(shardId, indexSettings);
         this.indexShard = indexShard;
-        this.analysisService = analysisService;
 
         ramDirectoryCache = CacheBuilder.newBuilder().build(
                 new CacheLoader<String, RAMDirectory>() {
@@ -133,7 +132,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
 
     public ShardSuggestRefreshResponse refresh(ShardSuggestRefreshRequest shardSuggestRefreshRequest) {
         String field = shardSuggestRefreshRequest.field();
-        if (field == null || field.length() == 0) {
+        if (!Strings.hasLength(field)) {
             update();
         } else {
             resetIndexReader();
@@ -159,6 +158,12 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
 
             FSTCompletionLookup lookup = lookupCache.getIfPresent(field);
             if (lookup != null) lookupCache.refresh(field);
+
+            for (FieldType fieldType : analyzingSuggesterCache.asMap().keySet()) {
+                if (fieldType.field().equals(shardSuggestRefreshRequest.field())) {
+                    analyzingSuggesterCache.refresh(fieldType);
+                }
+            }
         }
 
         return new ShardSuggestRefreshResponse(shardId.index().name(), shardId.id());
@@ -178,6 +183,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         spellCheckerCache.invalidateAll();
         ramDirectoryCache.invalidateAll();
         lookupCache.invalidateAll();
+        analyzingSuggesterCache.invalidateAll();
     }
 
     public void update() {
@@ -202,6 +208,10 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
 
         for (String field : lookupCache.asMap().keySet()) {
             lookupCache.refresh(field);
+        }
+
+        for (FieldType fieldType : analyzingSuggesterCache.asMap().keySet()) {
+            analyzingSuggesterCache.refresh(fieldType);
         }
     }
 

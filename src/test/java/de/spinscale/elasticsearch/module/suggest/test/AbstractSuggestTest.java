@@ -198,6 +198,7 @@ public abstract class AbstractSuggestTest {
         products = createProducts(1);
         products.get(0).put("ProductName", "Kochjacke PaulinPanzer");
         indexProducts(products, node);
+        refreshIndex(DEFAULT_INDEX, node);
         refreshAllSuggesters();
 
         suggestions = getSuggestions("ProductName.suggest", "kochjacke paulin", 10);
@@ -303,7 +304,7 @@ public abstract class AbstractSuggestTest {
         indexProducts(products, node);
 
         SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b")
-                .suggestType("full").analyzer("suggest_analyzer_stopwords").size(10);
+                .suggestType("full").indexAnalyzer("suggest_analyzer_stopwords").queryAnalyzer("suggest_analyzer_stopwords").size(10);
         List<String> suggestions = getSuggestions(query);
 
         assertSuggestions(suggestions, "BMW 318", "BMW 528", "BMW M3", "the BMW 320");

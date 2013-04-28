@@ -31,6 +31,8 @@ public class RestGetSuggestActionTest {
     @Before
     public void startNode() throws Exception {
         node = createNode("foo", "fooNodeName", 1).call().start();
+        NodesInfoResponse response = node.client().admin().cluster().prepareNodesInfo().setHttp(true).execute().actionGet();
+        port = ((InetSocketTransportAddress) response.getNodes()[0].getHttp().address().boundAddress()).address().getPort();
 
         List<Map<String, Object>> products = createProducts(4);
         products.get(0).put("ProductName", "foo");
@@ -39,9 +41,6 @@ public class RestGetSuggestActionTest {
         createIndexWithMapping("products", node);
         indexProducts(products, node);
         refreshAllSuggesters();
-
-        NodesInfoResponse response = node.client().admin().cluster().prepareNodesInfo().setHttp(true).execute().actionGet();
-        port = ((InetSocketTransportAddress) response.getNodes()[0].getHttp().address().boundAddress()).address().getPort();
     }
 
     @After
@@ -49,7 +48,6 @@ public class RestGetSuggestActionTest {
         httpClient.close();
         node.client().close();
         node.close();
-        System.out.println("TEST");
     }
 
     @Ignore("AsyncHttpClient does not allow body in GET requests - need to change")
