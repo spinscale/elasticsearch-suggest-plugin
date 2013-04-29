@@ -1,4 +1,4 @@
-package de.spinscale.elasticsearch.action.suggest;
+package de.spinscale.elasticsearch.action.suggest.suggest;
 
 import org.elasticsearch.action.Action;
 import org.elasticsearch.client.Client;

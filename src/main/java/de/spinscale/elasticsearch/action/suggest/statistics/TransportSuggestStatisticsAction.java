@@ -1,8 +1,6 @@
-package de.spinscale.elasticsearch.action.suggest;
+package de.spinscale.elasticsearch.action.suggest.statistics;
 
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReferenceArray;
-
+import de.spinscale.elasticsearch.service.suggest.ShardSuggestService;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.ShardOperationFailedException;
 import org.elasticsearch.action.support.DefaultShardOperationFailedException;
@@ -19,42 +17,44 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.service.IndexService;
 import org.elasticsearch.indices.IndicesService;
-import de.spinscale.elasticsearch.service.suggest.ShardSuggestService;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
-public class TransportSuggestRefreshAction extends TransportBroadcastOperationAction<SuggestRefreshRequest, SuggestRefreshResponse, ShardSuggestRefreshRequest, ShardSuggestRefreshResponse> {
+public class TransportSuggestStatisticsAction extends TransportBroadcastOperationAction<SuggestStatisticsRequest, SuggestStatisticsResponse, ShardSuggestStatisticsRequest, ShardSuggestStatisticsResponse> {
 
     private final IndicesService indicesService;
 
     @Inject
-    public TransportSuggestRefreshAction(Settings settings, ThreadPool threadPool, ClusterService clusterService,
-            TransportService transportService, IndicesService indicesService) {
+    public TransportSuggestStatisticsAction(Settings settings, ThreadPool threadPool, ClusterService clusterService,
+                                            TransportService transportService, IndicesService indicesService) {
         super(settings, threadPool, clusterService, transportService);
         this.indicesService = indicesService;
     }
 
     @Override
     protected String transportAction() {
-        return SuggestRefreshAction.NAME;
+        return SuggestStatisticsAction.NAME;
     }
 
     @Override
     protected String executor() {
-        return ThreadPool.Names.INDEX;
+        return ThreadPool.Names.MANAGEMENT;
     }
 
     @Override
-    protected SuggestRefreshRequest newRequest() {
-        return new SuggestRefreshRequest();
+    protected SuggestStatisticsRequest newRequest() {
+        return new SuggestStatisticsRequest();
     }
 
     @Override
-    protected SuggestRefreshResponse newResponse(SuggestRefreshRequest request, AtomicReferenceArray shardsResponses, ClusterState clusterState) {
+    protected SuggestStatisticsResponse newResponse(SuggestStatisticsRequest request, AtomicReferenceArray shardsResponses, ClusterState clusterState) {
         int successfulShards = 0;
         int failedShards = 0;
         List<ShardOperationFailedException> shardFailures = Lists.newArrayList();
+        List<ShardSuggestStatisticsResponse> successfulStatistics = Lists.newArrayList();
 
         for (int i = 0; i < shardsResponses.length(); i++) {
             Object shardResponse = shardsResponses.get(i);
@@ -65,47 +65,47 @@ public class TransportSuggestRefreshAction extends TransportBroadcastOperationAc
                 shardFailures.add(new DefaultShardOperationFailedException((BroadcastShardOperationFailedException) shardResponse));
             } else {
                 successfulShards++;
+                successfulStatistics.add((ShardSuggestStatisticsResponse)shardResponse);
             }
         }
 
-        return new SuggestRefreshResponse(shardsResponses.length(), successfulShards, failedShards, shardFailures);
+        return new SuggestStatisticsResponse(shardsResponses.length(), successfulShards, failedShards, successfulStatistics, shardFailures);
     }
 
     @Override
-    protected ShardSuggestRefreshRequest newShardRequest() {
-        return new ShardSuggestRefreshRequest();
+    protected ShardSuggestStatisticsRequest newShardRequest() {
+        return new ShardSuggestStatisticsRequest();
     }
 
     @Override
-    protected ShardSuggestRefreshRequest newShardRequest(ShardRouting shard, SuggestRefreshRequest request) {
-        return new ShardSuggestRefreshRequest(shard.index(), shard.id(), request);
+    protected ShardSuggestStatisticsRequest newShardRequest(ShardRouting shard, SuggestStatisticsRequest request) {
+        return new ShardSuggestStatisticsRequest(shard.index(), shard.id(), request);
     }
 
     @Override
-    protected ShardSuggestRefreshResponse newShardResponse() {
-        return new ShardSuggestRefreshResponse();
+    protected ShardSuggestStatisticsResponse newShardResponse() {
+        return new ShardSuggestStatisticsResponse();
     }
 
     @Override
-    protected ShardSuggestRefreshResponse shardOperation(ShardSuggestRefreshRequest request) throws ElasticSearchException {
-        logger.trace("Entered TransportSuggestRefreshAction.shardOperation()");
+    protected ShardSuggestStatisticsResponse shardOperation(ShardSuggestStatisticsRequest request) throws ElasticSearchException {
         IndexService indexService = indicesService.indexServiceSafe(request.index());
         ShardSuggestService suggestShardService = indexService.shardInjectorSafe(request.shardId()).getInstance(ShardSuggestService.class);
-        return suggestShardService.refresh(request);
+        return suggestShardService.getStatistics();
     }
 
     @Override
-    protected GroupShardsIterator shards(ClusterState clusterState, SuggestRefreshRequest request, String[] concreteIndices) {
+    protected GroupShardsIterator shards(ClusterState clusterState, SuggestStatisticsRequest request, String[] concreteIndices) {
         return clusterService.operationRouting().searchShards(clusterState, request.indices(), concreteIndices, null, null);
     }
 
     @Override
-    protected ClusterBlockException checkGlobalBlock(ClusterState state, SuggestRefreshRequest request) {
+    protected ClusterBlockException checkGlobalBlock(ClusterState state, SuggestStatisticsRequest request) {
         return state.blocks().globalBlockedException(ClusterBlockLevel.METADATA);
     }
 
     @Override
-    protected ClusterBlockException checkRequestBlock(ClusterState state, SuggestRefreshRequest request, String[] concreteIndices) {
+    protected ClusterBlockException checkRequestBlock(ClusterState state, SuggestStatisticsRequest request, String[] concreteIndices) {
         return state.blocks().indicesBlockedException(ClusterBlockLevel.METADATA, concreteIndices);
     }
 }

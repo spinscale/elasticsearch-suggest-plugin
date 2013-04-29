@@ -1,4 +1,4 @@
-package de.spinscale.elasticsearch.action.suggest;
+package de.spinscale.elasticsearch.action.suggest.refresh;
 
 import de.spinscale.elasticsearch.client.action.suggest.SuggestRefreshRequestBuilder;
 import org.elasticsearch.action.Action;

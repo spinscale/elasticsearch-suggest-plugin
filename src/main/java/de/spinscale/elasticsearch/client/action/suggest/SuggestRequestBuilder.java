@@ -1,10 +1,10 @@
 package de.spinscale.elasticsearch.client.action.suggest;
 
-import de.spinscale.elasticsearch.action.suggest.SuggestAction;
+import de.spinscale.elasticsearch.action.suggest.suggest.SuggestAction;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequestBuilder;
-import de.spinscale.elasticsearch.action.suggest.SuggestRequest;
-import de.spinscale.elasticsearch.action.suggest.SuggestResponse;
+import de.spinscale.elasticsearch.action.suggest.suggest.SuggestRequest;
+import de.spinscale.elasticsearch.action.suggest.suggest.SuggestResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.internal.InternalClient;
 

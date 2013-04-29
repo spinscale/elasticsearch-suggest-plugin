@@ -2,9 +2,9 @@ package de.spinscale.elasticsearch.client.action.suggest;
 
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequestBuilder;
-import de.spinscale.elasticsearch.action.suggest.SuggestRefreshAction;
-import de.spinscale.elasticsearch.action.suggest.SuggestRefreshRequest;
-import de.spinscale.elasticsearch.action.suggest.SuggestRefreshResponse;
+import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshAction;
+import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshRequest;
+import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.internal.InternalClient;
 

@@ -1,4 +1,4 @@
-package de.spinscale.elasticsearch.action.suggest;
+package de.spinscale.elasticsearch.action.suggest.refresh;
 
 import org.elasticsearch.action.support.broadcast.BroadcastShardOperationResponse;
 

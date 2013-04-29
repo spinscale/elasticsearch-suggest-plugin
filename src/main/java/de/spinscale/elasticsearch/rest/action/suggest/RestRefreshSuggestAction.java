@@ -7,9 +7,9 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.elasticsearch.action.ActionListener;
-import de.spinscale.elasticsearch.action.suggest.SuggestRefreshAction;
-import de.spinscale.elasticsearch.action.suggest.SuggestRefreshRequest;
-import de.spinscale.elasticsearch.action.suggest.SuggestRefreshResponse;
+import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshAction;
+import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshRequest;
+import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;

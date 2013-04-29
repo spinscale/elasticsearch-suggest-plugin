@@ -4,9 +4,9 @@ import static org.elasticsearch.rest.RestRequest.Method.*;
 import static org.elasticsearch.rest.RestStatus.OK;
 import static org.elasticsearch.rest.action.support.RestActions.buildBroadcastShardsHeader;
 
-import de.spinscale.elasticsearch.action.suggest.SuggestAction;
-import de.spinscale.elasticsearch.action.suggest.SuggestRequest;
-import de.spinscale.elasticsearch.action.suggest.SuggestResponse;
+import de.spinscale.elasticsearch.action.suggest.suggest.SuggestAction;
+import de.spinscale.elasticsearch.action.suggest.suggest.SuggestRequest;
+import de.spinscale.elasticsearch.action.suggest.suggest.SuggestResponse;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.Client;

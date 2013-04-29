@@ -1,9 +1,11 @@
 package de.spinscale.elasticsearch.service.suggest;
 
-import de.spinscale.elasticsearch.action.suggest.ShardSuggestRefreshRequest;
-import de.spinscale.elasticsearch.action.suggest.ShardSuggestRefreshResponse;
-import de.spinscale.elasticsearch.action.suggest.ShardSuggestRequest;
-import de.spinscale.elasticsearch.action.suggest.ShardSuggestResponse;
+import de.spinscale.elasticsearch.action.suggest.refresh.ShardSuggestRefreshRequest;
+import de.spinscale.elasticsearch.action.suggest.refresh.ShardSuggestRefreshResponse;
+import de.spinscale.elasticsearch.action.suggest.statistics.FstStats;
+import de.spinscale.elasticsearch.action.suggest.statistics.ShardSuggestStatisticsResponse;
+import de.spinscale.elasticsearch.action.suggest.suggest.ShardSuggestRequest;
+import de.spinscale.elasticsearch.action.suggest.suggest.ShardSuggestResponse;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -23,6 +25,7 @@ import org.elasticsearch.common.cache.CacheLoader;
 import org.elasticsearch.common.cache.LoadingCache;
 import org.elasticsearch.common.collect.Collections2;
 import org.elasticsearch.common.collect.Lists;
+import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.analysis.AnalysisService;
@@ -33,7 +36,6 @@ import org.elasticsearch.index.settings.IndexSettings;
 import org.elasticsearch.index.shard.AbstractIndexShardComponent;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.shard.service.IndexShard;
-import org.elasticsearch.indices.analysis.IndicesAnalysisService;
 
 import java.io.IOException;
 import java.util.*;
@@ -106,7 +108,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
 
                         Analyzer queryAnalyzer = fieldMapper.searchAnalyzer();
                         if (fieldType.queryAnalyzer != null) {
-                            // TODO: not found case
+                            // TODO: not found case, possible NPE
                             queryAnalyzer = analysisService.analyzer(fieldType.queryAnalyzer).analyzer();
                         }
                         if (queryAnalyzer == null) {
@@ -115,7 +117,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
 
                         Analyzer indexAnalyzer = fieldMapper.searchAnalyzer();
                         if (fieldType.indexAnalyzer != null) {
-                            // TODO: not found case
+                            // TODO: not found case, possible NPE
                             indexAnalyzer = analysisService.analyzer(fieldType.indexAnalyzer).analyzer();
                         }
                         if (indexAnalyzer == null) {
@@ -298,6 +300,18 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         }
 
         indexReader = null;
+    }
+
+    public ShardSuggestStatisticsResponse getStatistics() {
+        ShardSuggestStatisticsResponse shardSuggestStatisticsResponse = new ShardSuggestStatisticsResponse(shardId());
+
+        for (FieldType fieldType : analyzingSuggesterCache.asMap().keySet()) {
+            long sizeInBytes = analyzingSuggesterCache.getIfPresent(fieldType).sizeInBytes();
+            FstStats.FstIndexShardStats fstIndexShardStats = new FstStats.FstIndexShardStats(shardId.id(), "analyzingsuggester-" + fieldType.field(), sizeInBytes);
+            shardSuggestStatisticsResponse.getFstIndexShardStats().add(fstIndexShardStats);
+        }
+
+        return shardSuggestStatisticsResponse;
     }
 
     // this does not look thread safe and nice...

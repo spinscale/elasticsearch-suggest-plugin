@@ -6,8 +6,14 @@ import static org.hamcrest.Matchers.is;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
+import de.spinscale.elasticsearch.action.suggest.statistics.FstStats;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.ObjectNode;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
@@ -16,6 +22,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -67,6 +74,45 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
 
         Response r = httpClient.preparePost("http://localhost:"+ port +"/" + index + "/product/__suggestRefresh").setBody(jsonBody).execute().get();
         assertThat(r.getStatusCode(), is(200));
+    }
+
+    @Override
+    public FstStats getStatistics() throws Exception {
+        Response r = httpClient.prepareGet("http://localhost:" + port + "/__suggestStatistics").execute().get();
+        assertThat(r.getStatusCode(), is(200));
+        System.out.println(r.getResponseBody());
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode rootObj = objectMapper.readTree(r.getResponseBody());
+        FstStats fstStats = new FstStats();
+        ObjectNode jsonFstStats = (ObjectNode) rootObj.get("fstStats");
+        Iterator<Map.Entry<String, JsonNode>> nodes = jsonFstStats.getFields();
+
+        while (nodes.hasNext()) {
+            Map.Entry<String, JsonNode> fstStatsNodeEntry =  nodes.next();
+
+            if (fstStatsNodeEntry.getValue().isArray()) {
+                ArrayNode jsonNode = (ArrayNode) fstStatsNodeEntry.getValue();
+                Iterator<JsonNode> shardFieldDataIterator = jsonNode.iterator();
+
+                List<FstStats.FstIndexShardStats> stats = Lists.newArrayList();
+                while (shardFieldDataIterator.hasNext()) {
+                    JsonNode shardFieldData =  shardFieldDataIterator.next();
+                    if (shardFieldData.isObject()) {
+                        ObjectNode node = (ObjectNode) shardFieldData;
+                        Map.Entry<String, JsonNode> entry = node.getFields().next();
+                        String fieldName = entry.getKey();
+                        long fieldValue = entry.getValue().getLongValue();
+                        FstStats.FstIndexShardStats fstIndexShardStats = new FstStats.FstIndexShardStats(0, fieldName, fieldValue);
+                        stats.add(fstIndexShardStats);
+                    }
+                }
+                fstStats.getStats().put(fstStatsNodeEntry.getKey(), stats);
+            }
+
+        }
+
+        return fstStats;
     }
 
     private String createJSONQuery(SuggestionQuery suggestionQuery) {

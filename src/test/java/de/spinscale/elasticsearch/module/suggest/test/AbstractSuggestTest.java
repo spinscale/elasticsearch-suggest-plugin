@@ -2,9 +2,18 @@ package de.spinscale.elasticsearch.module.suggest.test;
 
 import static de.spinscale.elasticsearch.module.suggest.test.NodeTestHelper.*;
 import static de.spinscale.elasticsearch.module.suggest.test.ProductTestHelper.*;
-
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+
+import de.spinscale.elasticsearch.action.suggest.statistics.FstStats;
+import org.elasticsearch.action.deletebyquery.DeleteByQueryRequest;
+import org.elasticsearch.common.collect.Lists;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.node.Node;
+import org.junit.After;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -15,17 +24,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.elasticsearch.action.deletebyquery.DeleteByQueryRequest;
-import org.elasticsearch.common.StopWatch;
-import org.elasticsearch.common.collect.Lists;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.node.Node;
-import org.junit.After;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runners.Parameterized.Parameters;
-import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
-
 public abstract class AbstractSuggestTest {
 
     protected String clusterName;
@@ -34,6 +32,8 @@ public abstract class AbstractSuggestTest {
     protected ExecutorService executor;
     public static final String DEFAULT_INDEX = "products";
     public static final String DEFAULT_TYPE  = "product";
+    private final int shards;
+    private final int nodeCount;
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -44,6 +44,8 @@ public abstract class AbstractSuggestTest {
     }
 
     public AbstractSuggestTest(int shards, int nodeCount) throws Exception {
+        this.shards = shards;
+        this.nodeCount = nodeCount;
         clusterName = "SuggestTest_" + Math.random();
         executor = Executors.newFixedThreadPool(nodeCount);
         List<Future<Node>> nodeFutures = Lists.newArrayList();
@@ -78,6 +80,7 @@ public abstract class AbstractSuggestTest {
     abstract public void refreshAllSuggesters() throws Exception;
     abstract public void refreshIndexSuggesters(String index) throws Exception;
     abstract public void refreshFieldSuggesters(String index, String field) throws Exception;
+    abstract public FstStats getStatistics() throws Exception;
 
     @Test
     public void testThatSimpleSuggestionWorks() throws Exception {
@@ -313,8 +316,40 @@ public abstract class AbstractSuggestTest {
     @Ignore
     @Test
     public void testThatFuzzySuggesterWorks() throws Exception {
-        // TODO: test that wild typos
-        throw new RuntimeException("Not yte implemented");
+        // TODO: test that wild typos work
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    @Test
+    public void gettingStatisticsShouldWork() throws Exception {
+        List<Map<String, Object>> products = createProducts("ProductName",
+                "BMW 318", "BMW 528", "BMW M3", "the BMW 320", "VW Jetta");
+        indexProducts(products, node);
+
+        FstStats emptyFstStats = getStatistics();
+        assertThat(emptyFstStats.getStats().keySet(), hasSize(0));
+
+        SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b")
+                .suggestType("full").analyzer("suggest_analyzer_stopwords").size(10);
+        getSuggestions(query);
+
+        FstStats filledFstStats = getStatistics();
+        assertThat(filledFstStats.getStats().keySet(), hasSize(greaterThanOrEqualTo(1)));
+
+        List<FstStats.FstIndexShardStats> allStatsFlattened = Lists.newArrayList();
+        for (List<FstStats.FstIndexShardStats> stats : filledFstStats.getStats().values()) {
+            allStatsFlattened.addAll(stats);
+        }
+
+        assertThat(allStatsFlattened.get(0).fieldName(), is("analyzingsuggester-ProductName.keyword"));
+        assertThat(allStatsFlattened.get(0).shardId(), greaterThanOrEqualTo(0));
+
+        // one of the fsts has to have a size greater than zero
+        long totalFstSize = 0;
+        for (FstStats.FstIndexShardStats stats : allStatsFlattened) {
+            totalFstSize += stats.size();
+        }
+        assertThat(totalFstSize, greaterThan(0L));
     }
 
 //    @Test

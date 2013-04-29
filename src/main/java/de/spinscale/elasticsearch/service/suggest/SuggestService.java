@@ -3,8 +3,8 @@ package de.spinscale.elasticsearch.service.suggest;
 import java.util.Iterator;
 
 import org.elasticsearch.ElasticSearchException;
-import de.spinscale.elasticsearch.action.suggest.SuggestRefreshRequest;
-import de.spinscale.elasticsearch.action.suggest.TransportSuggestRefreshAction;
+import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshRequest;
+import de.spinscale.elasticsearch.action.suggest.refresh.TransportSuggestRefreshAction;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.Nullable;

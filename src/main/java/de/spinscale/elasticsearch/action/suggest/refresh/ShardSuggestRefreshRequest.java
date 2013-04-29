@@ -1,4 +1,4 @@
-package de.spinscale.elasticsearch.action.suggest;
+package de.spinscale.elasticsearch.action.suggest.refresh;
 
 import java.io.IOException;
 

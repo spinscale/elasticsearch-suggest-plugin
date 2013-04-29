@@ -149,6 +149,7 @@ builder.execute().actionGet();
 
 * Find and verify the absence of the current resource leak (open deleted files after lots of merging) with the new architecture
 * Create a `__suggestStats` endpoint, which shows the current size of the fst and it the duration it took for the creation
+* Upgrade to latest ES 0.90 release
 * Add FuzzySuggester
 * Update documentation, talk about analyzing suggester and fst suggester and `setEnablePositionIncrements` for stopwords
 * Create the FST structure only on the primary shard and send it to the replica over the wire as byte array

@@ -1,7 +1,9 @@
 package de.spinscale.elasticsearch.module.suggest.test;
 
+import de.spinscale.elasticsearch.action.suggest.statistics.FstStats;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestRefreshRequestBuilder;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestRequestBuilder;
+import de.spinscale.elasticsearch.client.action.suggest.SuggestStatisticsRequestBuilder;
 import org.elasticsearch.common.Strings;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -60,5 +62,11 @@ public class SuggestBuildersTest extends AbstractSuggestTest {
     public void refreshFieldSuggesters(String index, String field) throws Exception {
         SuggestRefreshRequestBuilder builder = new SuggestRefreshRequestBuilder(node.client()).setIndices(index).setField(field);
         builder.execute().actionGet();
+    }
+
+    @Override
+    public FstStats getStatistics() throws Exception {
+        SuggestStatisticsRequestBuilder builder = new SuggestStatisticsRequestBuilder(node.client());
+        return builder.execute().actionGet().fstStats();
     }
 }

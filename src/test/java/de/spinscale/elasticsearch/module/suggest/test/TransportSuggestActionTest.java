@@ -1,6 +1,13 @@
 package de.spinscale.elasticsearch.module.suggest.test;
 
-import de.spinscale.elasticsearch.action.suggest.*;
+import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshAction;
+import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshRequest;
+import de.spinscale.elasticsearch.action.suggest.statistics.FstStats;
+import de.spinscale.elasticsearch.action.suggest.statistics.SuggestStatisticsAction;
+import de.spinscale.elasticsearch.action.suggest.statistics.SuggestStatisticsRequest;
+import de.spinscale.elasticsearch.action.suggest.suggest.SuggestAction;
+import de.spinscale.elasticsearch.action.suggest.suggest.SuggestRequest;
+import de.spinscale.elasticsearch.action.suggest.suggest.SuggestResponse;
 import org.elasticsearch.common.Strings;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -62,6 +69,12 @@ public class TransportSuggestActionTest extends AbstractSuggestTest {
         SuggestRefreshRequest refreshRequest = new SuggestRefreshRequest(index);
         refreshRequest.field(field);
         node.client().execute(SuggestRefreshAction.INSTANCE, refreshRequest).actionGet();
+    }
+
+    @Override
+    public FstStats getStatistics() throws Exception {
+        SuggestStatisticsRequest suggestStatisticsRequest = new SuggestStatisticsRequest();
+        return node.client().execute(SuggestStatisticsAction.INSTANCE, suggestStatisticsRequest).actionGet().fstStats();
     }
 
 }

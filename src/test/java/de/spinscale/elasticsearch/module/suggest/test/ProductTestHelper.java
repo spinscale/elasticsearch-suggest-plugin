@@ -42,7 +42,7 @@ public class ProductTestHelper {
         assertDocumentCountAfterIndexing(index, products.size() + currentCount, node);
     }
 
-    public static List<Map<String, Object>> createProducts(int count) throws Exception {
+    public static List<Map<String, Object>> createProducts(int count) {
         List<Map<String, Object>> products = Lists.newArrayList();
 
         for (int i = 0 ; i < count; i++) {
@@ -50,6 +50,16 @@ public class ProductTestHelper {
             product.put("ProductName", RandomStringGenerator.randomAlphabetic(10));
             product.put("ProductId", i + "_" + RandomStringGenerator.randomAlphanumeric(10));
             products.add(product);
+        }
+
+        return products;
+    }
+
+    public static List<Map<String, Object>> createProducts(String fieldName, String ... fields) {
+        List<Map<String, Object>> products = createProducts(fields.length);
+
+        for (int i = 0 ; i < fields.length ; i++) {
+            products.get(i).put(fieldName, fields[i]);
         }
 
         return products;

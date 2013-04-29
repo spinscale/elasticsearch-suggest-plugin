@@ -3,8 +3,10 @@ package de.spinscale.elasticsearch.module.suggest.test;
 import java.io.IOException;
 import java.util.List;
 
+import de.spinscale.elasticsearch.action.suggest.statistics.FstStats;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestRefreshRequestBuilder;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestRequestBuilder;
+import de.spinscale.elasticsearch.client.action.suggest.SuggestStatisticsRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -80,5 +82,11 @@ public class TransportClientTest extends AbstractSuggestTest {
     public void refreshFieldSuggesters(String index, String field) throws Exception {
         SuggestRefreshRequestBuilder builder = new SuggestRefreshRequestBuilder(client).setIndices(index).setField(field);
         builder.execute().actionGet();
+    }
+
+    @Override
+    public FstStats getStatistics() throws Exception {
+        SuggestStatisticsRequestBuilder builder = new SuggestStatisticsRequestBuilder(client);
+        return builder.execute().actionGet().fstStats();
     }
 }

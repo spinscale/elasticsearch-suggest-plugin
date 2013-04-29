@@ -1,4 +1,4 @@
-rootLogger: INFO, console
+rootLogger: DEBUG, console
 
 logger:
   de.spinscale.elasticsearch.service.suggest: DEBUG
@@ -10,7 +10,6 @@ logger:
   service.suggest: DEBUG
   action.suggest: DEBUG
   action.suggest: DEBUG
-  service.suggest.NodeClientWithSuggest: DEBUG
   service.suggest.SuggestService: DEBUG
   rest.action.suggest.SuggestAction: DEBUG
   plugin.suggest.SuggestPlugin: DEBUG

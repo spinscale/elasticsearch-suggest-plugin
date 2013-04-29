@@ -6,6 +6,7 @@ import de.spinscale.elasticsearch.module.suggest.ShardSuggestModule;
 import de.spinscale.elasticsearch.module.suggest.SuggestClientModule;
 import de.spinscale.elasticsearch.module.suggest.SuggestModule;
 import de.spinscale.elasticsearch.rest.action.suggest.RestRefreshSuggestAction;
+import de.spinscale.elasticsearch.rest.action.suggest.RestStatisticsAction;
 import de.spinscale.elasticsearch.service.suggest.SuggestService;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.component.LifecycleComponent;
@@ -38,6 +39,7 @@ public class SuggestPlugin extends AbstractPlugin {
     public void onModule(RestModule restModule) {
         restModule.addRestAction(RestSuggestAction.class);
         restModule.addRestAction(RestRefreshSuggestAction.class);
+        restModule.addRestAction(RestStatisticsAction.class);
     }
 
     @SuppressWarnings("rawtypes")
