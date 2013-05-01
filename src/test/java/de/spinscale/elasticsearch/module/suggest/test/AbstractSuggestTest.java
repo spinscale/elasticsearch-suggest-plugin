@@ -11,7 +11,6 @@ import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.node.Node;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.Parameterized.Parameters;
 
@@ -258,11 +257,17 @@ public abstract class AbstractSuggestTest {
         assertSuggestions(suggestions, "BMW 318", "BMW 528", "BMW M3", "the BMW 320");
     }
 
-    @Ignore
     @Test
     public void testThatFuzzySuggesterWorks() throws Exception {
-        // TODO: test that wild typos work
-        throw new RuntimeException("Not yet implemented");
+        List<Map<String, Object>> products = createProducts("ProductName", "BMW 318", "BMW 528", "BMW M3",
+                "the BMW 320", "VW Jetta");
+        indexProducts(products, node);
+
+        SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "bwm")
+                .suggestType("fuzzy").analyzer("standard").size(10);
+        List<String> suggestions = getSuggestions(query);
+
+        assertSuggestions(suggestions, "BMW 318", "BMW 528", "BMW M3");
     }
 
     @Test

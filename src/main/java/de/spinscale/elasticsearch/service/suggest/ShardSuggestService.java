@@ -6,15 +6,14 @@ import de.spinscale.elasticsearch.action.suggest.statistics.FstStats;
 import de.spinscale.elasticsearch.action.suggest.statistics.ShardSuggestStatisticsResponse;
 import de.spinscale.elasticsearch.action.suggest.suggest.ShardSuggestRequest;
 import de.spinscale.elasticsearch.action.suggest.suggest.ShardSuggestResponse;
-import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.search.spell.HighFrequencyDictionary;
 import org.apache.lucene.search.spell.SpellChecker;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
 import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
+import org.apache.lucene.search.suggest.analyzing.FuzzySuggester;
 import org.apache.lucene.search.suggest.fst.FSTCompletionLookup;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
@@ -25,12 +24,10 @@ import org.elasticsearch.common.cache.CacheLoader;
 import org.elasticsearch.common.cache.LoadingCache;
 import org.elasticsearch.common.collect.Collections2;
 import org.elasticsearch.common.collect.Lists;
-import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.analysis.AnalysisService;
 import org.elasticsearch.index.engine.Engine;
-import org.elasticsearch.index.mapper.FieldMapper;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.settings.IndexSettings;
 import org.elasticsearch.index.shard.AbstractIndexShardComponent;
@@ -49,6 +46,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
     private IndexReader indexReader;
     private final LoadingCache<String, FSTCompletionLookup> lookupCache;
     private final LoadingCache<FieldType, AnalyzingSuggester> analyzingSuggesterCache;
+    private final LoadingCache<FieldType, FuzzySuggester> fuzzySuggesterCache;
     private final LoadingCache<String, HighFrequencyDictionary> dictCache;
     private final LoadingCache<String, SpellChecker> spellCheckerCache;
     private final LoadingCache<String, RAMDirectory> ramDirectoryCache;
@@ -101,35 +99,10 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         );
 
         analyzingSuggesterCache = CacheBuilder.newBuilder().build(
-                new CacheLoader<FieldType, AnalyzingSuggester>() {
-                    @Override
-                    public AnalyzingSuggester load(FieldType fieldType) throws Exception {
-                        FieldMapper fieldMapper = mapperService.smartName(fieldType.field(), fieldType.types()).mapper();
+                new AbstractCacheLoaderSuggester.CacheLoaderAnalyzingSuggester(mapperService, analysisService, dictCache));
 
-                        Analyzer queryAnalyzer = fieldMapper.searchAnalyzer();
-                        if (fieldType.queryAnalyzer != null) {
-                            // TODO: not found case, possible NPE
-                            queryAnalyzer = analysisService.analyzer(fieldType.queryAnalyzer).analyzer();
-                        }
-                        if (queryAnalyzer == null) {
-                            queryAnalyzer = new StandardAnalyzer(Version.LUCENE_42);
-                        }
-
-                        Analyzer indexAnalyzer = fieldMapper.searchAnalyzer();
-                        if (fieldType.indexAnalyzer != null) {
-                            // TODO: not found case, possible NPE
-                            indexAnalyzer = analysisService.analyzer(fieldType.indexAnalyzer).analyzer();
-                        }
-                        if (indexAnalyzer == null) {
-                            indexAnalyzer = new StandardAnalyzer(Version.LUCENE_42);
-                        }
-
-                        AnalyzingSuggester analyzingSuggester = new AnalyzingSuggester(indexAnalyzer, queryAnalyzer);
-                        analyzingSuggester.build(dictCache.getUnchecked(fieldType.field()));
-                        return analyzingSuggester;
-                    }
-                }
-        );
+        fuzzySuggesterCache = CacheBuilder.newBuilder().build(
+                new AbstractCacheLoaderSuggester.CacheLoaderFuzzySuggester(mapperService, analysisService, dictCache));
     }
 
     public ShardSuggestRefreshResponse refresh(ShardSuggestRefreshRequest shardSuggestRefreshRequest) {
@@ -239,43 +212,32 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
     }
 
     private Collection<String> getSuggestions(ShardSuggestRequest shardSuggestRequest) {
+        List<LookupResult> lookupResults = Lists.newArrayList();
         if ("full".equals(shardSuggestRequest.suggestType())) {
-            // FieldMapper fieldMapper = mapperService.smartName(shardSuggestRequest.field(), shardSuggestRequest.types()).mapper();
-            // Analyzer indexAnalyzer = fieldMapper.indexAnalyzer() != null ? fieldMapper.indexAnalyzer() : new StandardAnalyzer(Version.LUCENE_41);
-            // Analyzer searchAnalyzer = fieldMapper.searchAnalyzer() != null ? fieldMapper.searchAnalyzer() : new StandardAnalyzer(Version.LUCENE_41);;
-            //AnalyzingSuggester analyzingSuggester = new AnalyzingSuggester(indexAnalyzer, searchAnalyzer);
+            // TODO: support for multiple types here
+            lookupResults.addAll(analyzingSuggesterCache.getUnchecked(new FieldType(shardSuggestRequest))
+                    .lookup(shardSuggestRequest.term(), false, shardSuggestRequest.size()));
 
-            List<LookupResult> lookupResults = Lists.newArrayList();
-            if (shardSuggestRequest.types().length > 0) {
-                lookupResults.addAll(analyzingSuggesterCache.getUnchecked(new FieldType(shardSuggestRequest))
-                        .lookup(shardSuggestRequest.term(), false, shardSuggestRequest.size()));
+        } else if ("fuzzy".equals(shardSuggestRequest.suggestType())) {
+            // TODO: support for multiple types here
+            lookupResults.addAll(fuzzySuggesterCache.getUnchecked(new FieldType(shardSuggestRequest))
+                    .lookup(shardSuggestRequest.term(), false, shardSuggestRequest.size()));
 
-                // TODO: CHECK IF THE LIST MUST BE BELOW SIZE.. I DO NOT THINK THAT, AS THIS IS A SHARD
-                /*
-                if (lookupResults.size() >= shardSuggestRequest.size()) {
-                    lookupResults = lookupResults.subList(0, shardSuggestRequest.size());
-                    break;
-                }
-                */
-            } else {
-                lookupResults.addAll(analyzingSuggesterCache.getUnchecked(new FieldType(shardSuggestRequest))
-                        .lookup(shardSuggestRequest.term(), false, shardSuggestRequest.size()));
+        } else {
+            lookupResults.addAll(lookupCache.getUnchecked(shardSuggestRequest.field())
+                    .lookup(shardSuggestRequest.term(), true, shardSuggestRequest.size() + 1));
+            Collection<String> suggestions = Collections2.transform(lookupResults, new LookupResultToStringFunction());
 
+            float similarity = shardSuggestRequest.similarity();
+            if (similarity < 1.0f && suggestions.size() < shardSuggestRequest.size()) {
+                suggestions = Lists.newArrayList(suggestions);
+                suggestions.addAll(getSimilarSuggestions(shardSuggestRequest));
             }
 
-            return Collections2.transform(lookupResults, new LookupResultToStringFunction());
+            return suggestions;
         }
 
-        List<LookupResult> lookupResults = lookupCache.getUnchecked(shardSuggestRequest.field()).lookup(shardSuggestRequest.term(), true, shardSuggestRequest.size() + 1);
-        Collection<String> suggestions = Collections2.transform(lookupResults, new LookupResultToStringFunction());
-
-        float similarity = shardSuggestRequest.similarity();
-        if (similarity < 1.0f && suggestions.size() < shardSuggestRequest.size()) {
-            suggestions = Lists.newArrayList(suggestions);
-            suggestions.addAll(getSimilarSuggestions(shardSuggestRequest));
-        }
-
-        return suggestions;
+        return Collections2.transform(lookupResults, new LookupResultToStringFunction());
     }
 
     private class LookupResultToStringFunction implements Function<LookupResult, String> {
