@@ -15,10 +15,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.Parameterized.Parameters;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -32,8 +29,6 @@ public abstract class AbstractSuggestTest {
     protected ExecutorService executor;
     public static final String DEFAULT_INDEX = "products";
     public static final String DEFAULT_TYPE  = "product";
-    private final int shards;
-    private final int nodeCount;
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -44,8 +39,6 @@ public abstract class AbstractSuggestTest {
     }
 
     public AbstractSuggestTest(int shards, int nodeCount) throws Exception {
-        this.shards = shards;
-        this.nodeCount = nodeCount;
         clusterName = "SuggestTest_" + Math.random();
         executor = Executors.newFixedThreadPool(nodeCount);
         List<Future<Node>> nodeFutures = Lists.newArrayList();
@@ -84,79 +77,52 @@ public abstract class AbstractSuggestTest {
 
     @Test
     public void testThatSimpleSuggestionWorks() throws Exception {
-        List<Map<String, Object>> products = createProducts(4);
-        products.get(0).put("ProductName", "foo");
-        products.get(1).put("ProductName", "foob");
-        products.get(2).put("ProductName", "foobar");
-        products.get(3).put("ProductName", "boof");
+        List<Map<String, Object>> products = createProducts("ProductName", "foo", "foob", "foobar", "boof");
         indexProducts(products, node);
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "foo", 10);
-        assertThat(suggestions.toString(), suggestions, hasSize(3));
-        assertThat(suggestions.toString(), suggestions, contains("foo", "foob", "foobar"));
+        assertSuggestions(suggestions, "foo", "foob", "foobar");
     }
 
     @Test
     public void testThatAllFieldSuggestionsWorks() throws Exception {
-        List<Map<String, Object>> products = createProducts(4);
-        products.get(0).put("ProductName", "foo");
-        products.get(1).put("ProductName", "foob");
-        products.get(2).put("ProductName", "foobar");
-        products.get(3).put("ProductName", "boof");
+        List<Map<String, Object>> products = createProducts("ProductName", "foo", "foob", "foobar", "boof");
         indexProducts(products, node);
 
         List<String> suggestions = getSuggestions("_all", "foo", 10);
-        assertThat(suggestions.toString(), suggestions, hasSize(3));
-        assertThat(suggestions.toString(), suggestions, contains("foo", "foob", "foobar"));
+        assertSuggestions(suggestions, "foo", "foob", "foobar");
     }
 
     @Test
     public void testThatSimpleSuggestionShouldSupportLimit() throws Exception {
-        List<Map<String, Object>> products = createProducts(3);
-        products.get(0).put("ProductName", "foob");
-        products.get(1).put("ProductName", "fooba");
-        products.get(2).put("ProductName", "foobar");
-        assertThat(products.size(), is(3));
+        List<Map<String, Object>> products = createProducts("ProductName", "foo", "fooba", "foobar");
         indexProducts(products, node);
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "foo", 2);
-        assertThat(suggestions + " is not correct", suggestions, hasSize(2));
-        assertThat(suggestions.toString(), suggestions, contains("foob", "fooba"));
+        assertSuggestions(suggestions, "foo", "fooba");
     }
 
     @Test
     public void testThatSimpleSuggestionShouldSupportLimitWithConcreteWord() throws Exception {
-        List<Map<String, Object>> products = createProducts(3);
-        products.get(0).put("ProductName", "foo");
-        products.get(1).put("ProductName", "fooba");
-        products.get(2).put("ProductName", "foobar");
-        assertThat(products.size(), is(3));
+        List<Map<String, Object>> products = createProducts("ProductName", "foo", "fooba", "foobar");
         indexProducts(products, node);
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "foo", 2);
-        assertThat(suggestions + " is not correct", suggestions, hasSize(2));
-        assertThat(suggestions, contains("foo", "fooba"));
+        assertSuggestions(suggestions, "foo", "fooba");
     }
 
     @Test
     public void testThatSuggestionShouldNotContainDuplicates() throws Exception {
-        List<Map<String, Object>> products = createProducts(3);
-        products.get(0).put("ProductName", "foo");
-        products.get(1).put("ProductName", "foob");
-        products.get(2).put("ProductName", "foo");
+        List<Map<String, Object>> products = createProducts("ProductName", "foo", "foo", "foob");
         indexProducts(products, node);
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "foo", 10);
-        assertThat(suggestions, hasSize(2));
-        assertThat(suggestions, contains("foo", "foob"));
+        assertSuggestions(suggestions, "foo", "foob");
     }
 
     @Test
     public void testThatSuggestionShouldWorkOnDifferentFields() throws Exception {
-        List<Map<String, Object>> products = createProducts(3);
-        products.get(0).put("ProductName", "Kochjacke Pute");
-        products.get(1).put("ProductName", "Kochjacke Henne");
-        products.get(2).put("ProductName", "Kochjacke Hahn");
+        List<Map<String, Object>> products = createProducts("ProductName", "Kochjacke Pute", "Kochjacke Henne", "Kochjacke Hahn");
         products.get(0).put("Description", "Kochjacke Pute");
         products.get(1).put("Description", "Kochjacke Henne");
         products.get(2).put("Description", "Kochjacke Hahn");
@@ -171,10 +137,8 @@ public abstract class AbstractSuggestTest {
 
     @Test
     public void testThatSuggestionShouldWorkWithWhitespaces() throws Exception {
-        List<Map<String, Object>> products = createProducts(3);
-        products.get(0).put("ProductName", "Kochjacke Paul");
-        products.get(1).put("ProductName", "Kochjacke Pauline");
-        products.get(2).put("ProductName", "Kochjacke Paulinea");
+        List<Map<String, Object>> products = createProducts("ProductName", "Kochjacke Paul", "Kochjacke Pauline",
+                "Kochjacke Paulinea");
         indexProducts(products, node);
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "kochja", 10);
@@ -189,10 +153,8 @@ public abstract class AbstractSuggestTest {
 
     @Test
     public void testThatSuggestionWithShingleWorksAfterUpdate() throws Exception {
-        List<Map<String, Object>> products = createProducts(3);
-        products.get(0).put("ProductName", "Kochjacke Paul");
-        products.get(1).put("ProductName", "Kochjacke Pauline");
-        products.get(2).put("ProductName", "Kochjacke Paulinator");
+        List<Map<String, Object>> products = createProducts("ProductName", "Kochjacke Paul", "Kochjacke Pauline",
+                "Kochjacke Paulinator");
         indexProducts(products, node);
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "kochjacke", 10);
@@ -215,11 +177,8 @@ public abstract class AbstractSuggestTest {
 
     @Test
     public void testThatSuggestionWorksWithSimilarity() throws Exception {
-        List<Map<String, Object>> products = createProducts(4);
-        products.get(0).put("ProductName", "kochjacke bla");
-        products.get(1).put("ProductName", "kochjacke blubb");
-        products.get(2).put("ProductName", "kochjacke blibb");
-        products.get(3).put("ProductName", "kochjacke paul");
+        List<Map<String, Object>> products = createProducts("ProductName", "kochjacke bla", "kochjacke blubb",
+                "kochjacke blibb", "kochjacke paul");
         indexProducts(products, node);
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "kochajcke", 10, 0.75f);
@@ -231,9 +190,7 @@ public abstract class AbstractSuggestTest {
     public void testThatRefreshingPerIndexWorks() throws Exception {
         createIndexWithMapping("secondproductsindex", node);
 
-        List<Map<String, Object>> products = createProducts(2);
-        products.get(0).put("ProductName", "autoreifen");
-        products.get(1).put("ProductName", "autorad");
+        List<Map<String, Object>> products = createProducts("ProductName", "autoreifen", "autorad");
         indexProducts(products, node);
         indexProducts(products, "secondproductsindex", node);
 
@@ -244,8 +201,7 @@ public abstract class AbstractSuggestTest {
         getSuggestions(secondProductsIndexQuery);
 
         // index another product
-        List<Map<String, Object>> newProducts = createProducts(1);
-        newProducts.get(0).put("ProductName", "automatik");
+        List<Map<String, Object>> newProducts = createProducts("ProductName", "automatik");
         indexProducts(newProducts, node);
         indexProducts(newProducts, "secondproductsindex", node);
 
@@ -259,16 +215,13 @@ public abstract class AbstractSuggestTest {
 
     @Test
     public void testThatRefreshingPerIndexFieldWorks() throws Exception {
-        List<Map<String, Object>> products = createProducts(2);
-        products.get(0).put("ProductName", "autoreifen");
-        products.get(1).put("ProductName", "autorad");
+        List<Map<String, Object>> products = createProducts("ProductName", "autoreifen", "autorad");
         indexProducts(products, node);
 
         getSuggestions("ProductName.suggest", "auto", 10);
         getSuggestions("ProductName.lowercase", "auto", 10);
 
-        List<Map<String, Object>> newProducts = createProducts(1);
-        newProducts.get(0).put("ProductName", "automatik");
+        List<Map<String, Object>> newProducts = createProducts("ProductName", "automatik");
         indexProducts(newProducts, node);
 
         refreshFieldSuggesters("products", "ProductName.suggest");
@@ -281,12 +234,8 @@ public abstract class AbstractSuggestTest {
 
     @Test
     public void testThatAnalyzingSuggesterWorks() throws Exception {
-        List<Map<String, Object>> products = createProducts(5);
-        products.get(0).put("ProductName", "BMW 318");
-        products.get(1).put("ProductName", "BMW 528");
-        products.get(2).put("ProductName", "BMW M3");
-        products.get(3).put("ProductName", "the BMW 320");
-        products.get(4).put("ProductName", "VW Jetta");
+        List<Map<String, Object>> products = createProducts("ProductName", "BMW 318", "BMW 528", "BMW M3",
+                "the BMW 320", "VW Jetta");
         indexProducts(products, node);
 
         SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b")
@@ -298,12 +247,8 @@ public abstract class AbstractSuggestTest {
 
     @Test
     public void testThatAnalyzingSuggesterSupportsStopWords() throws Exception {
-        List<Map<String, Object>> products = createProducts(5);
-        products.get(0).put("ProductName", "BMW 318");
-        products.get(1).put("ProductName", "BMW 528");
-        products.get(2).put("ProductName", "BMW M3");
-        products.get(3).put("ProductName", "the BMW 320");
-        products.get(4).put("ProductName", "VW Jetta");
+        List<Map<String, Object>> products = createProducts("ProductName", "BMW 318", "BMW 528", "BMW M3",
+                "the BMW 320", "VW Jetta");
         indexProducts(products, node);
 
         SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b")
@@ -328,6 +273,7 @@ public abstract class AbstractSuggestTest {
 
         FstStats emptyFstStats = getStatistics();
         assertThat(emptyFstStats.getStats().keySet(), hasSize(0));
+        assertThat(getFstSizeSum(emptyFstStats), equalTo(0L));
 
         SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b")
                 .suggestType("full").analyzer("suggest_analyzer_stopwords").size(10);
@@ -336,20 +282,22 @@ public abstract class AbstractSuggestTest {
         FstStats filledFstStats = getStatistics();
         assertThat(filledFstStats.getStats().keySet(), hasSize(greaterThanOrEqualTo(1)));
 
-        List<FstStats.FstIndexShardStats> allStatsFlattened = Lists.newArrayList();
-        for (List<FstStats.FstIndexShardStats> stats : filledFstStats.getStats().values()) {
-            allStatsFlattened.addAll(stats);
-        }
+        List<List<FstStats.FstIndexShardStats>> allStats = Lists.newArrayList(filledFstStats.getStats().values());
+        assertThat(allStats.get(0).get(0).fieldName(), is("analyzingsuggester-ProductName.keyword"));
+        assertThat(allStats.get(0).get(0).shardId(), greaterThanOrEqualTo(0));
+        assertThat(getFstSizeSum(filledFstStats), greaterThan(0L));
+    }
 
-        assertThat(allStatsFlattened.get(0).fieldName(), is("analyzingsuggester-ProductName.keyword"));
-        assertThat(allStatsFlattened.get(0).shardId(), greaterThanOrEqualTo(0));
-
-        // one of the fsts has to have a size greater than zero
+    private long getFstSizeSum(FstStats fstStats) {
         long totalFstSize = 0;
-        for (FstStats.FstIndexShardStats stats : allStatsFlattened) {
-            totalFstSize += stats.size();
+
+        for (List<FstStats.FstIndexShardStats> stats : fstStats.getStats().values()) {
+            for (FstStats.FstIndexShardStats indexShardStats : stats) {
+                totalFstSize += indexShardStats.size();
+            }
         }
-        assertThat(totalFstSize, greaterThan(0L));
+
+        return totalFstSize;
     }
 
 //    @Test

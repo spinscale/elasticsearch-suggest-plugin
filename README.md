@@ -149,8 +149,8 @@ builder.execute().actionGet();
 
 * Find and verify the absence of the current resource leak (open deleted files after lots of merging) with the new architecture
 * Make tests stable
-* Add FuzzySuggester
 * Update documentation, talk about analyzing suggester and fst suggester and `setEnablePositionIncrements` for stopwords
+* Add FuzzySuggester
 * Create the FST structure only on the primary shard and send it to the replica over the wire as byte array
 * Create a testing rule that does start a node/cluster only once per test run, not per test. This costs so much time.
 
