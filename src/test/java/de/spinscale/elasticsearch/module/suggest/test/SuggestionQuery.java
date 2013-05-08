@@ -52,8 +52,14 @@ public class SuggestionQuery {
 
     @Override
     public String toString() {
-        return String.format("Index [%s] type [%s] field [%s] term [%s] size [%s] similarity [%s], queryAnalyzer[%s], indexAnalyzer[%s]",
-                index, type, field, term, size, similarity, queryAnalyzer, indexAnalyzer);
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("Index [%s] type [%s] field [%s] term [%s]", index, type, field, term));
+        if (size != null) sb.append(String.format(" size[%s]", size));
+        if (similarity != null) sb.append(String.format(" similarity[%s]", similarity));
+        if (analyzer != null) sb.append(String.format(" analyzer[%s]", analyzer));
+        if (indexAnalyzer!= null) sb.append(String.format(" indexAnalyzer[%s]", indexAnalyzer));
+        if (queryAnalyzer != null) sb.append(String.format(" queryAnalyzer[%s]", queryAnalyzer));
+        return sb.toString();
     }
 
 }

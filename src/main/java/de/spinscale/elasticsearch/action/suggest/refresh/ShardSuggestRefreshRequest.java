@@ -36,4 +36,8 @@ public class ShardSuggestRefreshRequest extends BroadcastShardOperationRequest {
         out.writeOptionalString(field);
     }
 
+    @Override
+    public String toString() {
+        return index() + " " + shardId() + " " + field;
+    }
 }
