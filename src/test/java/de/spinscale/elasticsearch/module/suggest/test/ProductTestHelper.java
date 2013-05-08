@@ -13,6 +13,7 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.common.RandomStringGenerator;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -26,11 +27,18 @@ public class ProductTestHelper {
     }
 
     static void indexProducts(List<Map<String, Object>> products, String index, Node node) throws Exception {
+        indexProducts(products, index, null, node);
+    }
+
+    static void indexProducts(List<Map<String, Object>> products, String index, String routing, Node node) throws Exception {
         long currentCount = getCurrentDocumentCount(index, node);
         BulkRequest bulkRequest = new BulkRequest();
         for (Map<String, Object> product : products) {
             IndexRequest indexRequest = new IndexRequest(index, "product", (String)product.get("ProductId"));
             indexRequest.source(product);
+            if (Strings.hasLength(routing)) {
+                indexRequest.routing(routing);
+            }
             bulkRequest.add(indexRequest);
         }
         bulkRequest.refresh(true);

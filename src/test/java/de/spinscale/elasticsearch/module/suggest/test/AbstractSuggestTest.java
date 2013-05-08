@@ -11,6 +11,7 @@ import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.node.Node;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.Parameterized.Parameters;
 
@@ -55,7 +56,6 @@ public abstract class AbstractSuggestTest {
         node = nodes.get(0);
         createIndexWithMapping("products", node);
     }
-
 
     @After
     public void stopNodes() throws Exception {
@@ -187,48 +187,56 @@ public abstract class AbstractSuggestTest {
 
     @Test
     public void testThatRefreshingPerIndexWorks() throws Exception {
+        // having routing ensures that all the data is written into one shard
+        // this ensures that when adding the second product it is added to the same shard
+        // if it is not added to the same shard, refreshing might not work as expected
+        // in case the data is added to a shard where there was no data in before, it is added immediately to the
+        // suggestions, this means more results than expected might be returned in the last line of this test
         createIndexWithMapping("secondproductsindex", node);
 
         List<Map<String, Object>> products = createProducts("ProductName", "autoreifen", "autorad");
-        indexProducts(products, node);
-        indexProducts(products, "secondproductsindex", node);
+        indexProducts(products, DEFAULT_INDEX, "someRoutingKey", node);
+        indexProducts(products, "secondproductsindex", "someRoutingKey", node);
 
         // get suggestions from both indexes to create fst structures
         SuggestionQuery productsQuery = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.suggest", "auto");
-        getSuggestions(productsQuery);
         SuggestionQuery secondProductsIndexQuery = new SuggestionQuery("secondproductsindex", DEFAULT_TYPE, "ProductName.suggest", "auto");
+        getSuggestions(productsQuery);
         getSuggestions(secondProductsIndexQuery);
 
         // index another product
         List<Map<String, Object>> newProducts = createProducts("ProductName", "automatik");
-        indexProducts(newProducts, node);
-        indexProducts(newProducts, "secondproductsindex", node);
+        indexProducts(newProducts, DEFAULT_INDEX, "someRoutingKey", node);
+        indexProducts(newProducts, "secondproductsindex", "someRoutingKey", node);
 
         refreshIndexSuggesters("products");
 
-        List<String> suggestionsFromProductIndex = getSuggestions("ProductName.suggest", "auto", 10);
-        assertSuggestions(suggestionsFromProductIndex, "automatik", "autorad", "autoreifen");
-        List<String> suggestionsFromSecondProductIndex = getSuggestions(secondProductsIndexQuery);
-        assertSuggestions(suggestionsFromSecondProductIndex, "autorad", "autoreifen");
+        assertSuggestions(productsQuery, "automatik", "autorad", "autoreifen");
+        assertSuggestions(secondProductsIndexQuery, "autorad", "autoreifen");
     }
 
     @Test
     public void testThatRefreshingPerIndexFieldWorks() throws Exception {
+        // having routing ensures that all the data is written into one shard
+        // this ensures that when adding the second product it is added to the same shard
+        // if it is not added to the same shard, refreshing might not work as expected
+        // in case the data is added to a shard where there was no data in before, it is added immediately to the
+        // suggestions, this means more results than expected might be returned in the last line of this test
         List<Map<String, Object>> products = createProducts("ProductName", "autoreifen", "autorad");
-        indexProducts(products, node);
+        indexProducts(products, DEFAULT_INDEX, "someRoutingKey", node);
 
-        getSuggestions("ProductName.suggest", "auto", 10);
-        getSuggestions("ProductName.lowercase", "auto", 10);
+        SuggestionQuery suggestionQuery = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.suggest", "auto");
+        SuggestionQuery lowerCaseQuery = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.lowercase", "auto");
+        getSuggestions(suggestionQuery);
+        getSuggestions(lowerCaseQuery);
 
         List<Map<String, Object>> newProducts = createProducts("ProductName", "automatik");
-        indexProducts(newProducts, node);
+        indexProducts(newProducts, DEFAULT_INDEX, "someRoutingKey", node);
 
         refreshFieldSuggesters("products", "ProductName.suggest");
 
-        List<String> suggestionsFromSuggestField = getSuggestions("ProductName.suggest", "auto", 10);
-        List<String> suggestionsFromLowercaseField = getSuggestions("ProductName.lowercase", "auto", 10);
-        assertSuggestions(suggestionsFromSuggestField, "automatik", "autorad", "autoreifen");
-        assertSuggestions(suggestionsFromLowercaseField, "autorad", "autoreifen");
+        assertSuggestions(suggestionQuery, "automatik", "autorad", "autoreifen");
+        assertSuggestions(lowerCaseQuery, "autorad", "autoreifen");
     }
 
     @Test
@@ -336,6 +344,12 @@ public abstract class AbstractSuggestTest {
 
     private void assertSuggestions(List<String> suggestions, String ... terms) {
         assertThat(suggestions.toString() + " should have size " + terms.length, suggestions, hasSize(terms.length));
+        assertThat("Suggestions are: " + suggestions, suggestions, contains(terms));
+    }
+
+    private void assertSuggestions(SuggestionQuery query, String ... terms) throws Exception {
+        List<String> suggestions = getSuggestions(query);
+        assertThat(suggestions.toString() + " for query " + query + " should have size " + terms.length, suggestions, hasSize(terms.length));
         assertThat("Suggestions are: " + suggestions, suggestions, contains(terms));
     }
 
