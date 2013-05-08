@@ -148,14 +148,13 @@ builder.execute().actionGet();
 ## TODO
 
 * Find and verify the absence of the current resource leak (open deleted files after lots of merging) with the new architecture
-* Make tests stable
 * Update documentation, talk about analyzing suggester and fst suggester and `setEnablePositionIncrements` for stopwords
-* Add FuzzySuggester
 * Create the FST structure only on the primary shard and send it to the replica over the wire as byte array
 * Create a testing rule that does start a node/cluster only once per test run, not per test. This costs so much time.
 
 ## Changelog
 
+* 2013-05-01: Added support for the fuzzy suggester
 * 2013-04-28: Added support for the analyzing suggester and stopwords
 * 2013-03-20: Moved to own package namespaces, changed REST endpoints in order to be compatible with elasticsearch 0.90
 * 2013-01-18: Support for HTTP GET, together with JSONP and the source parameter.
