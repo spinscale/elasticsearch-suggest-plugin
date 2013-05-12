@@ -56,6 +56,7 @@ public class SuggestionQuery {
         sb.append(String.format("Index [%s] type [%s] field [%s] term [%s]", index, type, field, term));
         if (size != null) sb.append(String.format(" size[%s]", size));
         if (similarity != null) sb.append(String.format(" similarity[%s]", similarity));
+        if (suggestType != null) sb.append(String.format(" suggestType[%s]", suggestType));
         if (analyzer != null) sb.append(String.format(" analyzer[%s]", analyzer));
         if (indexAnalyzer!= null) sb.append(String.format(" indexAnalyzer[%s]", indexAnalyzer));
         if (queryAnalyzer != null) sb.append(String.format(" queryAnalyzer[%s]", queryAnalyzer));
