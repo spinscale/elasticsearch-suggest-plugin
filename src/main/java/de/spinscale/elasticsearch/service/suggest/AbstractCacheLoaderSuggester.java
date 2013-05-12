@@ -6,9 +6,12 @@ import org.apache.lucene.search.spell.HighFrequencyDictionary;
 import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
 import org.apache.lucene.search.suggest.analyzing.FuzzySuggester;
 import org.apache.lucene.util.Version;
+import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.cache.CacheLoader;
 import org.elasticsearch.common.cache.LoadingCache;
 import org.elasticsearch.index.analysis.AnalysisService;
+import org.elasticsearch.index.analysis.NamedAnalyzer;
 import org.elasticsearch.index.mapper.FieldMapper;
 import org.elasticsearch.index.mapper.MapperService;
 
@@ -30,18 +33,24 @@ public abstract class AbstractCacheLoaderSuggester<T> extends CacheLoader<ShardS
         FieldMapper fieldMapper = mapperService.smartName(fieldType.field(), fieldType.types()).mapper();
 
         Analyzer queryAnalyzer = fieldMapper.searchAnalyzer();
-        if (fieldType.indexAnalyzer() != null) {
-            // TODO: not found case, possible NPE
-            queryAnalyzer = analysisService.analyzer(fieldType.queryAnalyzer()).analyzer();
+        if (Strings.hasLength(fieldType.indexAnalyzer())) {
+            NamedAnalyzer namedAnalyzer = analysisService.analyzer(fieldType.queryAnalyzer());
+            if (namedAnalyzer == null) {
+                throw new ElasticSearchException("Query analyzer[" + fieldType.queryAnalyzer() + "] does not exist.");
+            }
+            queryAnalyzer = namedAnalyzer.analyzer();
         }
         if (queryAnalyzer == null) {
             queryAnalyzer = new StandardAnalyzer(Version.LUCENE_42);
         }
 
         Analyzer indexAnalyzer = fieldMapper.searchAnalyzer();
-        if (fieldType.indexAnalyzer() != null) {
-            // TODO: not found case, possible NPE
-            indexAnalyzer = analysisService.analyzer(fieldType.queryAnalyzer()).analyzer();
+        if (Strings.hasLength(fieldType.indexAnalyzer())) {
+            NamedAnalyzer namedAnalyzer = analysisService.analyzer(fieldType.indexAnalyzer());
+            if (namedAnalyzer == null) {
+                throw new ElasticSearchException("Index analyzer[" + fieldType.indexAnalyzer() + "] does not exist.");
+            }
+            indexAnalyzer = namedAnalyzer.analyzer();
         }
         if (indexAnalyzer == null) {
             indexAnalyzer = new StandardAnalyzer(Version.LUCENE_42);
