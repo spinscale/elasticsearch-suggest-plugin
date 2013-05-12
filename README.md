@@ -20,14 +20,14 @@ I am totally open for better names. This is a WIP until elasticsearch 1.0 is rel
 
 ### Package names have been moved
 
-Everything is now in the `de.spinscale` package name space in order to avoid clashes.
+Everything is now in the `de.spinscale` package name space in order to avoid clashes. This means, if you are using the request builder classes, you will have to change your application.
 
 ## Installation
 
 If you do not want to work on the repository, just use the standard elasticsearch plugin command (inside your elasticsearch/bin directory)
 
 ```
-bin/plugin -install de.spinscale/elasticsearch-plugin-suggest/0.20.5-0.5
+bin/plugin -install de.spinscale/elasticsearch-plugin-suggest/0.90.0-0.6.1
 ```
 
 If you want to work on the repository
@@ -52,7 +52,7 @@ Alternatively you can now use this plugin via maven and include it via the sonat
   <dependency>
     <groupId>de.spinscale</groupId>
     <artifactId>elasticsearch-suggest-plugin</artifactId>
-    <version>0.20.5-0.5</version>
+    <version>0.90.0-0.6.1</version>
   </dependency>
   ...
 <dependencies>
@@ -61,6 +61,8 @@ Alternatively you can now use this plugin via maven and include it via the sonat
 The maven repo can be visited at https://oss.sonatype.org/content/repositories/releases/de/spinscale/elasticsearch-plugin-suggest/
 
 ## Usage
+
+### FST based suggestions
 
 Fire up curl like this, in case you have a products index and the right fields - if not, read below how to setup a clean elasticsearch in order to support suggestions.
 
@@ -79,6 +81,103 @@ As you can see, this queries the products index for the field `ProductName.sugge
 You can also use HTTP GET for getting suggestions - even with the `callback` and the `source` parameters like in any normal elasticsearch search.
 
 You might want to check out the included unit test as well. I use a shingle filter in my examples, take a look at the files in `src/test/resources` directory.
+
+### Full suggestions
+
+With Lucene 4 (and the upgrade to elasticsearch 0.90.0) two new suggesters were added, one of them the [AnalyzingSuggester](http://lucene.apache.org/core/4_3_0/suggest/org/apache/lucene/search/suggest/analyzing/AnalyzingSuggester.html) and the [FuzzySuggester](http://lucene.apache.org/core/4_3_0/suggest/org/apache/lucene/search/suggest/analyzing/FuzzySuggester.html) based on the first one. Both have the great capability of returning the original form, but search on an analyzed one. Take this example (notice the search for a lowercase `b`, but getting back the original field name):
+
+```
+» curl -X POST localhost:9200/cars/car/__suggest -d '{ "field" : "name", "type": "full", "term" : "b", "analyzer" : "standard" }'
+
+{"suggestions":["BMW 320","BMW 525d"],"_shards":{"total":5,"successful":5,"failed":0}}
+```
+
+*Note*: If you use type `full` or type `fuzzy`, the `similarity` parameter will not have any effect. In addition, these parameters are supported only for `full` and `fuzzy`:
+
+* `analyzer`:
+* `index_analyzer`:
+* `search_analyzer`:
+
+This suggester can even ignore stopwords if configured appropriately - but only if you disable position increments for stopwords. Use this mapping and index settings when creating an index:
+
+```
+curl -X DELETE localhost:9200/cars
+curl -X PUT localhost:9200/cars -d '{
+  "mappings" : {
+    "car" : {
+      "properties" : {
+        "name" : {
+          "type" : "multi_field",
+          "fields" : {
+            "name":    { "type": "string", "index": "not_analyzed" }
+          }
+        }
+      }
+    }
+  },
+  "settings" : {
+    "analysis" : {
+      "analyzer" : {
+        "suggest_analyzer_stopwords" : {
+          "type" : "custom",
+          "tokenizer" : "standard",
+          "filter" : [ "standard", "lowercase", "stopword_no_position_increment" ]
+        },
+        "suggest_analyzer_synonyms" : {
+          "type" : "custom",
+          "tokenizer" : "standard",
+          "filter" : [ "standard", "lowercase", "my_synonyms" ]
+        }
+      },
+      "filter" : {
+        "stopword_no_position_increment" : {
+          "type" : "stop",
+          "enable_position_increments" : false
+        },
+        "my_synonyms" : {
+          "type" : "synonym",
+          "synonyms" : [ "jetta, bora" ]
+        }
+      }
+    }
+  }
+}'
+
+
+curl -X POST localhost:9200/cars/car -d '{ "name" : "The BMW ever" }'
+curl -X POST localhost:9200/cars/car -d '{ "name" : "BMW 320" }'
+curl -X POST localhost:9200/cars/car -d '{ "name" : "BMW 525d" }'
+curl -X POST localhost:9200/cars/car -d '{ "name" : "VW Jetta" }'
+curl -X POST localhost:9200/cars/car -d '{ "name" : "VW Bora" }'
+```
+
+Now when querying with a stopwords analyzer, you can even get back `The BMW ever`
+
+```
+» curl -X POST localhost:9200/cars/car/__suggest -d '{ "field" : "name", "type": "full", "term" : "b", "analyzer" : "suggest_analyzer_stopwords" }'
+{"suggestions":["BMW 320","BMW 525d","The BMW ever"],"_shards":{"total":5,"successful":5,"failed":0}}
+```
+
+Or you could use synonyms (FYI: jetta and bora were the same cars, but named different in USA and Europe, so a search should return both)
+
+```
+» curl -X POST localhost:9200/cars/car/__suggest -d '{ "field" : "name", "type": "full", "term" : "vw je", "analyzer" : "suggest_analyzer_synonyms" }'
+
+{"suggestions":["VW Bora","VW Jetta"],"_shards":{"total":5,"successful":5,"failed":0}}
+```
+
+### Full fuzzy suggestions
+
+The FuzzySuggester uses LevenShtein distance to cater for typos.
+
+```
+» curl -X POST localhost:9200/cars/car/__suggest -d '{ "field" : "name", "type": "fuzzy", "term" : "bwm", "analyzer" : "standard" }'
+
+{"suggestions":["BMW 320","BMW 525d"],"_shards":{"total":5,"successful":5,"failed":0}}
+```
+
+
+### Configuration
 
 Furthermore the suggest data is not updated, whenever you index a new product but every few minutes. The default is to update the index every 10 minutes, but you can change that in your elasticsearch.yml configuration:
 
@@ -148,12 +247,14 @@ builder.execute().actionGet();
 ## TODO
 
 * Find and verify the absence of the current resource leak (open deleted files after lots of merging) with the new architecture
-* Update documentation, talk about analyzing suggester and fst suggester and `setEnablePositionIncrements` for stopwords
 * Create the FST structure only on the primary shard and send it to the replica over the wire as byte array
+* Exchange "shard" and "suggestion" fields in HTTP response in order to conform to all other calls
+* Fix refresh with analyzingsuggester
 * Create a testing rule that does start a node/cluster only once per test run, not per test. This costs so much time.
 
 ## Changelog
 
+* 2013-05-12: Documentation update
 * 2013-05-01: Added support for the fuzzy suggester
 * 2013-04-28: Added support for the analyzing suggester and stopwords
 * 2013-03-20: Moved to own package namespaces, changed REST endpoints in order to be compatible with elasticsearch 0.90
