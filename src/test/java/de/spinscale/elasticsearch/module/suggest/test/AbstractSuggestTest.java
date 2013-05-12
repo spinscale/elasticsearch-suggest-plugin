@@ -185,7 +185,7 @@ public abstract class AbstractSuggestTest {
         assertThat(suggestions, contains("kochjacke"));
     }
 
-    @Ignore("This test is useless in this setup, as it may return better/more data than request and therefore fails")
+    @Ignore("This test is useless in this setup, as it may return better/more data than expected and therefore fails")
     @Test
     public void testThatRefreshingPerIndexWorks() throws Exception {
         // having routing ensures that all the data is written into one shard
@@ -216,7 +216,7 @@ public abstract class AbstractSuggestTest {
         assertSuggestions(secondProductsIndexQuery, "autorad", "autoreifen");
     }
 
-    @Ignore("This test is useless in this setup, as it may return better/more data than request and therefore fails")
+    @Ignore("This test is useless in this setup, as it may return better/more data than expected and therefore fails")
     @Test
     public void testThatRefreshingPerIndexFieldWorks() throws Exception {
         // having routing ensures that all the data is written into one shard

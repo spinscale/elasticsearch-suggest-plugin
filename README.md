@@ -251,6 +251,7 @@ builder.execute().actionGet();
 * Document statistics
 * Allow deletion of of fields in cache instead of refresh
 * Reenable the field refresh tests by checking statistics
+* Add stats for fuzzy suggester
 * Create a testing rule that does start a node/cluster only once per test run, not per test. This costs so much time.
 
 ## Changelog
