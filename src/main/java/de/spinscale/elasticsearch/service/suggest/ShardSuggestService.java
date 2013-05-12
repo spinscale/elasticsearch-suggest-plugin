@@ -19,6 +19,7 @@ import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.base.Function;
+import org.elasticsearch.common.base.Joiner;
 import org.elasticsearch.common.cache.CacheBuilder;
 import org.elasticsearch.common.cache.CacheLoader;
 import org.elasticsearch.common.cache.LoadingCache;
@@ -273,7 +274,13 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
 
         for (FieldType fieldType : analyzingSuggesterCache.asMap().keySet()) {
             long sizeInBytes = analyzingSuggesterCache.getIfPresent(fieldType).sizeInBytes();
-            FstStats.FstIndexShardStats fstIndexShardStats = new FstStats.FstIndexShardStats(shardId.id(), "analyzingsuggester-" + fieldType.field(), sizeInBytes);
+            FstStats.FstIndexShardStats fstIndexShardStats = new FstStats.FstIndexShardStats(shardId.id(), "analyzingsuggester-" + fieldType, sizeInBytes);
+            shardSuggestStatisticsResponse.getFstIndexShardStats().add(fstIndexShardStats);
+        }
+
+        for (FieldType fieldType : fuzzySuggesterCache.asMap().keySet()) {
+            long sizeInBytes = fuzzySuggesterCache.getIfPresent(fieldType).sizeInBytes();
+            FstStats.FstIndexShardStats fstIndexShardStats = new FstStats.FstIndexShardStats(shardId.id(), "fuzzysuggester-" + fieldType, sizeInBytes);
             shardSuggestStatisticsResponse.getFstIndexShardStats().add(fstIndexShardStats);
         }
 
@@ -337,6 +344,22 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
 
         public String indexAnalyzer() {
             return indexAnalyzer;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder(field);
+            if (types.size() > 0) {
+                sb.append("-types" + Joiner.on("-").join(types));
+            }
+            if (queryAnalyzer != null) {
+                sb.append("-queryAnalyzer:" + queryAnalyzer);
+            }
+            if (indexAnalyzer != null) {
+                sb.append("-indexAnalyzer:" + indexAnalyzer);
+            }
+
+            return sb.toString();
         }
     }
 }

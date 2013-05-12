@@ -176,6 +176,14 @@ The FuzzySuggester uses LevenShtein distance to cater for typos.
 {"suggestions":["BMW 320","BMW 525d"],"_shards":{"total":5,"successful":5,"failed":0}}
 ```
 
+### Statistics
+
+The `FuzzySuggester` and the `AnalyzingSuggester` suggesters contain a method to find out their size, which is also exposed as an own endpoint, in case you want to monitor memory consumption of the in-memory structures.
+
+```
+» curl localhost:9200/__suggestStatistics
+{"_shards":{"total":2,"successful":2,"failed":0},"fstStats":{"cars-0":[{"analyzingsuggester-name-queryAnalyzer:suggest_analyzer_synonyms-indexAnalyzer:suggest_analyzer_synonyms":147},{"analyzingsuggester-name-queryAnalyzer:suggest_analyzer_stopwords-indexAnalyzer:suggest_analyzer_stopwords":126}]}}
+```
 
 ### Configuration
 
@@ -248,10 +256,9 @@ builder.execute().actionGet();
 
 * Find and verify the absence of the current resource leak (open deleted files after lots of merging) with the new architecture
 * Create the FST structure only on the primary shard and send it to the replica over the wire as byte array
-* Document statistics
 * Allow deletion of of fields in cache instead of refresh
 * Reenable the field refresh tests by checking statistics
-* Add stats for fuzzy suggester
+* Also expose the guava cache statistics in the endpoint
 * Create a testing rule that does start a node/cluster only once per test run, not per test. This costs so much time.
 
 ## Changelog
