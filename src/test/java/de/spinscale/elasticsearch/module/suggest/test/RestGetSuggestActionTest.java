@@ -66,7 +66,7 @@ public class RestGetSuggestActionTest {
         String queryString = "callback=mycallback&source=" + query;
         String response = httpClient.prepareGet("http://localhost:" + port + "/products/product/__suggest?" + queryString).
                 execute().get().getResponseBody();
-        assertThat(response, is("mycallback({\"suggestions\":[\"foobar\"],\"_shards\":{\"total\":1,\"successful\":1,\"failed\":0}});"));
+        assertThat(response, is("mycallback({\"_shards\":{\"total\":1,\"successful\":1,\"failed\":0},\"suggestions\":[\"foobar\"]});"));
     }
 
     private void refreshAllSuggesters() throws Exception {
