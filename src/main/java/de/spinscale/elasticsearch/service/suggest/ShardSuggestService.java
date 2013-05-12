@@ -31,6 +31,7 @@ import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.settings.IndexSettings;
 import org.elasticsearch.index.shard.AbstractIndexShardComponent;
+import org.elasticsearch.index.shard.IndexShardState;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.shard.service.IndexShard;
 
@@ -248,9 +249,12 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
     }
 
     public void resetIndexReader() {
-        Engine.Searcher currentIndexSearcher = indexShard.searcher();
-        IndexReader currentIndexReader = currentIndexSearcher.reader();
-        currentIndexSearcher.release();
+        IndexReader currentIndexReader = null;
+        if (indexShard.state() == IndexShardState.STARTED) {
+            Engine.Searcher currentIndexSearcher = indexShard.searcher();
+            currentIndexReader = currentIndexSearcher.reader();
+            currentIndexSearcher.release();
+        }
 
         // if this index reader is not used in the current index searcher, we need to decrease the old refcount
         if (indexReader != null && indexReader.getRefCount() > 0 && !indexReader.equals(currentIndexReader)) {
