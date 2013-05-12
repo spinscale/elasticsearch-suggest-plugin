@@ -286,6 +286,14 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
                     Engine.Searcher indexSearcher = indexShard.searcher();
                     indexReader = indexSearcher.reader();
                     indexSearcher.release();
+
+                    // If an indexreader closes, we have to refresh all our data structures!
+                    indexReader.addReaderClosedListener(new IndexReader.ReaderClosedListener() {
+                        @Override
+                        public void onClose(IndexReader reader) {
+                            update();
+                        }
+                    });
                 }
             }
         } finally {
