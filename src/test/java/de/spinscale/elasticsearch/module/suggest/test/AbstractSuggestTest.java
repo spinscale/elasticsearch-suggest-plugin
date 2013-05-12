@@ -313,7 +313,8 @@ public abstract class AbstractSuggestTest {
         assertThat(filledFstStats.getStats().keySet(), hasSize(greaterThanOrEqualTo(1)));
 
         List<List<FstStats.FstIndexShardStats>> allStats = Lists.newArrayList(filledFstStats.getStats().values());
-        assertThat(allStats.get(0).get(0).fieldName(), is("analyzingsuggester-ProductName.keyword"));
+        String expectedName = "analyzingsuggester-ProductName.keyword-analyzer:suggest_analyzer_stopwords";
+        assertThat(allStats.get(0).get(0).fieldName(), is(expectedName));
         assertThat(allStats.get(0).get(0).shardId(), greaterThanOrEqualTo(0));
         assertThat(getFstSizeSum(filledFstStats), greaterThan(0L));
     }

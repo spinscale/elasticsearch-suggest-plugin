@@ -352,11 +352,15 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
             if (types.size() > 0) {
                 sb.append("-types" + Joiner.on("-").join(types));
             }
-            if (queryAnalyzer != null) {
-                sb.append("-queryAnalyzer:" + queryAnalyzer);
-            }
-            if (indexAnalyzer != null) {
-                sb.append("-indexAnalyzer:" + indexAnalyzer);
+            if (queryAnalyzer != null && queryAnalyzer.equals(indexAnalyzer)) {
+                sb.append("-analyzer:" + queryAnalyzer);
+            } else {
+                if (queryAnalyzer != null) {
+                    sb.append("-queryAnalyzer:" + queryAnalyzer);
+                }
+                if (indexAnalyzer != null) {
+                    sb.append("-indexAnalyzer:" + indexAnalyzer);
+                }
             }
 
             return sb.toString();
