@@ -57,5 +57,6 @@ public class NodeTestHelper {
         String settings = IOUtils.toString(NodeTestHelper.class.getResourceAsStream("/product.json"));
         CreateIndexResponse createIndexResponse = node.client().admin().indices().prepareCreate(index).setSource(settings).execute().actionGet();
         assertThat(createIndexResponse.isAcknowledged(), is(true));
+        node.client().admin().cluster().prepareHealth(index).setWaitForGreenStatus().execute().actionGet();
     }
 }

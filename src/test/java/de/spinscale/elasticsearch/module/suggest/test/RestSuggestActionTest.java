@@ -3,6 +3,7 @@ package de.spinscale.elasticsearch.module.suggest.test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
@@ -50,10 +51,20 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
         String url = "http://localhost:" + port + "/" + suggestionQuery.index + "/" + suggestionQuery.type + "/__suggest";
         Response r = httpClient.preparePost(url).setBody(json).execute().get();
         assertThat(r.getStatusCode(), is(200));
+        assertThatResponseHasNoShardFailures(r);
+
 //        System.out.println("REQ : " + json);
 //        System.out.println("RESP: " + r.getResponseBody());
 
         return getSuggestionsFromResponse(r.getResponseBody());
+    }
+
+    private void assertThatResponseHasNoShardFailures(Response r) throws IOException {
+        XContentParser parser = JsonXContent.jsonXContent.createParser(r.getResponseBody());
+        Map<String, Object> jsonResponse = parser.mapAndClose();
+        assertThat(jsonResponse, hasKey("_shards"));
+        Map<String, Object> shardResponse = (Map<String, Object>) jsonResponse.get("_shards");
+        assertThat(shardResponse, not(hasKey("failures")));
     }
 
     @Override

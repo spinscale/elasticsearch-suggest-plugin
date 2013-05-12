@@ -1,6 +1,11 @@
 package de.spinscale.elasticsearch.module.suggest.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyArray;
+import static org.hamcrest.Matchers.is;
+
 import de.spinscale.elasticsearch.action.suggest.statistics.FstStats;
+import de.spinscale.elasticsearch.action.suggest.suggest.SuggestResponse;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestRefreshRequestBuilder;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestRequestBuilder;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestStatisticsRequestBuilder;
@@ -43,7 +48,10 @@ public class SuggestBuildersTest extends AbstractSuggestTest {
             builder.analyzer(suggestionQuery.analyzer);
         }
 
-        return builder.execute().actionGet().suggestions();
+        SuggestResponse suggestResponse = builder.execute().actionGet();
+        assertThat(suggestResponse.getShardFailures(), is(emptyArray()));
+
+        return suggestResponse.suggestions();
     }
 
     @Override

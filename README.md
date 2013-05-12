@@ -248,11 +248,14 @@ builder.execute().actionGet();
 
 * Find and verify the absence of the current resource leak (open deleted files after lots of merging) with the new architecture
 * Create the FST structure only on the primary shard and send it to the replica over the wire as byte array
-* Fix refresh with analyzingsuggester
+* Document statistics
+* Allow deletion of of fields in cache instead of refresh
+* Reenable the field refresh tests by checking statistics
 * Create a testing rule that does start a node/cluster only once per test run, not per test. This costs so much time.
 
 ## Changelog
 
+* 2013-05-12: Fix for trying to access a closed index reader in AnalyzingSuggesster (i.e. after refresh) 
 * 2013-05-12: Documentation update
 * 2013-05-01: Added support for the fuzzy suggester
 * 2013-04-28: Added support for the analyzing suggester and stopwords

@@ -1,5 +1,9 @@
 package de.spinscale.elasticsearch.module.suggest.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyArray;
+import static org.hamcrest.Matchers.is;
+
 import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshAction;
 import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshRequest;
 import de.spinscale.elasticsearch.action.suggest.statistics.FstStats;
@@ -47,9 +51,10 @@ public class TransportSuggestActionTest extends AbstractSuggestTest {
             request.analyzer(suggestionQuery.analyzer);
         }
 
-        SuggestResponse response = node.client().execute(SuggestAction.INSTANCE, request).actionGet();
+        SuggestResponse suggestResponse = node.client().execute(SuggestAction.INSTANCE, request).actionGet();
+        assertThat(suggestResponse.getShardFailures(), is(emptyArray()));
 
-        return response.suggestions();
+        return suggestResponse.suggestions();
     }
 
     @Override
