@@ -248,7 +248,6 @@ builder.execute().actionGet();
 
 * Find and verify the absence of the current resource leak (open deleted files after lots of merging) with the new architecture
 * Create the FST structure only on the primary shard and send it to the replica over the wire as byte array
-* Exchange "shard" and "suggestion" fields in HTTP response in order to conform to all other calls
 * Fix refresh with analyzingsuggester
 * Create a testing rule that does start a node/cluster only once per test run, not per test. This costs so much time.
 
