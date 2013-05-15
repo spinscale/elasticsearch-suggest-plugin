@@ -30,6 +30,30 @@ If you do not want to work on the repository, just use the standard elasticsearc
 bin/plugin -install de.spinscale/elasticsearch-plugin-suggest/0.90.0-0.6.1
 ```
 
+### Compatibility
+
+
+**Note**: Please make sure the plugin version matches with your elasticsearch version. Follow this compatibility matrix
+
+    ---------------------------------------
+    | suggest Plugin   | ElasticSearch    |
+    ---------------------------------------
+    | master           | 0.90.0 -> master |
+    ---------------------------------------
+    | 0.90.0-0.6.1     | 0.90.0           |
+    ---------------------------------------
+    | 0.20.5-0.5       | 0.20.5 -> 0.20.6 |
+    ---------------------------------------
+    | 0.20.2-0.4       | 0.20.2 -> 0.20.4 |
+    ---------------------------------------
+    | 0.19.12-0.2      | 0.19.12          |
+    ---------------------------------------
+    | 0.19.11-0.1      | 0.19.11          |
+    ---------------------------------------
+
+
+### Development
+
 If you want to work on the repository
 
  * Clone this repo with `git clone git://github.com/spinscale/elasticsearch-suggest-plugin.git`
@@ -259,6 +283,7 @@ builder.execute().actionGet();
 * Allow deletion of of fields in cache instead of refresh
 * Reenable the field refresh tests by checking statistics
 * Also expose the guava cache statistics in the endpoint
+* Stop working if the elasticsearch version does not match on startup
 * Create a testing rule that does start a node/cluster only once per test run, not per test. This costs so much time.
 
 ## Changelog
