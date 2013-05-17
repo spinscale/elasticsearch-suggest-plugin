@@ -8,6 +8,8 @@ import de.spinscale.elasticsearch.module.suggest.SuggestModule;
 import de.spinscale.elasticsearch.rest.action.suggest.RestRefreshSuggestAction;
 import de.spinscale.elasticsearch.rest.action.suggest.RestStatisticsAction;
 import de.spinscale.elasticsearch.service.suggest.SuggestService;
+import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.Version;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.component.LifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
@@ -24,6 +26,18 @@ public class SuggestPlugin extends AbstractPlugin {
     @Inject
     public SuggestPlugin(Settings settings) {
         this.settings = settings;
+
+        // Check if the plugin is newer than elasticsearch
+        // First failure, if the versions dont match
+        // Second failure: if the Version specified in before() does not yet exist, therefore catching Throwable
+        try {
+            if (Version.CURRENT.before(Version.V_0_90_0)) {
+                throw new Exception();
+            }
+        } catch (Throwable e) {
+            String error = String.format("The elasticsearch suggest plugin needs a newer version of elasticsearch than %s",Version.CURRENT);
+            throw new ElasticSearchException(error);
+        }
     }
 
     @Override
