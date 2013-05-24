@@ -302,7 +302,7 @@ public abstract class AbstractSuggestTest {
         indexProducts(products, node);
 
         FstStats emptyFstStats = getStatistics();
-        assertThat(emptyFstStats.getStats().keySet(), hasSize(0));
+        assertThat(emptyFstStats.getStats(), hasSize(0));
         assertThat(getFstSizeSum(emptyFstStats), equalTo(0L));
 
         SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b")
@@ -310,22 +310,18 @@ public abstract class AbstractSuggestTest {
         getSuggestions(query);
 
         FstStats filledFstStats = getStatistics();
-        assertThat(filledFstStats.getStats().keySet(), hasSize(greaterThanOrEqualTo(1)));
+        assertThat(filledFstStats.getStats(), hasSize(greaterThanOrEqualTo(1)));
 
-        List<List<FstStats.FstIndexShardStats>> allStats = Lists.newArrayList(filledFstStats.getStats().values());
-        String expectedName = "analyzingsuggester-ProductName.keyword-analyzer:suggest_analyzer_stopwords";
-        assertThat(allStats.get(0).get(0).fieldName(), is(expectedName));
-        assertThat(allStats.get(0).get(0).shardId(), greaterThanOrEqualTo(0));
+        List<FstStats.FstIndexShardStats> allStats = Lists.newArrayList(filledFstStats.getStats());
+        assertThat(allStats.get(0).getShardId().id(), greaterThanOrEqualTo(0));
         assertThat(getFstSizeSum(filledFstStats), greaterThan(0L));
     }
 
     private long getFstSizeSum(FstStats fstStats) {
         long totalFstSize = 0;
 
-        for (List<FstStats.FstIndexShardStats> stats : fstStats.getStats().values()) {
-            for (FstStats.FstIndexShardStats indexShardStats : stats) {
-                totalFstSize += indexShardStats.size();
-            }
+        for (FstStats.FstIndexShardStats stats : fstStats.getStats()) {
+            totalFstSize += stats.getSizeInBytes();
         }
 
         return totalFstSize;

@@ -18,6 +18,7 @@ import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
+import org.elasticsearch.index.shard.ShardId;
 import org.junit.After;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -89,6 +90,8 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
 
     @Override
     public FstStats getStatistics() throws Exception {
+        List<FstStats.FstIndexShardStats> stats = Lists.newArrayList();
+
         Response r = httpClient.prepareGet("http://localhost:" + port + "/__suggestStatistics").execute().get();
         assertThat(r.getStatusCode(), is(200));
         System.out.println(r.getResponseBody());
@@ -96,30 +99,19 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootObj = objectMapper.readTree(r.getResponseBody());
         FstStats fstStats = new FstStats();
-        ObjectNode jsonFstStats = (ObjectNode) rootObj.get("fstStats");
-        Iterator<Map.Entry<String, JsonNode>> nodes = jsonFstStats.getFields();
+        ArrayNode jsonFstStats = (ArrayNode) rootObj.get("fstStats");
+        Iterator<JsonNode> nodesIterator = jsonFstStats.iterator();
 
-        while (nodes.hasNext()) {
-            Map.Entry<String, JsonNode> fstStatsNodeEntry =  nodes.next();
+        while (nodesIterator.hasNext()) {
+            JsonNode fstStatsNodeEntry =  nodesIterator.next();
 
-            if (fstStatsNodeEntry.getValue().isArray()) {
-                ArrayNode jsonNode = (ArrayNode) fstStatsNodeEntry.getValue();
-                Iterator<JsonNode> shardFieldDataIterator = jsonNode.iterator();
-
-                List<FstStats.FstIndexShardStats> stats = Lists.newArrayList();
-                while (shardFieldDataIterator.hasNext()) {
-                    JsonNode shardFieldData =  shardFieldDataIterator.next();
-                    if (shardFieldData.isObject()) {
-                        ObjectNode node = (ObjectNode) shardFieldData;
-                        Map.Entry<String, JsonNode> entry = node.getFields().next();
-                        String fieldName = entry.getKey();
-                        long fieldValue = entry.getValue().getLongValue();
-                        FstStats.FstIndexShardStats fstIndexShardStats = new FstStats.FstIndexShardStats(0, fieldName, fieldValue);
-                        stats.add(fstIndexShardStats);
-                    }
-                }
-                fstStats.getStats().put(fstStatsNodeEntry.getKey(), stats);
+            if (fstStatsNodeEntry.isObject()) {
+                ShardId shardId = new ShardId(fstStatsNodeEntry.get("index").asText(), fstStatsNodeEntry.get("id").asInt());
+                FstStats.FstIndexShardStats fstIndexShardStats = new FstStats.FstIndexShardStats(shardId, null, null, fstStatsNodeEntry.get("sizeInBytes").getLongValue());
+                stats.add(fstIndexShardStats);
             }
+
+            fstStats.getStats().addAll(stats);
 
         }
 

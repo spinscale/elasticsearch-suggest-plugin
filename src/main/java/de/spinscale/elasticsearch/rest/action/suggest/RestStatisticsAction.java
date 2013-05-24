@@ -41,6 +41,7 @@ public class RestStatisticsAction extends BaseRestHandler {
                     builder.endObject();
                     channel.sendResponse(new XContentRestResponse(request, OK, builder));
                 } catch (Exception e) {
+                    e.printStackTrace();
                     onFailure(e);
                 }
             }

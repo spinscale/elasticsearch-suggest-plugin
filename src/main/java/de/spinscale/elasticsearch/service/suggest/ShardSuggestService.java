@@ -26,7 +26,13 @@ import org.elasticsearch.common.cache.LoadingCache;
 import org.elasticsearch.common.collect.Collections2;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.inject.internal.ToStringBuilder;
+import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.Streamable;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.ToXContent;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.analysis.AnalysisService;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.mapper.MapperService;
@@ -37,6 +43,7 @@ import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.shard.service.IndexShard;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -141,6 +148,12 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
                     analyzingSuggesterCache.refresh(fieldType);
                 }
             }
+
+            for (FieldType fieldType : fuzzySuggesterCache.asMap().keySet()) {
+                if (fieldType.field().equals(shardSuggestRefreshRequest.field())) {
+                    fuzzySuggesterCache.refresh(fieldType);
+                }
+            }
         }
 
         return new ShardSuggestRefreshResponse(shardId.index().name(), shardId.id());
@@ -161,6 +174,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         ramDirectoryCache.invalidateAll();
         lookupCache.invalidateAll();
         analyzingSuggesterCache.invalidateAll();
+        fuzzySuggesterCache.invalidateAll();
     }
 
     public void update() {
@@ -189,6 +203,10 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
 
         for (FieldType fieldType : analyzingSuggesterCache.asMap().keySet()) {
             analyzingSuggesterCache.refresh(fieldType);
+        }
+
+        for (FieldType fieldType : fuzzySuggesterCache.asMap().keySet()) {
+            fuzzySuggesterCache.refresh(fieldType);
         }
     }
 
@@ -274,13 +292,13 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
 
         for (FieldType fieldType : analyzingSuggesterCache.asMap().keySet()) {
             long sizeInBytes = analyzingSuggesterCache.getIfPresent(fieldType).sizeInBytes();
-            FstStats.FstIndexShardStats fstIndexShardStats = new FstStats.FstIndexShardStats(shardId.id(), "analyzingsuggester-" + fieldType, sizeInBytes);
+            FstStats.FstIndexShardStats fstIndexShardStats = new FstStats.FstIndexShardStats(shardId, "analyzingsuggester", fieldType, sizeInBytes);
             shardSuggestStatisticsResponse.getFstIndexShardStats().add(fstIndexShardStats);
         }
 
         for (FieldType fieldType : fuzzySuggesterCache.asMap().keySet()) {
             long sizeInBytes = fuzzySuggesterCache.getIfPresent(fieldType).sizeInBytes();
-            FstStats.FstIndexShardStats fstIndexShardStats = new FstStats.FstIndexShardStats(shardId.id(), "fuzzysuggester-" + fieldType, sizeInBytes);
+            FstStats.FstIndexShardStats fstIndexShardStats = new FstStats.FstIndexShardStats(shardId, "fuzzysuggester", fieldType, sizeInBytes);
             shardSuggestStatisticsResponse.getFstIndexShardStats().add(fstIndexShardStats);
         }
 
@@ -316,12 +334,14 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         return indexReader;
     }
 
-    public static class FieldType {
+    public static class FieldType implements Streamable, Serializable, ToXContent {
 
         private String field;
         private List<String> types = Lists.newArrayList();
         private String queryAnalyzer;
         private String indexAnalyzer;
+
+        public FieldType() {}
 
         public FieldType(ShardSuggestRequest shardSuggestRequest) {
             this.field = shardSuggestRequest.field();
@@ -347,23 +367,83 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         }
 
         @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder(field);
-            if (types.size() > 0) {
-                sb.append("-types" + Joiner.on("-").join(types));
+        public boolean equals(Object obj) {
+            if (obj == null) {
+                return false;
             }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final FieldType other = (FieldType) obj;
+
+            return Objects.equals(this.field(), other.field())
+                    && Objects.equals(this.queryAnalyzer(), other.queryAnalyzer())
+                    && Objects.equals(this.indexAnalyzer(), other.indexAnalyzer())
+                    && Objects.equals(this.types, other.types);
+        }
+
+        @Override
+        public int hashCode() {
+            int hashCode = this.field().hashCode();
+            hashCode += this.types.hashCode();
+            if (this.queryAnalyzer != null) hashCode += this.queryAnalyzer.hashCode();
+            if (this.indexAnalyzer != null) hashCode += this.indexAnalyzer.hashCode();
+
+            return hashCode;
+        }
+
+        @Override
+        public String toString() {
+            ToStringBuilder toStringBuilder = new ToStringBuilder(this.getClass())
+                    .add("field", this.field());
+
             if (queryAnalyzer != null && queryAnalyzer.equals(indexAnalyzer)) {
-                sb.append("-analyzer:" + queryAnalyzer);
+                toStringBuilder.add("analyzer", this.queryAnalyzer);
             } else {
                 if (queryAnalyzer != null) {
-                    sb.append("-queryAnalyzer:" + queryAnalyzer);
+                    toStringBuilder.add("queryAnalyzer", queryAnalyzer);
                 }
                 if (indexAnalyzer != null) {
-                    sb.append("-indexAnalyzer:" + indexAnalyzer);
+                    toStringBuilder.add("indexAnalyzer", indexAnalyzer);
                 }
             }
 
-            return sb.toString();
+            if (types.size() > 0) {
+                toStringBuilder.add("types", Joiner.on("-").join(types));
+            }
+
+            return toStringBuilder.toString();
+        }
+
+        @Override
+        public void readFrom(StreamInput in) throws IOException {
+            field = in.readString();
+            queryAnalyzer = in.readOptionalString();
+            indexAnalyzer = in.readOptionalString();
+            types = (List<String>) in.readGenericValue();
+        }
+
+        @Override
+        public void writeTo(StreamOutput out) throws IOException {
+            out.writeString(field);
+            out.writeOptionalString(queryAnalyzer);
+            out.writeOptionalString(indexAnalyzer);
+            out.writeGenericValue(types);
+        }
+
+        @Override
+        public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+            //builder.startObject(field);
+            builder.field("field", field);
+            if (queryAnalyzer != null && queryAnalyzer.equals(indexAnalyzer)) {
+                builder.field("analyzer", this.queryAnalyzer);
+            } else {
+                if (queryAnalyzer != null) builder.field("queryAnalyzer", queryAnalyzer);
+                if (indexAnalyzer != null) builder.field("indexAnalyzer", indexAnalyzer);
+            }
+            if (types.size() > 0) builder.field("types", types());
+            //builder.endObject();
+            return builder;
         }
     }
 }

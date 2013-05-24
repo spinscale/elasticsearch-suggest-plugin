@@ -23,10 +23,8 @@ public class SuggestStatisticsResponse extends BroadcastOperationResponse {
         super(totalShards, successfulShards, failedShards, shardFailures);
 
         for (ShardSuggestStatisticsResponse response : successfulStatistics) {
-            String index = response.getIndex();
-            int shardId = response.getShardId();
-            if (Strings.hasLength(index) && response.getFstIndexShardStats() != null && response.getFstIndexShardStats().size() > 0) {
-                fstStats.getStats().put(index + "-" + shardId, response.getFstIndexShardStats());
+            if (response.getFstIndexShardStats() != null && response.getFstIndexShardStats().size() > 0) {
+                fstStats.getStats().addAll(response.getFstIndexShardStats());
             }
         }
     }
