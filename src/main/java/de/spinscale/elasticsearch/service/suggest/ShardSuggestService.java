@@ -20,6 +20,7 @@ import org.apache.lucene.util.Version;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.base.Function;
 import org.elasticsearch.common.base.Joiner;
+import org.elasticsearch.common.base.Objects;
 import org.elasticsearch.common.cache.CacheBuilder;
 import org.elasticsearch.common.cache.CacheLoader;
 import org.elasticsearch.common.cache.LoadingCache;
@@ -376,10 +377,10 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
             }
             final FieldType other = (FieldType) obj;
 
-            return Objects.equals(this.field(), other.field())
-                    && Objects.equals(this.queryAnalyzer(), other.queryAnalyzer())
-                    && Objects.equals(this.indexAnalyzer(), other.indexAnalyzer())
-                    && Objects.equals(this.types, other.types);
+            return Objects.equal(this.field(), other.field())
+                    && Objects.equal(this.queryAnalyzer(), other.queryAnalyzer())
+                    && Objects.equal(this.indexAnalyzer(), other.indexAnalyzer())
+                    && Objects.equal(this.types, other.types);
         }
 
         @Override
