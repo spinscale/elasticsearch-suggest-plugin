@@ -41,7 +41,7 @@ public abstract class AbstractCacheLoaderSuggester<T> extends CacheLoader<ShardS
             queryAnalyzer = namedAnalyzer.analyzer();
         }
         if (queryAnalyzer == null) {
-            queryAnalyzer = new StandardAnalyzer(Version.LUCENE_42);
+            queryAnalyzer = new StandardAnalyzer(Version.LUCENE_43);
         }
 
         Analyzer indexAnalyzer = fieldMapper.searchAnalyzer();
@@ -53,7 +53,7 @@ public abstract class AbstractCacheLoaderSuggester<T> extends CacheLoader<ShardS
             indexAnalyzer = namedAnalyzer.analyzer();
         }
         if (indexAnalyzer == null) {
-            indexAnalyzer = new StandardAnalyzer(Version.LUCENE_42);
+            indexAnalyzer = new StandardAnalyzer(Version.LUCENE_43);
         }
 
         return getSuggester(indexAnalyzer, queryAnalyzer, fieldType);

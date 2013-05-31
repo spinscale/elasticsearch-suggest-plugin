@@ -31,11 +31,11 @@ public class SuggestPlugin extends AbstractPlugin {
         // First failure, if the versions dont match
         // Second failure: if the Version specified in before() does not yet exist, therefore catching Throwable
         try {
-            if (Version.CURRENT.before(Version.V_0_90_0)) {
+            if (Version.CURRENT.before(Version.V_0_90_1)) {
                 throw new Exception();
             }
         } catch (Throwable e) {
-            String error = String.format("The elasticsearch suggest plugin needs a newer version of elasticsearch than %s",Version.CURRENT);
+            String error = String.format("The elasticsearch suggest plugin needs a newer version of elasticsearch than %s", Version.CURRENT);
             throw new ElasticSearchException(error);
         }
     }

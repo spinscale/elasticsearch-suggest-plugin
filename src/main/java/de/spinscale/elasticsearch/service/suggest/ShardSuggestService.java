@@ -90,7 +90,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
                     @Override
                     public SpellChecker load(String field) throws Exception {
                         SpellChecker spellChecker = new SpellChecker(ramDirectoryCache.get(field));
-                        IndexWriterConfig indexWriterConfig = new IndexWriterConfig(Version.LUCENE_41, new WhitespaceAnalyzer(Version.LUCENE_41));
+                        IndexWriterConfig indexWriterConfig = new IndexWriterConfig(Version.LUCENE_43, new WhitespaceAnalyzer(Version.LUCENE_43));
                         spellChecker.indexDictionary(dictCache.getUnchecked(field), indexWriterConfig, false);
                         return spellChecker;
                     }

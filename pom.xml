@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>de.spinscale</groupId>
     <artifactId>elasticsearch-plugin-suggest</artifactId>
-    <version>0.90.0-0.6.4-SNAPSHOT</version>
+    <version>0.90.1-0.7-SNAPSHOT</version>
     <packaging>jar</packaging>
     <description>Lucene FSTSuggester implementation for ElasticSearch</description>
     <inceptionYear>2011</inceptionYear>
@@ -17,8 +17,8 @@
     </scm>
 
     <properties>
-        <elasticsearch.version>0.90.0</elasticsearch.version>
-        <lucene.version>4.2.1</lucene.version>
+        <elasticsearch.version>0.90.1</elasticsearch.version>
+        <lucene.version>4.3.0</lucene.version>
     </properties>
 
     <dependencies>

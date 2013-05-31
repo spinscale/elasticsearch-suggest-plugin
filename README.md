@@ -27,7 +27,7 @@ Everything is now in the `de.spinscale` package name space in order to avoid cla
 If you do not want to work on the repository, just use the standard elasticsearch plugin command (inside your elasticsearch/bin directory)
 
 ```
-bin/plugin -install de.spinscale/elasticsearch-plugin-suggest/0.90.0-0.6.3
+bin/plugin -install de.spinscale/elasticsearch-plugin-suggest/0.90.1-0.7
 ```
 
 ### Compatibility
@@ -38,7 +38,9 @@ bin/plugin -install de.spinscale/elasticsearch-plugin-suggest/0.90.0-0.6.3
     ---------------------------------------
     | suggest Plugin   | ElasticSearch    |
     ---------------------------------------
-    | master           | 0.90.0 -> master |
+    | master           | 0.90.1 -> master |
+    ---------------------------------------
+    | 0.90.1-0.7       | 0.90.1           |
     ---------------------------------------
     | 0.90.0-0.6.*     | 0.90.0           |
     ---------------------------------------
@@ -76,7 +78,7 @@ Alternatively you can now use this plugin via maven and include it via the sonat
   <dependency>
     <groupId>de.spinscale</groupId>
     <artifactId>elasticsearch-suggest-plugin</artifactId>
-    <version>0.90.0-0.6.3</version>
+    <version>0.90.1-0.7</version>
   </dependency>
   ...
 <dependencies>
@@ -288,6 +290,7 @@ builder.execute().actionGet();
 
 ## Changelog
 
+* 2013-05-31: Removing usage of jdk7 only methods, version bumb to 0.90.1
 * 2013-05-25: Changing suggest statistics format, fixing cache loading bug for analyzing/fuzzysuggester
 * 2013-05-12: Fix for trying to access a closed index reader in AnalyzingSuggesster (i.e. after refresh) 
 * 2013-05-12: Documentation update
