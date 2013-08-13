@@ -140,6 +140,7 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
         if (Strings.hasLength(suggestionQuery.analyzer)) {
             query.append(String.format(", \"analyzer\": \"%s\"", suggestionQuery.analyzer));
         }
+        query.append(String.format(", \"preserve_position_increments\": \"%s\"", suggestionQuery.preservePositionIncrements));
         query.append("}");
 
         return query.toString();

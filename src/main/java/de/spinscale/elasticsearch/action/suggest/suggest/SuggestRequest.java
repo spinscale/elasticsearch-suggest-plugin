@@ -20,6 +20,7 @@ public class SuggestRequest extends BroadcastOperationRequest {
     private String suggestType = "fst";
     private String queryAnalyzer;
     private String indexAnalyzer;
+    private boolean preservePositionIncrements = true;
 
     public SuggestRequest() {
     }
@@ -107,6 +108,15 @@ public class SuggestRequest extends BroadcastOperationRequest {
     public SuggestRequest types(String... types) {
         this.types = types;
         return this;
+    }
+
+    public SuggestRequest preservePositionIncrements(boolean preservePositionIncrements) {
+        this.preservePositionIncrements = preservePositionIncrements;
+        return this;
+    }
+
+    public boolean preservePositionIncrements() {
+        return preservePositionIncrements;
     }
 
     @Override public void readFrom(StreamInput in) throws IOException {

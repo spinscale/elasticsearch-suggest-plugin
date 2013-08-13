@@ -1,5 +1,7 @@
 # Suggester Plugin for Elasticsearch
 
+**Note**: If you only need prefix suggestions, please use the new `completion suggest` feature available since elasticsearch 0.90.3, which features blazing fast real time suggestions, uses the `AnalyzingSuggester` under the hood and will also support fuzzy mode in 0.90.4.
+
 This plugin uses the FSTSuggester, the AnalyzingSuggester or the FuzzySuggester from Lucene to create suggestions from a certain field for a specified term instead of returning the whole document data.
 
 Feel free to comment, improve and help - I am thankful for any insights, no matter whether you want to help with elasticsearch, lucene or my other flaws I will have done for sure.
@@ -27,7 +29,7 @@ Everything is now in the `de.spinscale` package name space in order to avoid cla
 If you do not want to work on the repository, just use the standard elasticsearch plugin command (inside your elasticsearch/bin directory)
 
 ```
-bin/plugin -install de.spinscale/elasticsearch-plugin-suggest/0.90.1-0.7
+bin/plugin -install de.spinscale/elasticsearch-plugin-suggest/0.90.3-0.8
 ```
 
 ### Compatibility
@@ -36,9 +38,11 @@ bin/plugin -install de.spinscale/elasticsearch-plugin-suggest/0.90.1-0.7
 **Note**: Please make sure the plugin version matches with your elasticsearch version. Follow this compatibility matrix
 
     ---------------------------------------
-    | suggest Plugin   | ElasticSearch    |
+    | suggest plugin   | Elasticsearch    |
     ---------------------------------------
     | master           | 0.90.1 -> master |
+    ---------------------------------------
+    | 0.90.3-0.8       | 0.90.3           |
     ---------------------------------------
     | 0.90.1-0.7       | 0.90.1           |
     ---------------------------------------
@@ -78,7 +82,7 @@ Alternatively you can now use this plugin via maven and include it via the sonat
   <dependency>
     <groupId>de.spinscale</groupId>
     <artifactId>elasticsearch-suggest-plugin</artifactId>
-    <version>0.90.1-0.7</version>
+    <version>0.90.3-0.8</version>
   </dependency>
   ...
 <dependencies>
@@ -285,12 +289,12 @@ builder.execute().actionGet();
 * Allow deletion of of fields in cache instead of refresh
 * Reenable the field refresh tests by checking statistics
 * Also expose the guava cache statistics in the endpoint
-* Stop working if the elasticsearch version does not match on startup
 * Create a testing rule that does start a node/cluster only once per test run, not per test. This costs so much time.
 
 ## Changelog
 
-* 2013-05-31: Removing usage of jdk7 only methods, version bumb to 0.90.1
+* 2013-08-13: Version bump to 0.90.3. Due to changes in Lucene 4.4, please check the tests to see that stopwords need to be handled on the request side if you use the fuzzy or full mode.
+* 2013-05-31: Removing usage of jdk7 only methods, version bump to 0.90.1
 * 2013-05-25: Changing suggest statistics format, fixing cache loading bug for analyzing/fuzzysuggester
 * 2013-05-12: Fix for trying to access a closed index reader in AnalyzingSuggesster (i.e. after refresh) 
 * 2013-05-12: Documentation update

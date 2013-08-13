@@ -248,7 +248,7 @@ public abstract class AbstractSuggestTest {
         indexProducts(products, node);
 
         SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b")
-                .suggestType("full").analyzer("standard").size(10);
+                .suggestType("full").analyzer("simple").size(10);
         List<String> suggestions = getSuggestions(query);
 
         assertSuggestions(suggestions, "BMW 318", "BMW 528", "BMW M3");
@@ -261,7 +261,8 @@ public abstract class AbstractSuggestTest {
         indexProducts(products, node);
 
         SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b")
-                .suggestType("full").indexAnalyzer("suggest_analyzer_stopwords").queryAnalyzer("suggest_analyzer_stopwords").size(10);
+                .suggestType("full").indexAnalyzer("stop").queryAnalyzer("stop")
+                .preservePositionIncrements(false).size(10);
         List<String> suggestions = getSuggestions(query);
 
         assertSuggestions(suggestions, "BMW 318", "BMW 528", "BMW M3", "the BMW 320");
@@ -306,7 +307,7 @@ public abstract class AbstractSuggestTest {
         assertThat(getFstSizeSum(emptyFstStats), equalTo(0L));
 
         SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b")
-                .suggestType("full").analyzer("suggest_analyzer_stopwords").size(10);
+                .suggestType("full").analyzer("stop").size(10);
         getSuggestions(query);
 
         FstStats filledFstStats = getStatistics();
@@ -357,7 +358,8 @@ public abstract class AbstractSuggestTest {
     }
 
     private void assertSuggestions(List<String> suggestions, String ... terms) {
-        assertThat(suggestions.toString() + " should have size " + terms.length, suggestions, hasSize(terms.length));
+        String msg = String.format("%s should have size %s, content %s", suggestions, terms.length, Arrays.asList(terms));
+        assertThat(msg, suggestions, hasSize(terms.length));
         assertThat("Suggestions are: " + suggestions, suggestions, contains(terms));
     }
 

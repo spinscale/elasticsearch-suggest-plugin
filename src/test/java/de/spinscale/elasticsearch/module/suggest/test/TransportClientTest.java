@@ -67,6 +67,7 @@ public class TransportClientTest extends AbstractSuggestTest {
         if (Strings.hasLength(suggestionQuery.analyzer)) {
             builder.analyzer(suggestionQuery.analyzer);
         }
+        builder.preservePositionIncrements(suggestionQuery.preservePositionIncrements);
 
         SuggestResponse suggestResponse = builder.execute().actionGet();
         assertThat(suggestResponse.getShardFailures(), is(emptyArray()));

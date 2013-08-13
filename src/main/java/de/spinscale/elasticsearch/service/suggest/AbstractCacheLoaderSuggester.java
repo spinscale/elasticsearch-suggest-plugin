@@ -72,7 +72,9 @@ public abstract class AbstractCacheLoaderSuggester<T> extends CacheLoader<ShardS
         @Override
         public AnalyzingSuggester getSuggester(Analyzer indexAnalyzer, Analyzer queryAnalyzer,
                                                ShardSuggestService.FieldType fieldType) throws Exception {
-            AnalyzingSuggester analyzingSuggester = new AnalyzingSuggester(indexAnalyzer, queryAnalyzer);
+            AnalyzingSuggester analyzingSuggester = new AnalyzingSuggester(indexAnalyzer, queryAnalyzer,
+                    AnalyzingSuggester.EXACT_FIRST, 256, -1);
+            analyzingSuggester.setPreservePositionIncrements(fieldType.preservePositionIncrements());
             analyzingSuggester.build(dictCache.getUnchecked(fieldType.field()));
             return analyzingSuggester;
         }
@@ -88,6 +90,7 @@ public abstract class AbstractCacheLoaderSuggester<T> extends CacheLoader<ShardS
         public FuzzySuggester getSuggester(Analyzer indexAnalyzer, Analyzer queryAnalyzer,
                                                ShardSuggestService.FieldType fieldType) throws Exception {
             FuzzySuggester fuzzySuggester = new FuzzySuggester(indexAnalyzer, queryAnalyzer);
+            fuzzySuggester.setPreservePositionIncrements(fieldType.preservePositionIncrements());
             fuzzySuggester.build(dictCache.getUnchecked(fieldType.field()));
             return fuzzySuggester;
         }

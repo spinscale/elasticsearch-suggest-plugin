@@ -64,4 +64,9 @@ public class SuggestRequestBuilder extends ActionRequestBuilder<SuggestRequest, 
         request.queryAnalyzer(analyzer);
         return this;
     }
+
+    public SuggestRequestBuilder preservePositionIncrements(boolean preservePositionIncrements) {
+        request.preservePositionIncrements(preservePositionIncrements);
+        return this;
+    }
 }

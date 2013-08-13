@@ -1,24 +1,23 @@
 package de.spinscale.elasticsearch.module.suggest.test;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.fail;
-
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
+import org.apache.commons.lang.RandomStringUtils;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.common.RandomStringGenerator;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.node.Node;
-import org.junit.Assert;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.fail;
 
 public class ProductTestHelper {
 
@@ -55,8 +54,8 @@ public class ProductTestHelper {
 
         for (int i = 0 ; i < count; i++) {
             Map<String, Object> product = Maps.newHashMap();
-            product.put("ProductName", RandomStringGenerator.randomAlphabetic(10));
-            product.put("ProductId", i + "_" + RandomStringGenerator.randomAlphanumeric(10));
+            product.put("ProductName", RandomStringUtils.randomAlphabetic(10));
+            product.put("ProductId", i + "_" + RandomStringUtils.randomAlphabetic(10));
             products.add(product);
         }
 

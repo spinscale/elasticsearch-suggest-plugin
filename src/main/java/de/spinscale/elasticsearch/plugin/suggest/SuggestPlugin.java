@@ -31,7 +31,7 @@ public class SuggestPlugin extends AbstractPlugin {
         // First failure, if the versions dont match
         // Second failure: if the Version specified in before() does not yet exist, therefore catching Throwable
         try {
-            if (Version.CURRENT.before(Version.V_0_90_1)) {
+            if (Version.CURRENT.before(Version.V_0_90_3)) {
                 throw new Exception();
             }
         } catch (Throwable e) {

@@ -90,7 +90,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
                     @Override
                     public SpellChecker load(String field) throws Exception {
                         SpellChecker spellChecker = new SpellChecker(ramDirectoryCache.get(field));
-                        IndexWriterConfig indexWriterConfig = new IndexWriterConfig(Version.LUCENE_43, new WhitespaceAnalyzer(Version.LUCENE_43));
+                        IndexWriterConfig indexWriterConfig = new IndexWriterConfig(Version.LUCENE_44, new WhitespaceAnalyzer(Version.LUCENE_44));
                         spellChecker.indexDictionary(dictCache.getUnchecked(field), indexWriterConfig, false);
                         return spellChecker;
                     }
@@ -236,8 +236,8 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         List<LookupResult> lookupResults = Lists.newArrayList();
         if ("full".equals(shardSuggestRequest.suggestType())) {
             // TODO: support for multiple types here
-            lookupResults.addAll(analyzingSuggesterCache.getUnchecked(new FieldType(shardSuggestRequest))
-                    .lookup(shardSuggestRequest.term(), false, shardSuggestRequest.size()));
+            AnalyzingSuggester analyzingSuggester = analyzingSuggesterCache.getUnchecked(new FieldType(shardSuggestRequest));
+            lookupResults.addAll(analyzingSuggester.lookup(shardSuggestRequest.term(), false, shardSuggestRequest.size()));
 
         } else if ("fuzzy".equals(shardSuggestRequest.suggestType())) {
             // TODO: support for multiple types here
@@ -341,6 +341,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         private List<String> types = Lists.newArrayList();
         private String queryAnalyzer;
         private String indexAnalyzer;
+        private boolean preservePositionIncrements = true;
 
         public FieldType() {}
 
@@ -349,6 +350,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
             this.types = Arrays.asList(shardSuggestRequest.types());
             this.queryAnalyzer = shardSuggestRequest.queryAnalyzer();
             this.indexAnalyzer = shardSuggestRequest.indexAnalyzer();
+            this.preservePositionIncrements = shardSuggestRequest.preservePositionIncrements();
         }
 
         public String field() {
@@ -367,6 +369,10 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
             return indexAnalyzer;
         }
 
+        public boolean preservePositionIncrements() {
+            return preservePositionIncrements;
+        }
+
         @Override
         public boolean equals(Object obj) {
             if (obj == null) {
@@ -380,7 +386,8 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
             return Objects.equal(this.field(), other.field())
                     && Objects.equal(this.queryAnalyzer(), other.queryAnalyzer())
                     && Objects.equal(this.indexAnalyzer(), other.indexAnalyzer())
-                    && Objects.equal(this.types, other.types);
+                    && Objects.equal(this.types, other.types)
+                    && Objects.equal(this.preservePositionIncrements(), other.preservePositionIncrements());
         }
 
         @Override
@@ -389,6 +396,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
             hashCode += this.types.hashCode();
             if (this.queryAnalyzer != null) hashCode += this.queryAnalyzer.hashCode();
             if (this.indexAnalyzer != null) hashCode += this.indexAnalyzer.hashCode();
+            hashCode += Boolean.valueOf(preservePositionIncrements).hashCode();
 
             return hashCode;
         }
@@ -398,6 +406,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
             ToStringBuilder toStringBuilder = new ToStringBuilder(this.getClass())
                     .add("field", this.field());
 
+            toStringBuilder.add("preservePositionIncrements", this.preservePositionIncrements);
             if (queryAnalyzer != null && queryAnalyzer.equals(indexAnalyzer)) {
                 toStringBuilder.add("analyzer", this.queryAnalyzer);
             } else {
@@ -422,6 +431,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
             queryAnalyzer = in.readOptionalString();
             indexAnalyzer = in.readOptionalString();
             types = (List<String>) in.readGenericValue();
+            preservePositionIncrements = in.readBoolean();
         }
 
         @Override
@@ -430,6 +440,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
             out.writeOptionalString(queryAnalyzer);
             out.writeOptionalString(indexAnalyzer);
             out.writeGenericValue(types);
+            out.writeBoolean(preservePositionIncrements);
         }
 
         @Override
@@ -442,6 +453,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
                 if (queryAnalyzer != null) builder.field("queryAnalyzer", queryAnalyzer);
                 if (indexAnalyzer != null) builder.field("indexAnalyzer", indexAnalyzer);
             }
+            if (!preservePositionIncrements) builder.field("preservePositionIncrements", preservePositionIncrements);
             if (types.size() > 0) builder.field("types", types());
             //builder.endObject();
             return builder;

@@ -17,6 +17,7 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
     private String suggestType = "fst";
     private String queryAnalyzer;
     private String indexAnalyzer;
+    private boolean preservePositionIncrements = true;
 
     public ShardSuggestRequest() {}
 
@@ -30,6 +31,7 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
         suggestType = request.suggestType();
         queryAnalyzer = request.queryAnalyzer();
         indexAnalyzer = request.indexAnalyzer();
+        preservePositionIncrements = request.preservePositionIncrements();
     }
 
     public int size() {
@@ -92,6 +94,14 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
         this.indexAnalyzer = indexAnalyzer;
     }
 
+    public boolean preservePositionIncrements() {
+        return preservePositionIncrements;
+    }
+
+    public void preservePositionIncrements(boolean preservePositionIncrements) {
+        this.preservePositionIncrements = preservePositionIncrements;
+    }
+
     @Override public void readFrom(StreamInput in) throws IOException {
         super.readFrom(in);
         size = in.readVInt();
@@ -102,6 +112,7 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
         queryAnalyzer = in.readOptionalString();
         indexAnalyzer = in.readOptionalString();
         types = in.readStringArray();
+        preservePositionIncrements = in.readBoolean();
     }
 
     @Override public void writeTo(StreamOutput out) throws IOException {
@@ -114,6 +125,6 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
         out.writeOptionalString(queryAnalyzer);
         out.writeOptionalString(indexAnalyzer);
         out.writeStringArrayNullable(types);
+        out.writeBoolean(preservePositionIncrements);
     }
-
 }

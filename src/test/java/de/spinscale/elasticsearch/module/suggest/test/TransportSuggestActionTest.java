@@ -51,6 +51,8 @@ public class TransportSuggestActionTest extends AbstractSuggestTest {
             request.analyzer(suggestionQuery.analyzer);
         }
 
+        request.preservePositionIncrements(suggestionQuery.preservePositionIncrements);
+
         SuggestResponse suggestResponse = node.client().execute(SuggestAction.INSTANCE, request).actionGet();
         assertThat(suggestResponse.getShardFailures(), is(emptyArray()));
 

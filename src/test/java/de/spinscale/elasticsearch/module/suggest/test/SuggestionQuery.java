@@ -12,6 +12,7 @@ public class SuggestionQuery {
     public Integer size;
     public Float similarity;
     public String analyzer;
+    public boolean preservePositionIncrements = true;
 
     public SuggestionQuery(String index, String type, String field, String term) {
         this.index = index;
@@ -60,7 +61,12 @@ public class SuggestionQuery {
         if (analyzer != null) sb.append(String.format(" analyzer[%s]", analyzer));
         if (indexAnalyzer!= null) sb.append(String.format(" indexAnalyzer[%s]", indexAnalyzer));
         if (queryAnalyzer != null) sb.append(String.format(" queryAnalyzer[%s]", queryAnalyzer));
+        sb.append(String.format(" preservePositionIncrements[%s]", preservePositionIncrements));
         return sb.toString();
     }
 
+    public SuggestionQuery preservePositionIncrements(boolean preservePositionIncrements) {
+        this.preservePositionIncrements = preservePositionIncrements;
+        return this;
+    }
 }
