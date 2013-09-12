@@ -29,7 +29,7 @@ Everything is now in the `de.spinscale` package name space in order to avoid cla
 If you do not want to work on the repository, just use the standard elasticsearch plugin command (inside your elasticsearch/bin directory)
 
 ```
-bin/plugin -install de.spinscale/elasticsearch-plugin-suggest/0.90.3-0.8
+bin/plugin -install de.spinscale/elasticsearch-plugin-suggest/0.90.3-0.8.0
 ```
 
 ### Compatibility
@@ -42,7 +42,7 @@ bin/plugin -install de.spinscale/elasticsearch-plugin-suggest/0.90.3-0.8
     ---------------------------------------
     | master           | 0.90.1 -> master |
     ---------------------------------------
-    | 0.90.3-0.8       | 0.90.3           |
+    | 0.90.3-0.8.0     | 0.90.3           |
     ---------------------------------------
     | 0.90.1-0.7       | 0.90.1           |
     ---------------------------------------
@@ -82,7 +82,7 @@ Alternatively you can now use this plugin via maven and include it via the sonat
   <dependency>
     <groupId>de.spinscale</groupId>
     <artifactId>elasticsearch-suggest-plugin</artifactId>
-    <version>0.90.3-0.8</version>
+    <version>0.90.3-0.8.0</version>
   </dependency>
   ...
 <dependencies>
