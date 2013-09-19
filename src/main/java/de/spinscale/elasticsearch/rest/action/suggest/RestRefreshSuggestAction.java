@@ -1,23 +1,23 @@
 package de.spinscale.elasticsearch.rest.action.suggest;
 
-import static org.elasticsearch.rest.RestRequest.Method.*;
-import static org.elasticsearch.rest.RestStatus.*;
-
-import java.io.IOException;
-import java.util.Map;
-
-import org.elasticsearch.action.ActionListener;
 import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshAction;
 import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshRequest;
 import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshResponse;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.rest.*;
-import org.elasticsearch.rest.action.support.RestActions;
+
+import java.io.IOException;
+import java.util.Map;
+
+import static org.elasticsearch.rest.RestRequest.Method.POST;
+import static org.elasticsearch.rest.RestStatus.OK;
 
 public class RestRefreshSuggestAction extends BaseRestHandler {
 
@@ -30,7 +30,7 @@ public class RestRefreshSuggestAction extends BaseRestHandler {
 
     @Override
     public void handleRequest(final RestRequest request, final RestChannel channel) {
-        final String[] indices = RestActions.splitIndices(request.param("index"));
+        final String[] indices = Strings.splitStringByCommaToArray(request.param("index"));
 
         try {
 
