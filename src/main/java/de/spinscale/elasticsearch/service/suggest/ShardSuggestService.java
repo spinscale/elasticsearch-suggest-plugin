@@ -271,7 +271,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
     public void resetIndexReader() {
         IndexReader currentIndexReader = null;
         if (indexShard.state() == IndexShardState.STARTED) {
-            Engine.Searcher currentIndexSearcher = indexShard.acquireSearcher();
+            Engine.Searcher currentIndexSearcher = indexShard.acquireSearcher( "suggest" );
             currentIndexReader = currentIndexSearcher.reader();
             currentIndexSearcher.release();
         }
@@ -313,7 +313,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
                 lock.lock();
                 if (indexReader == null) {
                     // logger.info("1 shard {} : ref count {}", shardId, indexReader.getRefCount());
-                    Engine.Searcher indexSearcher = indexShard.acquireSearcher();
+                    Engine.Searcher indexSearcher = indexShard.acquireSearcher( "suggest" );
                     indexReader = indexSearcher.reader();
                     indexSearcher.release();
 
