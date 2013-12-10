@@ -40,7 +40,7 @@ bin/plugin -install de.spinscale/elasticsearch-plugin-suggest/0.90.5-0.9
     ---------------------------------------
     | suggest plugin   | Elasticsearch    |
     ---------------------------------------
-    | master           | 0.90.5 -> master |
+    | 0.90.7-1.0       | 0.90.7 -> master |
     ---------------------------------------
     | 0.90.5-0.9       | 0.90.5           |
     ---------------------------------------
@@ -84,7 +84,7 @@ Alternatively you can now use this plugin via maven and include it via the sonat
   <dependency>
     <groupId>de.spinscale</groupId>
     <artifactId>elasticsearch-suggest-plugin</artifactId>
-    <version>0.90.5-0.9</version>
+    <version>0.90.7-1.0</version>
   </dependency>
   ...
 <dependencies>
@@ -295,6 +295,7 @@ builder.execute().actionGet();
 
 ## Changelog
 
+* 2013-12-10: Version bump to 0.90.7
 * 2013-08-13: Version bump to 0.90.3. Due to changes in Lucene 4.4, please check the tests to see that stopwords need to be handled on the request side if you use the fuzzy or full mode.
 * 2013-05-31: Removing usage of jdk7 only methods, version bump to 0.90.1
 * 2013-05-25: Changing suggest statistics format, fixing cache loading bug for analyzing/fuzzysuggester
