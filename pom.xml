@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>de.spinscale</groupId>
     <artifactId>elasticsearch-plugin-suggest</artifactId>
-    <version>0.90.12-1.1-SNAPSHOT</version>
+    <version>0.90.12-1.1</version>
     <packaging>jar</packaging>
     <description>Lucene FSTSuggester implementation for ElasticSearch</description>
     <inceptionYear>2011</inceptionYear>
@@ -22,7 +22,7 @@
         <tests.jvms>1</tests.jvms>
         <tests.shuffle>true</tests.shuffle>
         <tests.output>onerror</tests.output>
-        <tests.client.ratio></tests.client.ratio>
+        <tests.client.ratio />
         <es.logger.level>INFO</es.logger.level>
     </properties>
 
@@ -149,28 +149,18 @@
                             <jvmOutputAction>pipe,warn</jvmOutputAction>
                             <leaveTemporary>true</leaveTemporary>
                             <listeners>
-                                <report-ant-xml mavenExtensions="true"
-                                                dir="${project.build.directory}/surefire-reports"/>
-                                <report-text
-                                        showThrowable="true"
-                                        showStackTraces="true"
-                                        showOutput="${tests.output}"
-                                        showStatusOk="false"
-                                        showStatusError="true"
-                                        showStatusFailure="true"
-                                        showStatusIgnored="true"
-                                        showSuiteSummary="true"
-                                        timestamps="false"/>
-                                <report-execution-times file="${basedir}/.local-execution-hints.log"/>
+                                <report-ant-xml mavenExtensions="true" dir="${project.build.directory}/surefire-reports" />
+                                <report-text showThrowable="true" showStackTraces="true" showOutput="${tests.output}" showStatusOk="false" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showSuiteSummary="true" timestamps="false" />
+                                <report-execution-times file="${basedir}/.local-execution-hints.log" />
                             </listeners>
                             <assertions>
                                 <enable />
-                                <disable package="${tests.assertion.disabled}"/>  <!-- pass org.elasticsearch to run without assertions -->
+                                <disable package="${tests.assertion.disabled}" />  <!-- pass org.elasticsearch to run without assertions -->
                             </assertions>
                             <parallelism>${tests.jvms}</parallelism>
                             <balancers>
                                 <execution-times>
-                                    <fileset dir="${basedir}" includes=".local-execution-hints.log"/>
+                                    <fileset dir="${basedir}" includes=".local-execution-hints.log" />
                                 </execution-times>
                             </balancers>
                             <argLine>${tests.jvm.argline}</argLine>
@@ -263,7 +253,7 @@
                                     </goals>
                                 </pluginExecutionFilter>
                                 <action>
-                                    <execute/>
+                                    <execute />
                                 </action>
                             </pluginExecution>
                         </pluginExecutions>
