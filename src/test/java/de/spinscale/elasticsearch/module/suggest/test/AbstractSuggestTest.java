@@ -1,71 +1,44 @@
 package de.spinscale.elasticsearch.module.suggest.test;
 
-import static de.spinscale.elasticsearch.module.suggest.test.NodeTestHelper.*;
-import static de.spinscale.elasticsearch.module.suggest.test.ProductTestHelper.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-
 import de.spinscale.elasticsearch.action.suggest.statistics.FstStats;
+import org.apache.commons.io.IOUtils;
+import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.admin.indices.settings.UpdateSettingsResponse;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryRequest;
 import org.elasticsearch.common.collect.Lists;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.node.Node;
-import org.junit.After;
+import org.elasticsearch.test.ElasticsearchIntegrationTest;
+import org.elasticsearch.test.junit.annotations.TestLogging;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.runners.Parameterized.Parameters;
 
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
-public abstract class AbstractSuggestTest {
+import static de.spinscale.elasticsearch.module.suggest.test.NodeTestHelper.createIndexWithMapping;
+import static de.spinscale.elasticsearch.module.suggest.test.ProductTestHelper.createProducts;
+import static de.spinscale.elasticsearch.module.suggest.test.ProductTestHelper.indexProducts;
+import static org.hamcrest.Matchers.*;
 
-    protected String clusterName;
-    protected Node node;
-    protected List<Node> nodes = Lists.newArrayList();
-    protected ExecutorService executor;
+@TestLogging("_root:info")
+@Ignore
+public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
+
     public static final String DEFAULT_INDEX = "products";
     public static final String DEFAULT_TYPE  = "product";
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        // first argument: number of shards, second argument: number of nodes
-//        Object[][] data = new Object[][] { { 1,1 } };
-        Object[][] data = new Object[][] { { 1, 1 }, { 4, 1 }, { 10, 1 }, { 4, 4 } };
-        return Arrays.asList(data);
-    }
+    @Before
+    public void createIndex() throws Exception {
+        String settingsData = IOUtils.toString(NodeTestHelper.class.getResourceAsStream("/product.json"));
+        CreateIndexResponse createIndexResponse = client().admin().indices().prepareCreate(DEFAULT_INDEX)
+                .setSource(settingsData).execute().actionGet();
+        assertThat(createIndexResponse.isAcknowledged(), is(true));
 
-    public AbstractSuggestTest(int shards, int nodeCount) throws Exception {
-        clusterName = "SuggestTest_" + Math.random();
-        executor = Executors.newFixedThreadPool(nodeCount);
-        List<Future<Node>> nodeFutures = Lists.newArrayList();
-
-        for (int i = 0 ; i < nodeCount ; i++) {
-            String nodeName = String.format("node-%02d", i);
-            Future<Node> nodeFuture = executor.submit(createNode(clusterName, nodeName, shards));
-            nodeFutures.add(nodeFuture);
-        }
-
-        for (Future<Node> nodeFuture : nodeFutures) {
-            nodes.add(nodeFuture.get());
-        }
-
-        node = nodes.get(0);
-        createIndexWithMapping("products", node);
-    }
-
-    @After
-    public void stopNodes() throws Exception {
-        node.client().admin().indices().prepareDelete("products").execute().actionGet();
-
-        for (Node nodeToStop : nodes) {
-            executor.submit(stopNode(nodeToStop));
-        }
-        executor.shutdown();
-        executor.awaitTermination(1, TimeUnit.MINUTES); // maybe there are freaky long gc runs, so wait
+        client().admin().cluster().prepareHealth(DEFAULT_INDEX).setWaitForGreenStatus().execute().actionGet();
     }
 
     abstract public List<String> getSuggestions(SuggestionQuery suggestionQuery) throws Exception;
@@ -77,7 +50,7 @@ public abstract class AbstractSuggestTest {
     @Test
     public void testThatSimpleSuggestionWorks() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "foo", "foob", "foobar", "boof");
-        indexProducts(products, node);
+        indexProducts(products, client());
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "foo", 10);
         assertSuggestions(suggestions, "foo", "foob", "foobar");
@@ -86,7 +59,7 @@ public abstract class AbstractSuggestTest {
     @Test
     public void testThatAllFieldSuggestionsWorks() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "foo", "foob", "foobar", "boof");
-        indexProducts(products, node);
+        indexProducts(products, client());
 
         List<String> suggestions = getSuggestions("_all", "foo", 10);
         assertSuggestions(suggestions, "foo", "foob", "foobar");
@@ -95,7 +68,7 @@ public abstract class AbstractSuggestTest {
     @Test
     public void testThatSimpleSuggestionShouldSupportLimit() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "foo", "fooba", "foobar");
-        indexProducts(products, node);
+        indexProducts(products, client());
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "foo", 2);
         assertSuggestions(suggestions, "foo", "fooba");
@@ -104,7 +77,7 @@ public abstract class AbstractSuggestTest {
     @Test
     public void testThatSimpleSuggestionShouldSupportLimitWithConcreteWord() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "foo", "fooba", "foobar");
-        indexProducts(products, node);
+        indexProducts(products, client());
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "foo", 2);
         assertSuggestions(suggestions, "foo", "fooba");
@@ -113,7 +86,7 @@ public abstract class AbstractSuggestTest {
     @Test
     public void testThatSuggestionShouldNotContainDuplicates() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "foo", "foo", "foob");
-        indexProducts(products, node);
+        indexProducts(products, client());
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "foo", 10);
         assertSuggestions(suggestions, "foo", "foob");
@@ -125,7 +98,7 @@ public abstract class AbstractSuggestTest {
         products.get(0).put("Description", "Kochjacke Pute");
         products.get(1).put("Description", "Kochjacke Henne");
         products.get(2).put("Description", "Kochjacke Hahn");
-        indexProducts(products, node);
+        indexProducts(products, client());
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "kochjacke", 10);
         assertSuggestions(suggestions, "kochjacke", "kochjacke hahn", "kochjacke henne", "kochjacke pute");
@@ -138,7 +111,7 @@ public abstract class AbstractSuggestTest {
     public void testThatSuggestionShouldWorkWithWhitespaces() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "Kochjacke Paul", "Kochjacke Pauline",
                 "Kochjacke Paulinea");
-        indexProducts(products, node);
+        indexProducts(products, client());
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "kochja", 10);
         assertSuggestions(suggestions, "kochjacke", "kochjacke paul", "kochjacke pauline", "kochjacke paulinea");
@@ -154,15 +127,15 @@ public abstract class AbstractSuggestTest {
     public void testThatSuggestionWithShingleWorksAfterUpdate() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "Kochjacke Paul", "Kochjacke Pauline",
                 "Kochjacke Paulinator");
-        indexProducts(products, node);
+        indexProducts(products, client());
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "kochjacke", 10);
         assertSuggestions(suggestions, "kochjacke", "kochjacke paul", "kochjacke paulinator", "kochjacke pauline");
 
         products = createProducts(1);
         products.get(0).put("ProductName", "Kochjacke PaulinPanzer");
-        indexProducts(products, node);
-        refreshIndex(DEFAULT_INDEX, node);
+        indexProducts(products, client());
+        refresh();
         refreshAllSuggesters();
 
         suggestions = getSuggestions("ProductName.suggest", "kochjacke paulin", 10);
@@ -178,7 +151,7 @@ public abstract class AbstractSuggestTest {
     public void testThatSuggestionWorksWithSimilarity() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "kochjacke bla", "kochjacke blubb",
                 "kochjacke blibb", "kochjacke paul");
-        indexProducts(products, node);
+        indexProducts(products, client());
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "kochajcke", 10, 0.75f);
         assertThat(suggestions, hasSize(1));
@@ -193,11 +166,11 @@ public abstract class AbstractSuggestTest {
         // if it is not added to the same shard, refreshing might not work as expected
         // in case the data is added to a shard where there was no data in before, it is added immediately to the
         // suggestions, this means more results than expected might be returned in the last line of this test
-        createIndexWithMapping("secondproductsindex", node);
+        createIndexWithMapping("secondproductsindex", client());
 
         List<Map<String, Object>> products = createProducts("ProductName", "autoreifen", "autorad");
-        indexProducts(products, DEFAULT_INDEX, "someRoutingKey", node);
-        indexProducts(products, "secondproductsindex", "someRoutingKey", node);
+        indexProducts(products, DEFAULT_INDEX, "someRoutingKey", client());
+        indexProducts(products, "secondproductsindex", "someRoutingKey", client());
 
         // get suggestions from both indexes to create fst structures
         SuggestionQuery productsQuery = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.suggest", "auto");
@@ -207,8 +180,8 @@ public abstract class AbstractSuggestTest {
 
         // index another product
         List<Map<String, Object>> newProducts = createProducts("ProductName", "automatik");
-        indexProducts(newProducts, DEFAULT_INDEX, "someRoutingKey", node);
-        indexProducts(newProducts, "secondproductsindex", "someRoutingKey", node);
+        indexProducts(newProducts, DEFAULT_INDEX, "someRoutingKey", client());
+        indexProducts(newProducts, "secondproductsindex", "someRoutingKey", client());
 
         refreshIndexSuggesters("products");
 
@@ -225,7 +198,7 @@ public abstract class AbstractSuggestTest {
         // in case the data is added to a shard where there was no data in before, it is added immediately to the
         // suggestions, this means more results than expected might be returned in the last line of this test
         List<Map<String, Object>> products = createProducts("ProductName", "autoreifen", "autorad");
-        indexProducts(products, DEFAULT_INDEX, "someRoutingKey", node);
+        indexProducts(products, DEFAULT_INDEX, "someRoutingKey", client());
 
         SuggestionQuery suggestionQuery = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.suggest", "auto");
         SuggestionQuery lowerCaseQuery = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.lowercase", "auto");
@@ -233,7 +206,7 @@ public abstract class AbstractSuggestTest {
         getSuggestions(lowerCaseQuery);
 
         List<Map<String, Object>> newProducts = createProducts("ProductName", "automatik");
-        indexProducts(newProducts, DEFAULT_INDEX, "someRoutingKey", node);
+        indexProducts(newProducts, DEFAULT_INDEX, "someRoutingKey", client());
 
         refreshFieldSuggesters("products", "ProductName.suggest");
 
@@ -245,7 +218,7 @@ public abstract class AbstractSuggestTest {
     public void testThatAnalyzingSuggesterWorks() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "BMW 318", "BMW 528", "BMW M3",
                 "the BMW 320", "VW Jetta");
-        indexProducts(products, node);
+        indexProducts(products, client());
 
         SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b")
                 .suggestType("full").analyzer("simple").size(10);
@@ -258,7 +231,7 @@ public abstract class AbstractSuggestTest {
     public void testThatAnalyzingSuggesterSupportsStopWords() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "BMW 318", "BMW 528", "BMW M3",
                 "the BMW 320", "VW Jetta");
-        indexProducts(products, node);
+        indexProducts(products, client());
 
         SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b")
                 .suggestType("full").indexAnalyzer("stop").queryAnalyzer("stop")
@@ -272,7 +245,7 @@ public abstract class AbstractSuggestTest {
     public void testThatFuzzySuggesterWorks() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "BMW 318", "BMW 528", "BMW M3",
                 "the BMW 320", "VW Jetta");
-        indexProducts(products, node);
+        indexProducts(products, client());
 
         SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "bwm")
                 .suggestType("fuzzy").analyzer("standard").size(10);
@@ -284,23 +257,30 @@ public abstract class AbstractSuggestTest {
     @Test
     public void testThatFlushForcesReloadingOfAllFieldsWithoutErrors() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "BMW 318");
-        indexProducts(products, node);
+        indexProducts(products, client());
 
         SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "bwm").suggestType("full");
         getSuggestions(query);
 
         // add data to index and flush
         // indexProducts(createProducts("ProductName", "BMW 320"), node);
-        node.client().prepareIndex(DEFAULT_INDEX, DEFAULT_TYPE, "foo").setSource(createProducts(1).get(0)).execute().actionGet();
-        node.client().admin().indices().prepareFlush(DEFAULT_INDEX).execute().actionGet();
+        client().prepareIndex(DEFAULT_INDEX, DEFAULT_TYPE, "foo").setSource(createProducts(1).get(0)).execute().actionGet();
+        client().admin().indices().prepareFlush(DEFAULT_INDEX).execute().actionGet();
         getSuggestions(query);
     }
 
     @Test
     public void gettingStatisticsShouldWork() throws Exception {
+        // needed to make sure that we hit the already queried shards for stats, the other are empty
+        Settings settings = ImmutableSettings.settingsBuilder()
+                .put("index.number_of_replicas", 0)
+                .build();
+        UpdateSettingsResponse response = client().admin().indices().prepareUpdateSettings(DEFAULT_INDEX).setSettings(settings).get();
+        assertThat(response.isAcknowledged(), is(true));
+
         List<Map<String, Object>> products = createProducts("ProductName",
                 "BMW 318", "BMW 528", "BMW M3", "the BMW 320", "VW Jetta");
-        indexProducts(products, node);
+        indexProducts(products, client());
 
         FstStats emptyFstStats = getStatistics();
         assertThat(emptyFstStats.getStats(), hasSize(0));
@@ -308,7 +288,8 @@ public abstract class AbstractSuggestTest {
 
         SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b")
                 .suggestType("full").analyzer("stop").size(10);
-        getSuggestions(query);
+        List<String> suggestions = getSuggestions(query);
+        assertSuggestions(suggestions, "BMW 318", "BMW 528", "BMW M3", "the BMW 320");
 
         FstStats filledFstStats = getStatistics();
         assertThat(filledFstStats.getStats(), hasSize(greaterThanOrEqualTo(1)));
@@ -371,6 +352,6 @@ public abstract class AbstractSuggestTest {
     }
 
     private void cleanIndex() {
-        node.client().deleteByQuery(new DeleteByQueryRequest("products").types("product").query(QueryBuilders.matchAllQuery())).actionGet();
+        client().deleteByQuery(new DeleteByQueryRequest("products").types("product").query(QueryBuilders.matchAllQuery())).actionGet();
     }
 }

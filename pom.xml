@@ -17,11 +17,23 @@
     </scm>
 
     <properties>
-        <elasticsearch.version>0.90.7</elasticsearch.version>
-        <lucene.version>4.5.1</lucene.version>
+        <elasticsearch.version>0.90.9</elasticsearch.version>
+        <lucene.version>4.6.0</lucene.version>
+        <tests.jvms>1</tests.jvms>
+        <tests.shuffle>true</tests.shuffle>
+        <tests.output>onerror</tests.output>
+        <tests.client.ratio></tests.client.ratio>
+        <es.logger.level>INFO</es.logger.level>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-test-framework</artifactId>
+            <version>${lucene.version}</version>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
@@ -34,6 +46,14 @@
             <artifactId>lucene-misc</artifactId>
             <version>${lucene.version}</version>
             <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.elasticsearch</groupId>
+            <artifactId>elasticsearch</artifactId>
+            <version>${elasticsearch.version}</version>
+            <scope>test</scope>
+            <type>test-jar</type>
         </dependency>
 
         <dependency>
@@ -118,6 +138,85 @@
                 <configuration>
                     <source>1.6</source>
                     <target>1.6</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.carrotsearch.randomizedtesting</groupId>
+                <artifactId>junit4-maven-plugin</artifactId>
+                <version>2.0.15</version>
+                <executions>
+                    <execution>
+                        <id>tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>junit4</goal>
+                        </goals>
+                        <configuration>
+                            <heartbeat>20</heartbeat>
+                            <jvmOutputAction>pipe,warn</jvmOutputAction>
+                            <leaveTemporary>true</leaveTemporary>
+                            <listeners>
+                                <report-ant-xml mavenExtensions="true"
+                                                dir="${project.build.directory}/surefire-reports"/>
+                                <report-text
+                                        showThrowable="true"
+                                        showStackTraces="true"
+                                        showOutput="${tests.output}"
+                                        showStatusOk="false"
+                                        showStatusError="true"
+                                        showStatusFailure="true"
+                                        showStatusIgnored="true"
+                                        showSuiteSummary="true"
+                                        timestamps="false"/>
+                                <report-execution-times file="${basedir}/.local-execution-hints.log"/>
+                            </listeners>
+                            <assertions>
+                                <enable />
+                                <disable package="${tests.assertion.disabled}"/>  <!-- pass org.elasticsearch to run without assertions -->
+                            </assertions>
+                            <parallelism>${tests.jvms}</parallelism>
+                            <balancers>
+                                <execution-times>
+                                    <fileset dir="${basedir}" includes=".local-execution-hints.log"/>
+                                </execution-times>
+                            </balancers>
+                            <argLine>${tests.jvm.argline}</argLine>
+                            <jvmArgs>
+                                <param>-Xmx512m</param>
+                                <param>-Xss256k</param>
+                                <param>-XX:MaxPermSize=128m</param>
+                                <param>-XX:MaxDirectMemorySize=512m</param>
+                                <param>-Des.logger.prefix=</param>
+                            </jvmArgs>
+                            <shuffleOnSlave>${tests.shuffle}</shuffleOnSlave>
+                            <sysouts>${tests.verbose}</sysouts>
+                            <seed>${tests.seed}</seed>
+                            <haltOnFailure>${tests.failfast}</haltOnFailure>
+                            <systemProperties>
+                                <!-- RandomizedTesting library system properties -->
+                                <tests.jvm.argline>${tests.jvm.argline}</tests.jvm.argline>
+                                <tests.appendseed>${tests.appendseed}</tests.appendseed>
+                                <tests.iters>${tests.iters}</tests.iters>
+                                <tests.class>${tests.class}</tests.class>
+                                <tests.method>${tests.method}</tests.method>
+                                <tests.cluster_seed>${tests.cluster_seed}</tests.cluster_seed>
+                                <tests.client.ratio>${tests.client.ratio}</tests.client.ratio>
+                                <tests.enable_mock_modules>${tests.enable_mock_modules}</tests.enable_mock_modules>
+                                <tests.assertion.disabled>${tests.assertion.disabled}</tests.assertion.disabled>
+                                <es.logger.level>${es.logger.level}</es.logger.level>
+                                <java.awt.headless>true</java.awt.headless>
+                            </systemProperties>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!-- we skip surefire to work with randomized testing above -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.16</version>
+                <configuration>
+                    <skipTests>true</skipTests>
                 </configuration>
             </plugin>
             <plugin>

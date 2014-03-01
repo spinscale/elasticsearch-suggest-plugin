@@ -36,7 +36,7 @@ public class RestStatisticsAction extends BaseRestHandler {
                     XContentBuilder builder = RestXContentBuilder.restContentBuilder(request);
                     builder.startObject();
                     buildBroadcastShardsHeader(builder, response);
-                    response.fstStats().toXContent(builder, null);
+                    response.fstStats().toXContent(builder, request);
 
                     builder.endObject();
                     channel.sendResponse(new XContentRestResponse(request, OK, builder));

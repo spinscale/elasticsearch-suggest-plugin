@@ -5,6 +5,7 @@ import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.collect.Maps;
@@ -21,16 +22,16 @@ import static org.junit.Assert.fail;
 
 public class ProductTestHelper {
 
-    static void indexProducts(List<Map<String, Object>> products, Node node) throws Exception {
-        indexProducts(products, "products", node);
+    static void indexProducts(List<Map<String, Object>> products, Client client) throws Exception {
+        indexProducts(products, "products", client);
     }
 
-    static void indexProducts(List<Map<String, Object>> products, String index, Node node) throws Exception {
-        indexProducts(products, index, null, node);
+    static void indexProducts(List<Map<String, Object>> products, String index, Client client) throws Exception {
+        indexProducts(products, index, null, client);
     }
 
-    static void indexProducts(List<Map<String, Object>> products, String index, String routing, Node node) throws Exception {
-        long currentCount = getCurrentDocumentCount(index, node);
+    static void indexProducts(List<Map<String, Object>> products, String index, String routing, Client client) throws Exception {
+        long currentCount = getCurrentDocumentCount(index, client);
         BulkRequest bulkRequest = new BulkRequest();
         for (Map<String, Object> product : products) {
             IndexRequest indexRequest = new IndexRequest(index, "product", (String)product.get("ProductId"));
@@ -41,12 +42,12 @@ public class ProductTestHelper {
             bulkRequest.add(indexRequest);
         }
         bulkRequest.refresh(true);
-        BulkResponse response = node.client().bulk(bulkRequest).actionGet();
+        BulkResponse response = client.bulk(bulkRequest).actionGet();
         if (response.hasFailures()) {
             fail("Error in creating products: " + response.buildFailureMessage());
         }
 
-        assertDocumentCountAfterIndexing(index, products.size() + currentCount, node);
+        assertDocumentCountAfterIndexing(index, products.size() + currentCount, client);
     }
 
     public static List<Map<String, Object>> createProducts(int count) {
@@ -76,12 +77,12 @@ public class ProductTestHelper {
         node.client().admin().indices().refresh(new RefreshRequest(index)).get();
     }
 
-    public static void assertDocumentCountAfterIndexing(String index, long expectedDocumentCount, Node node) throws Exception {
-        assertThat(getCurrentDocumentCount(index, node), is(expectedDocumentCount));
+    public static void assertDocumentCountAfterIndexing(String index, long expectedDocumentCount, Client client) throws Exception {
+        assertThat(getCurrentDocumentCount(index, client), is(expectedDocumentCount));
     }
 
-    public static long getCurrentDocumentCount(String index, Node node) {
-        return node.client().prepareCount(index).setQuery(QueryBuilders.matchAllQuery()).execute().actionGet(2000).getCount();
+    public static long getCurrentDocumentCount(String index, Client client) {
+        return client.prepareCount(index).setQuery(QueryBuilders.matchAllQuery()).execute().actionGet(2000).getCount();
     }
 
 }

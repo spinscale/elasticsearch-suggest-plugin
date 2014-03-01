@@ -8,3 +8,4 @@ target
 *.swp
 *.iml
 .idea
+.local-execution-hints.log

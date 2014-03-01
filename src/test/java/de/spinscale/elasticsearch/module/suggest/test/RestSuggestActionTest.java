@@ -1,17 +1,11 @@
 package de.spinscale.elasticsearch.module.suggest.test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
 import de.spinscale.elasticsearch.action.suggest.statistics.FstStats;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.ObjectNode;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.Lists;
@@ -19,24 +13,27 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.shard.ShardId;
+import org.elasticsearch.test.junit.annotations.TestLogging;
 import org.junit.After;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.Before;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-@RunWith(value = Parameterized.class)
+import static org.elasticsearch.test.ElasticsearchIntegrationTest.ClusterScope;
+import static org.elasticsearch.test.ElasticsearchIntegrationTest.Scope;
+import static org.hamcrest.Matchers.*;
+
 public class RestSuggestActionTest extends AbstractSuggestTest {
 
     private final AsyncHttpClient httpClient = new AsyncHttpClient();
-    private final int port;
+    private int port;
 
-    public RestSuggestActionTest(int shards, int nodeCount) throws Exception {
-        super(shards, nodeCount);
-        NodesInfoResponse response = node.client().admin().cluster().prepareNodesInfo().setHttp(true).execute().actionGet();
+    @Before
+    public void setPort() {
+        NodesInfoResponse response = client().admin().cluster().prepareNodesInfo().setHttp(true).execute().actionGet();
         port = ((InetSocketTransportAddress) response.getNodes()[0].getHttp().address().boundAddress()).address().getPort();
     }
 
