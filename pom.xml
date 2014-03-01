@@ -244,6 +244,86 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.eclipse.m2e</groupId>
+                <artifactId>lifecycle-mapping</artifactId>
+                <version>1.0.0</version>
+                <configuration>
+                    <lifecycleMappingMetadata>
+                        <pluginExecutions>
+                            <!-- forbidden-apis plugin -->
+                            <pluginExecution>
+                                <pluginExecutionFilter>
+                                    <groupId>de.thetaphi</groupId>
+                                    <artifactId>forbiddenapis</artifactId>
+                                    <versionRange>[1.0.0,)</versionRange>
+                                    <goals>
+                                        <goal>testCheck</goal>
+                                        <goal>check</goal>
+                                    </goals>
+                                </pluginExecutionFilter>
+                                <action>
+                                    <execute/>
+                                </action>
+                            </pluginExecution>
+                        </pluginExecutions>
+                    </lifecycleMappingMetadata>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>de.thetaphi</groupId>
+                <artifactId>forbiddenapis</artifactId>
+                <version>1.4</version>
+
+                <executions>
+                    <execution>
+                        <id>check-forbidden-apis</id>
+                        <configuration>
+                            <targetVersion>1.6</targetVersion>
+                            <!-- disallow undocumented classes like sun.misc.Unsafe: -->
+                            <internalRuntimeForbidden>true</internalRuntimeForbidden>
+                            <!-- if the used Java version is too new, don't fail, just do nothing: -->
+                            <failOnUnsupportedJava>false</failOnUnsupportedJava>
+                            <excludes>
+                                <exclude>de/spinscale/elasticsearch/service/suggest/ShardSuggestService.class</exclude>
+                            </excludes>
+                            <bundledSignatures>
+                                <!-- This will automatically choose the right signatures based on 'maven.compiler.target': -->
+                                <bundledSignature>jdk-unsafe</bundledSignature>
+                                <bundledSignature>jdk-deprecated</bundledSignature>
+                                <bundledSignaure>jdk-system-out</bundledSignaure>
+                            </bundledSignatures>
+                            <signaturesFiles>
+                                <signaturesFile>core-signatures.txt</signaturesFile>
+                            </signaturesFiles>
+                        </configuration>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>check-forbidden-test-apis</id>
+                        <configuration>
+                            <targetVersion>1.7</targetVersion>
+                            <!-- disallow undocumented classes like sun.misc.Unsafe: -->
+                            <internalRuntimeForbidden>true</internalRuntimeForbidden>
+                            <!-- if the used Java version is too new, don't fail, just do nothing: -->
+                            <failOnUnsupportedJava>false</failOnUnsupportedJava>
+                            <bundledSignatures>
+                                <!-- This will automatically choose the right signatures based on 'maven.compiler.target': -->
+                                <bundledSignature>jdk-unsafe</bundledSignature>
+                                <bundledSignature>jdk-deprecated</bundledSignature>
+                            </bundledSignatures>
+                        </configuration>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>testCheck</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 

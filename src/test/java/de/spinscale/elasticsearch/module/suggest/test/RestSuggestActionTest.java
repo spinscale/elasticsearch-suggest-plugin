@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.elasticsearch.test.ElasticsearchIntegrationTest.ClusterScope;
@@ -54,7 +55,7 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
         indexProducts(products);
         refreshAllSuggesters();
 
-        String json = String.format("{ \"field\": \"%s\", \"term\": \"%s\" }", "ProductName.suggest", "foobar");
+        String json = String.format(Locale.ROOT, "{ \"field\": \"%s\", \"term\": \"%s\" }", "ProductName.suggest", "foobar");
         String query = URLEncoder.encode(json, "UTF8");
         String queryString = "callback=mycallback&source=" + query;
         String response = httpClient.prepareGet("http://localhost:" + port + "/"+ index +"/product/__suggest?" + queryString).
@@ -100,7 +101,7 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
 
     @Override
     public void refreshFieldSuggesters(String index, String field) throws Exception {
-        String jsonBody = String.format("{ \"field\": \"%s\" } ", field);
+        String jsonBody = String.format(Locale.ROOT, "{ \"field\": \"%s\" } ", field);
 
         Response r = httpClient.preparePost("http://localhost:"+ port +"/" + index + "/product/__suggestRefresh").setBody(jsonBody).execute().get();
         assertThat(r.getStatusCode(), is(200));
@@ -138,27 +139,27 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
 
     private String createJSONQuery(SuggestionQuery suggestionQuery) {
         StringBuilder query = new StringBuilder("{");
-        query.append(String.format("\"field\": \"%s\", ", suggestionQuery.field));
-        query.append(String.format("\"term\": \"%s\"", suggestionQuery.term));
+        query.append(String.format(Locale.ROOT, "\"field\": \"%s\", ", suggestionQuery.field));
+        query.append(String.format(Locale.ROOT, "\"term\": \"%s\"", suggestionQuery.term));
         if (suggestionQuery.size != null) {
-            query.append(String.format(", \"size\": \"%s\"", suggestionQuery.size));
+            query.append(String.format(Locale.ROOT, ", \"size\": \"%s\"", suggestionQuery.size));
         }
         if (suggestionQuery.suggestType != null) {
-            query.append(String.format(", \"type\": \"%s\"", suggestionQuery.suggestType));
+            query.append(String.format(Locale.ROOT, ", \"type\": \"%s\"", suggestionQuery.suggestType));
         }
         if (suggestionQuery.similarity != null && suggestionQuery.similarity > 0.0 && suggestionQuery.similarity < 1.0) {
-            query.append(String.format(", \"similarity\": \"%s\"", suggestionQuery.similarity));
+            query.append(String.format(Locale.ROOT, ", \"similarity\": \"%s\"", suggestionQuery.similarity));
         }
         if (Strings.hasLength(suggestionQuery.indexAnalyzer)) {
-            query.append(String.format(", \"indexAnalyzer\": \"%s\"", suggestionQuery.indexAnalyzer));
+            query.append(String.format(Locale.ROOT, ", \"indexAnalyzer\": \"%s\"", suggestionQuery.indexAnalyzer));
         }
         if (Strings.hasLength(suggestionQuery.queryAnalyzer)) {
-            query.append(String.format(", \"queryAnalyzer\": \"%s\"", suggestionQuery.queryAnalyzer));
+            query.append(String.format(Locale.ROOT, ", \"queryAnalyzer\": \"%s\"", suggestionQuery.queryAnalyzer));
         }
         if (Strings.hasLength(suggestionQuery.analyzer)) {
-            query.append(String.format(", \"analyzer\": \"%s\"", suggestionQuery.analyzer));
+            query.append(String.format(Locale.ROOT, ", \"analyzer\": \"%s\"", suggestionQuery.analyzer));
         }
-        query.append(String.format(", \"preserve_position_increments\": \"%s\"", suggestionQuery.preservePositionIncrements));
+        query.append(String.format(Locale.ROOT, ", \"preserve_position_increments\": \"%s\"", suggestionQuery.preservePositionIncrements));
         query.append("}");
 
         return query.toString();

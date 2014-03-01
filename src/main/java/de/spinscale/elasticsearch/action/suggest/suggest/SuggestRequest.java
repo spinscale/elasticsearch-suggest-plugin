@@ -2,6 +2,7 @@ package de.spinscale.elasticsearch.action.suggest.suggest;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Locale;
 
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.ValidateActions;
@@ -144,7 +145,7 @@ public class SuggestRequest extends BroadcastOperationRequest {
     }
 
     @Override public String toString() {
-        return String.format("[%s] %s, field[%s], term[%s], size[%s], similarity[%s], suggestType[%s], indexAnalyzer[%s], queryAnalyzer[%s]",
+        return String.format(Locale.ROOT, "[%s] %s, field[%s], term[%s], size[%s], similarity[%s], suggestType[%s], indexAnalyzer[%s], queryAnalyzer[%s]",
                 Arrays.toString(indices), Arrays.toString(types), field, term, size, similarity, suggestType, indexAnalyzer, queryAnalyzer);
     }
 }

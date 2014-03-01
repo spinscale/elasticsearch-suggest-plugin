@@ -2,6 +2,7 @@ package de.spinscale.elasticsearch.action.suggest.refresh;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Locale;
 
 import org.elasticsearch.action.support.broadcast.BroadcastOperationRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -39,7 +40,7 @@ public class SuggestRefreshRequest extends BroadcastOperationRequest {
     }
 
     @Override public String toString() {
-        return String.format("[%s] field[%s]", Arrays.toString(indices), field);
+        return String.format(Locale.ROOT, "[%s] field[%s]", Arrays.toString(indices), field);
     }
 
 }

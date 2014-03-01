@@ -1,6 +1,7 @@
 package de.spinscale.elasticsearch.plugin.suggest;
 
 import java.util.Collection;
+import java.util.Locale;
 
 import de.spinscale.elasticsearch.module.suggest.ShardSuggestModule;
 import de.spinscale.elasticsearch.module.suggest.SuggestClientModule;
@@ -35,7 +36,7 @@ public class SuggestPlugin extends AbstractPlugin {
                 throw new Exception();
             }
         } catch (Throwable e) {
-            String error = String.format("The elasticsearch suggest plugin needs a newer version of elasticsearch than %s", Version.CURRENT);
+            String error = String.format(Locale.ROOT, "The elasticsearch suggest plugin needs a newer version of elasticsearch than %s", Version.CURRENT);
             throw new ElasticSearchException(error);
         }
     }

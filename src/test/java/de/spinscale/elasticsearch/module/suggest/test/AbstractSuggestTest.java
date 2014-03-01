@@ -340,14 +340,14 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     }
 
     private void assertSuggestions(List<String> suggestions, String ... terms) {
-        String msg = String.format("%s should have size %s, content %s", suggestions, terms.length, Arrays.asList(terms));
+        String msg = String.format(Locale.ROOT, "%s should have size %s, content %s", suggestions, terms.length, Arrays.asList(terms));
         assertThat(msg, suggestions, hasSize(terms.length));
         assertThat("Suggestions are: " + suggestions, suggestions, contains(terms));
     }
 
     private void assertSuggestions(SuggestionQuery query, String ... terms) throws Exception {
         List<String> suggestions = getSuggestions(query);
-        String assertionError = String.format("%s for query %s should be %s", suggestions, query, Arrays.asList(terms));
+        String assertionError = String.format(Locale.ROOT, "%s for query %s should be %s", suggestions, query, Arrays.asList(terms));
         assertThat(assertionError, suggestions, hasSize(terms.length));
         assertThat("Suggestions are: " + suggestions, suggestions, contains(terms));
     }
