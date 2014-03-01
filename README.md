@@ -37,27 +37,29 @@ bin/plugin -install de.spinscale/elasticsearch-plugin-suggest/0.90.5-0.9
 
 **Note**: Please make sure the plugin version matches with your elasticsearch version. Follow this compatibility matrix
 
-    ---------------------------------------
-    | suggest plugin   | Elasticsearch    |
-    ---------------------------------------
-    | 0.90.7-1.0       | 0.90.7 -> master |
-    ---------------------------------------
-    | 0.90.5-0.9       | 0.90.5           |
-    ---------------------------------------
-    | 0.90.3-0.8.*     | 0.90.3           |
-    ---------------------------------------
-    | 0.90.1-0.7       | 0.90.1           |
-    ---------------------------------------
-    | 0.90.0-0.6.*     | 0.90.0           |
-    ---------------------------------------
-    | 0.20.5-0.5       | 0.20.5 -> 0.20.6 |
-    ---------------------------------------
-    | 0.20.2-0.4       | 0.20.2 -> 0.20.4 |
-    ---------------------------------------
-    | 0.19.12-0.2      | 0.19.12          |
-    ---------------------------------------
-    | 0.19.11-0.1      | 0.19.11          |
-    ---------------------------------------
+    ----------------------------------------
+    | suggest plugin   | Elasticsearch     |
+    ----------------------------------------
+    | 0.90.12-1.1      | 0.90.12 -> master |
+    ----------------------------------------
+    | 0.90.7-1.0       | 0.90.7            |
+    ----------------------------------------
+    | 0.90.5-0.9       | 0.90.5            |
+    ----------------------------------------
+    | 0.90.3-0.8.*     | 0.90.3            |
+    ----------------------------------------
+    | 0.90.1-0.7       | 0.90.1            |
+    ----------------------------------------
+    | 0.90.0-0.6.*     | 0.90.0            |
+    ----------------------------------------
+    | 0.20.5-0.5       | 0.20.5 -> 0.20.6  |
+    ----------------------------------------
+    | 0.20.2-0.4       | 0.20.2 -> 0.20.4  |
+    ----------------------------------------
+    | 0.19.12-0.2      | 0.19.12           |
+    ----------------------------------------
+    | 0.19.11-0.1      | 0.19.11           |
+    ----------------------------------------
 
 
 ### Development
@@ -84,7 +86,7 @@ Alternatively you can now use this plugin via maven and include it via the sonat
   <dependency>
     <groupId>de.spinscale</groupId>
     <artifactId>elasticsearch-suggest-plugin</artifactId>
-    <version>0.90.7-1.0</version>
+    <version>0.90.12-1.1</version>
   </dependency>
   ...
 <dependencies>
@@ -295,6 +297,7 @@ builder.execute().actionGet();
 
 ## Changelog
 
+* 2014-03-01: Version bump to 0.90.12, switched to randomized elasticsearch testing resulting in testing code cleanups and waaaaaaaay faster tests
 * 2013-12-10: Version bump to 0.90.7
 * 2013-08-13: Version bump to 0.90.3. Due to changes in Lucene 4.4, please check the tests to see that stopwords need to be handled on the request side if you use the fuzzy or full mode.
 * 2013-05-31: Removing usage of jdk7 only methods, version bump to 0.90.1

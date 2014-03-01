@@ -2,10 +2,17 @@ package de.spinscale.elasticsearch.module.suggest.test;
 
 import de.spinscale.elasticsearch.action.suggest.statistics.FstStats;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.RandomStringUtils;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.settings.UpdateSettingsResponse;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryRequest;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.Lists;
+import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -15,30 +22,24 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
-import static de.spinscale.elasticsearch.module.suggest.test.NodeTestHelper.createIndexWithMapping;
-import static de.spinscale.elasticsearch.module.suggest.test.ProductTestHelper.createProducts;
-import static de.spinscale.elasticsearch.module.suggest.test.ProductTestHelper.indexProducts;
 import static org.hamcrest.Matchers.*;
 
 @TestLogging("_root:info")
 @Ignore
 public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
 
-    public static final String DEFAULT_INDEX = "products";
-    public static final String DEFAULT_TYPE  = "product";
+    public final String index = randomAsciiOfLength(10).toLowerCase(Locale.ROOT);
+    public final String type = randomAsciiOfLength(10).toLowerCase(Locale.ROOT);
 
     @Before
     public void createIndex() throws Exception {
-        String settingsData = IOUtils.toString(NodeTestHelper.class.getResourceAsStream("/product.json"));
-        CreateIndexResponse createIndexResponse = client().admin().indices().prepareCreate(DEFAULT_INDEX)
-                .setSource(settingsData).execute().actionGet();
-        assertThat(createIndexResponse.isAcknowledged(), is(true));
-
-        client().admin().cluster().prepareHealth(DEFAULT_INDEX).setWaitForGreenStatus().execute().actionGet();
+        createIndexWithProductsMapping(index);
     }
 
     abstract public List<String> getSuggestions(SuggestionQuery suggestionQuery) throws Exception;
@@ -50,7 +51,7 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     @Test
     public void testThatSimpleSuggestionWorks() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "foo", "foob", "foobar", "boof");
-        indexProducts(products, client());
+        indexProducts(products);
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "foo", 10);
         assertSuggestions(suggestions, "foo", "foob", "foobar");
@@ -59,7 +60,7 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     @Test
     public void testThatAllFieldSuggestionsWorks() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "foo", "foob", "foobar", "boof");
-        indexProducts(products, client());
+        indexProducts(products);
 
         List<String> suggestions = getSuggestions("_all", "foo", 10);
         assertSuggestions(suggestions, "foo", "foob", "foobar");
@@ -68,7 +69,7 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     @Test
     public void testThatSimpleSuggestionShouldSupportLimit() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "foo", "fooba", "foobar");
-        indexProducts(products, client());
+        indexProducts(products);
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "foo", 2);
         assertSuggestions(suggestions, "foo", "fooba");
@@ -77,7 +78,7 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     @Test
     public void testThatSimpleSuggestionShouldSupportLimitWithConcreteWord() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "foo", "fooba", "foobar");
-        indexProducts(products, client());
+        indexProducts(products);
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "foo", 2);
         assertSuggestions(suggestions, "foo", "fooba");
@@ -86,7 +87,7 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     @Test
     public void testThatSuggestionShouldNotContainDuplicates() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "foo", "foo", "foob");
-        indexProducts(products, client());
+        indexProducts(products);
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "foo", 10);
         assertSuggestions(suggestions, "foo", "foob");
@@ -98,7 +99,7 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
         products.get(0).put("Description", "Kochjacke Pute");
         products.get(1).put("Description", "Kochjacke Henne");
         products.get(2).put("Description", "Kochjacke Hahn");
-        indexProducts(products, client());
+        indexProducts(products);
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "kochjacke", 10);
         assertSuggestions(suggestions, "kochjacke", "kochjacke hahn", "kochjacke henne", "kochjacke pute");
@@ -111,7 +112,7 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     public void testThatSuggestionShouldWorkWithWhitespaces() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "Kochjacke Paul", "Kochjacke Pauline",
                 "Kochjacke Paulinea");
-        indexProducts(products, client());
+        indexProducts(products);
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "kochja", 10);
         assertSuggestions(suggestions, "kochjacke", "kochjacke paul", "kochjacke pauline", "kochjacke paulinea");
@@ -127,14 +128,14 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     public void testThatSuggestionWithShingleWorksAfterUpdate() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "Kochjacke Paul", "Kochjacke Pauline",
                 "Kochjacke Paulinator");
-        indexProducts(products, client());
+        indexProducts(products);
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "kochjacke", 10);
         assertSuggestions(suggestions, "kochjacke", "kochjacke paul", "kochjacke paulinator", "kochjacke pauline");
 
         products = createProducts(1);
         products.get(0).put("ProductName", "Kochjacke PaulinPanzer");
-        indexProducts(products, client());
+        indexProducts(products);
         refresh();
         refreshAllSuggesters();
 
@@ -151,7 +152,7 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     public void testThatSuggestionWorksWithSimilarity() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "kochjacke bla", "kochjacke blubb",
                 "kochjacke blibb", "kochjacke paul");
-        indexProducts(products, client());
+        indexProducts(products);
 
         List<String> suggestions = getSuggestions("ProductName.suggest", "kochajcke", 10, 0.75f);
         assertThat(suggestions, hasSize(1));
@@ -166,24 +167,24 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
         // if it is not added to the same shard, refreshing might not work as expected
         // in case the data is added to a shard where there was no data in before, it is added immediately to the
         // suggestions, this means more results than expected might be returned in the last line of this test
-        createIndexWithMapping("secondproductsindex", client());
+        createIndexWithProductsMapping("secondproductsindex");
 
         List<Map<String, Object>> products = createProducts("ProductName", "autoreifen", "autorad");
-        indexProducts(products, DEFAULT_INDEX, "someRoutingKey", client());
-        indexProducts(products, "secondproductsindex", "someRoutingKey", client());
+        indexProducts(products, index, "someRoutingKey");
+        indexProducts(products, "secondproductsindex", "someRoutingKey");
 
         // get suggestions from both indexes to create fst structures
-        SuggestionQuery productsQuery = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.suggest", "auto");
-        SuggestionQuery secondProductsIndexQuery = new SuggestionQuery("secondproductsindex", DEFAULT_TYPE, "ProductName.suggest", "auto");
+        SuggestionQuery productsQuery = new SuggestionQuery(index, type, "ProductName.suggest", "auto");
+        SuggestionQuery secondProductsIndexQuery = new SuggestionQuery("secondproductsindex", type, "ProductName.suggest", "auto");
         getSuggestions(productsQuery);
         getSuggestions(secondProductsIndexQuery);
 
         // index another product
         List<Map<String, Object>> newProducts = createProducts("ProductName", "automatik");
-        indexProducts(newProducts, DEFAULT_INDEX, "someRoutingKey", client());
-        indexProducts(newProducts, "secondproductsindex", "someRoutingKey", client());
+        indexProducts(newProducts, index, "someRoutingKey");
+        indexProducts(newProducts, "secondproductsindex", "someRoutingKey");
 
-        refreshIndexSuggesters("products");
+        refreshIndexSuggesters(index);
 
         assertSuggestions(productsQuery, "automatik", "autorad", "autoreifen");
         assertSuggestions(secondProductsIndexQuery, "autorad", "autoreifen");
@@ -198,17 +199,17 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
         // in case the data is added to a shard where there was no data in before, it is added immediately to the
         // suggestions, this means more results than expected might be returned in the last line of this test
         List<Map<String, Object>> products = createProducts("ProductName", "autoreifen", "autorad");
-        indexProducts(products, DEFAULT_INDEX, "someRoutingKey", client());
+        indexProducts(products, index, "someRoutingKey");
 
-        SuggestionQuery suggestionQuery = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.suggest", "auto");
-        SuggestionQuery lowerCaseQuery = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.lowercase", "auto");
+        SuggestionQuery suggestionQuery = new SuggestionQuery(index, type, "ProductName.suggest", "auto");
+        SuggestionQuery lowerCaseQuery = new SuggestionQuery(index, type, "ProductName.lowercase", "auto");
         getSuggestions(suggestionQuery);
         getSuggestions(lowerCaseQuery);
 
         List<Map<String, Object>> newProducts = createProducts("ProductName", "automatik");
-        indexProducts(newProducts, DEFAULT_INDEX, "someRoutingKey", client());
+        indexProducts(newProducts, index, "someRoutingKey");
 
-        refreshFieldSuggesters("products", "ProductName.suggest");
+        refreshFieldSuggesters(index, "ProductName.suggest");
 
         assertSuggestions(suggestionQuery, "automatik", "autorad", "autoreifen");
         assertSuggestions(lowerCaseQuery, "autorad", "autoreifen");
@@ -218,9 +219,9 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     public void testThatAnalyzingSuggesterWorks() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "BMW 318", "BMW 528", "BMW M3",
                 "the BMW 320", "VW Jetta");
-        indexProducts(products, client());
+        indexProducts(products);
 
-        SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b")
+        SuggestionQuery query = new SuggestionQuery(index, type, "ProductName.keyword", "b")
                 .suggestType("full").analyzer("simple").size(10);
         List<String> suggestions = getSuggestions(query);
 
@@ -231,9 +232,9 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     public void testThatAnalyzingSuggesterSupportsStopWords() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "BMW 318", "BMW 528", "BMW M3",
                 "the BMW 320", "VW Jetta");
-        indexProducts(products, client());
+        indexProducts(products);
 
-        SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b")
+        SuggestionQuery query = new SuggestionQuery(index, type, "ProductName.keyword", "b")
                 .suggestType("full").indexAnalyzer("stop").queryAnalyzer("stop")
                 .preservePositionIncrements(false).size(10);
         List<String> suggestions = getSuggestions(query);
@@ -245,9 +246,9 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     public void testThatFuzzySuggesterWorks() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "BMW 318", "BMW 528", "BMW M3",
                 "the BMW 320", "VW Jetta");
-        indexProducts(products, client());
+        indexProducts(products);
 
-        SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "bwm")
+        SuggestionQuery query = new SuggestionQuery(index, type, "ProductName.keyword", "bwm")
                 .suggestType("fuzzy").analyzer("standard").size(10);
         List<String> suggestions = getSuggestions(query);
 
@@ -257,15 +258,15 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     @Test
     public void testThatFlushForcesReloadingOfAllFieldsWithoutErrors() throws Exception {
         List<Map<String, Object>> products = createProducts("ProductName", "BMW 318");
-        indexProducts(products, client());
+        indexProducts(products);
 
-        SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "bwm").suggestType("full");
+        SuggestionQuery query = new SuggestionQuery(index, type, "ProductName.keyword", "bwm").suggestType("full");
         getSuggestions(query);
 
         // add data to index and flush
         // indexProducts(createProducts("ProductName", "BMW 320"), node);
-        client().prepareIndex(DEFAULT_INDEX, DEFAULT_TYPE, "foo").setSource(createProducts(1).get(0)).execute().actionGet();
-        client().admin().indices().prepareFlush(DEFAULT_INDEX).execute().actionGet();
+        client().prepareIndex(index, type, "foo").setSource(createProducts(1).get(0)).execute().actionGet();
+        client().admin().indices().prepareFlush(index).execute().actionGet();
         getSuggestions(query);
     }
 
@@ -275,18 +276,18 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
         Settings settings = ImmutableSettings.settingsBuilder()
                 .put("index.number_of_replicas", 0)
                 .build();
-        UpdateSettingsResponse response = client().admin().indices().prepareUpdateSettings(DEFAULT_INDEX).setSettings(settings).get();
+        UpdateSettingsResponse response = client().admin().indices().prepareUpdateSettings(index).setSettings(settings).get();
         assertThat(response.isAcknowledged(), is(true));
 
         List<Map<String, Object>> products = createProducts("ProductName",
                 "BMW 318", "BMW 528", "BMW M3", "the BMW 320", "VW Jetta");
-        indexProducts(products, client());
+        indexProducts(products);
 
         FstStats emptyFstStats = getStatistics();
         assertThat(emptyFstStats.getStats(), hasSize(0));
         assertThat(getFstSizeSum(emptyFstStats), equalTo(0L));
 
-        SuggestionQuery query = new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, "ProductName.keyword", "b")
+        SuggestionQuery query = new SuggestionQuery(index, type, "ProductName.keyword", "b")
                 .suggestType("full").analyzer("stop").size(10);
         List<String> suggestions = getSuggestions(query);
         assertSuggestions(suggestions, "BMW 318", "BMW 528", "BMW M3", "the BMW 320");
@@ -331,11 +332,11 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
 //    }
 
     private List<String> getSuggestions(String field, String term, Integer size) throws Exception {
-        return getSuggestions(new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, field, term).size(size));
+        return getSuggestions(new SuggestionQuery(index, type, field, term).size(size));
     }
 
     private List<String> getSuggestions(String field, String term, Integer size, Float similarity) throws Exception {
-        return getSuggestions(new SuggestionQuery(DEFAULT_INDEX, DEFAULT_TYPE, field, term).size(size).similarity(similarity));
+        return getSuggestions(new SuggestionQuery(index, type, field, term).size(size).similarity(similarity));
     }
 
     private void assertSuggestions(List<String> suggestions, String ... terms) {
@@ -352,6 +353,76 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     }
 
     private void cleanIndex() {
-        client().deleteByQuery(new DeleteByQueryRequest("products").types("product").query(QueryBuilders.matchAllQuery())).actionGet();
+        client().deleteByQuery(new DeleteByQueryRequest(index).types("product").query(QueryBuilders.matchAllQuery())).actionGet();
     }
+
+
+    private void createIndexWithProductsMapping(String indexName) throws IOException {
+        String settingsData = IOUtils.toString(this.getClass().getResourceAsStream("/product.json"));
+        CreateIndexResponse createIndexResponse = client().admin().indices().prepareCreate(indexName)
+                .setSource(settingsData).execute().actionGet();
+        assertThat(createIndexResponse.isAcknowledged(), is(true));
+
+        client().admin().cluster().prepareHealth(indexName).setWaitForGreenStatus().execute().actionGet();
+    }
+
+    protected void indexProducts(List<Map<String, Object>> products) throws Exception {
+        indexProducts(products, index);
+    }
+
+    private void indexProducts(List<Map<String, Object>> products, String index) throws Exception {
+        indexProducts(products, index, null);
+    }
+
+    private void indexProducts(List<Map<String, Object>> products, String index, String routing) throws Exception {
+        long currentCount = getCurrentDocumentCount(index);
+        BulkRequest bulkRequest = new BulkRequest();
+        for (Map<String, Object> product : products) {
+            IndexRequest indexRequest = new IndexRequest(index, "product", (String)product.get("ProductId"));
+            indexRequest.source(product);
+            if (Strings.hasLength(routing)) {
+                indexRequest.routing(routing);
+            }
+            bulkRequest.add(indexRequest);
+        }
+        bulkRequest.refresh(true);
+        BulkResponse response = client().bulk(bulkRequest).actionGet();
+        if (response.hasFailures()) {
+            fail("Error in creating products: " + response.buildFailureMessage());
+        }
+
+        assertDocumentCountAfterIndexing(index, products.size() + currentCount);
+    }
+
+    protected List<Map<String, Object>> createProducts(int count) {
+        List<Map<String, Object>> products = Lists.newArrayList();
+
+        for (int i = 0 ; i < count; i++) {
+            Map<String, Object> product = Maps.newHashMap();
+            product.put("ProductName", RandomStringUtils.randomAlphabetic(10));
+            product.put("ProductId", i + "_" + RandomStringUtils.randomAlphabetic(10));
+            products.add(product);
+        }
+
+        return products;
+    }
+
+    private List<Map<String, Object>> createProducts(String fieldName, String ... fields) {
+        List<Map<String, Object>> products = createProducts(fields.length);
+
+        for (int i = 0 ; i < fields.length ; i++) {
+            products.get(i).put(fieldName, fields[i]);
+        }
+
+        return products;
+    }
+
+    private void assertDocumentCountAfterIndexing(String index, long expectedDocumentCount) throws Exception {
+        assertThat(getCurrentDocumentCount(index), is(expectedDocumentCount));
+    }
+
+    private long getCurrentDocumentCount(String index) {
+        return client().prepareCount(index).setQuery(QueryBuilders.matchAllQuery()).execute().actionGet(2000).getCount();
+    }
+
 }

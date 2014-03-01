@@ -1,30 +1,18 @@
 package de.spinscale.elasticsearch.module.suggest.test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.emptyArray;
-import static org.hamcrest.Matchers.is;
-
 import de.spinscale.elasticsearch.action.suggest.statistics.FstStats;
 import de.spinscale.elasticsearch.action.suggest.suggest.SuggestResponse;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestRefreshRequestBuilder;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestRequestBuilder;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestStatisticsRequestBuilder;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.test.ElasticsearchIntegrationTest;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import java.util.List;
 
-//@RunWith(value = Parameterized.class)
-@ElasticsearchIntegrationTest.ClusterScope(scope=ElasticsearchIntegrationTest.Scope.SUITE)
-public class SuggestBuildersTest extends AbstractSuggestTest {
+import static org.hamcrest.Matchers.emptyArray;
+import static org.hamcrest.Matchers.is;
 
-    /*
-    public SuggestBuildersTest(int shards, int nodeCount) throws Exception {
-        super(shards, nodeCount);
-    }
-    */
+public class SuggestBuildersTest extends AbstractSuggestTest {
 
     @Override
     public List<String> getSuggestions(SuggestionQuery suggestionQuery) throws Exception {

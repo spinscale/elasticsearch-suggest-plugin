@@ -16,8 +16,10 @@ import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.test.junit.annotations.TestLogging;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +42,25 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
     @After
     public void closeHttpClient() {
         httpClient.close();
+    }
+
+    @Test
+    public void testThatSuggestionsShouldWorkWithCallbackAndGetRequestParameter() throws Exception {
+        List<Map<String, Object>> products = createProducts(4);
+        products.get(0).put("ProductName", "foo");
+        products.get(1).put("ProductName", "foob");
+        products.get(2).put("ProductName", "foobar");
+
+        indexProducts(products);
+        refreshAllSuggesters();
+
+        String json = String.format("{ \"field\": \"%s\", \"term\": \"%s\" }", "ProductName.suggest", "foobar");
+        String query = URLEncoder.encode(json, "UTF8");
+        String queryString = "callback=mycallback&source=" + query;
+        String response = httpClient.prepareGet("http://localhost:" + port + "/"+ index +"/product/__suggest?" + queryString).
+                execute().get().getResponseBody();
+        assertThat(response, startsWith("mycallback({\"_shards\":{\"total\""));
+        assertThat(response, endsWith("\"suggestions\":[\"foobar\"]});"));
     }
 
     @Override
