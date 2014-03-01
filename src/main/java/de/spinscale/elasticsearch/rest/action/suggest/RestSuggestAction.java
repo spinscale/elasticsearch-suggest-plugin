@@ -3,7 +3,7 @@ package de.spinscale.elasticsearch.rest.action.suggest;
 import de.spinscale.elasticsearch.action.suggest.suggest.SuggestAction;
 import de.spinscale.elasticsearch.action.suggest.suggest.SuggestRequest;
 import de.spinscale.elasticsearch.action.suggest.suggest.SuggestResponse;
-import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.Strings;
@@ -49,7 +49,7 @@ public class RestSuggestAction extends BaseRestHandler {
                 XContentParser parser = XContentFactory.xContent(source).createParser(source);
                 parserMap = parser.mapAndClose();
             } else {
-                handleException(channel, request, new ElasticSearchException("Please provide body data or source parameter"));
+                handleException(channel, request, new ElasticsearchException("Please provide body data or source parameter"));
             }
 
             SuggestRequest suggestRequest = new SuggestRequest(indices);

@@ -4,18 +4,15 @@ import de.spinscale.elasticsearch.action.suggest.statistics.FstStats;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
-import org.elasticsearch.action.admin.indices.settings.UpdateSettingsResponse;
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.deletebyquery.DeleteByQueryRequest;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.test.ElasticsearchIntegrationTest;
 import org.elasticsearch.test.junit.annotations.TestLogging;
 import org.junit.Before;
@@ -28,6 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 import static org.hamcrest.Matchers.*;
 
 @TestLogging("_root:info")
@@ -353,7 +351,7 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     }
 
     private void cleanIndex() {
-        client().deleteByQuery(new DeleteByQueryRequest(index).types("product").query(QueryBuilders.matchAllQuery())).actionGet();
+        client().prepareDeleteByQuery(index).setTypes("product").setQuery(matchAllQuery()).get();
     }
 
 
@@ -422,7 +420,7 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     }
 
     private long getCurrentDocumentCount(String index) {
-        return client().prepareCount(index).setQuery(QueryBuilders.matchAllQuery()).execute().actionGet(2000).getCount();
+        return client().prepareCount(index).setQuery(matchAllQuery()).execute().actionGet(2000).getCount();
     }
 
 }

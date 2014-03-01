@@ -1,7 +1,7 @@
 package de.spinscale.elasticsearch.action.suggest.statistics;
 
 import de.spinscale.elasticsearch.service.suggest.ShardSuggestService;
-import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ShardOperationFailedException;
 import org.elasticsearch.action.support.DefaultShardOperationFailedException;
 import org.elasticsearch.action.support.broadcast.BroadcastShardOperationFailedException;
@@ -88,7 +88,7 @@ public class TransportSuggestStatisticsAction extends TransportBroadcastOperatio
     }
 
     @Override
-    protected ShardSuggestStatisticsResponse shardOperation(ShardSuggestStatisticsRequest request) throws ElasticSearchException {
+    protected ShardSuggestStatisticsResponse shardOperation(ShardSuggestStatisticsRequest request) throws ElasticsearchException {
         IndexService indexService = indicesService.indexServiceSafe(request.index());
         ShardSuggestService suggestShardService = indexService.shardInjectorSafe(request.shardId()).getInstance(ShardSuggestService.class);
         return suggestShardService.getStatistics();

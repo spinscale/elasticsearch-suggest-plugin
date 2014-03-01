@@ -1,15 +1,13 @@
 package de.spinscale.elasticsearch.plugin.suggest;
 
-import java.util.Collection;
-import java.util.Locale;
-
 import de.spinscale.elasticsearch.module.suggest.ShardSuggestModule;
 import de.spinscale.elasticsearch.module.suggest.SuggestClientModule;
 import de.spinscale.elasticsearch.module.suggest.SuggestModule;
 import de.spinscale.elasticsearch.rest.action.suggest.RestRefreshSuggestAction;
 import de.spinscale.elasticsearch.rest.action.suggest.RestStatisticsAction;
+import de.spinscale.elasticsearch.rest.action.suggest.RestSuggestAction;
 import de.spinscale.elasticsearch.service.suggest.SuggestService;
-import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.component.LifecycleComponent;
@@ -18,7 +16,9 @@ import org.elasticsearch.common.inject.Module;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.plugins.AbstractPlugin;
 import org.elasticsearch.rest.RestModule;
-import de.spinscale.elasticsearch.rest.action.suggest.RestSuggestAction;
+
+import java.util.Collection;
+import java.util.Locale;
 
 public class SuggestPlugin extends AbstractPlugin {
 
@@ -37,7 +37,7 @@ public class SuggestPlugin extends AbstractPlugin {
             }
         } catch (Throwable e) {
             String error = String.format(Locale.ROOT, "The elasticsearch suggest plugin needs a newer version of elasticsearch than %s", Version.CURRENT);
-            throw new ElasticSearchException(error);
+            throw new ElasticsearchException(error);
         }
     }
 

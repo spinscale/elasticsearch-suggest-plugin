@@ -5,8 +5,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.search.spell.HighFrequencyDictionary;
 import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
 import org.apache.lucene.search.suggest.analyzing.FuzzySuggester;
-import org.apache.lucene.util.Version;
-import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.cache.CacheLoader;
 import org.elasticsearch.common.cache.LoadingCache;
@@ -41,7 +40,7 @@ public abstract class AbstractCacheLoaderSuggester<T> extends CacheLoader<ShardS
             if (Strings.hasLength(fieldType.indexAnalyzer())) {
                 NamedAnalyzer namedAnalyzer = analysisService.analyzer(fieldType.queryAnalyzer());
                 if (namedAnalyzer == null) {
-                    throw new ElasticSearchException("Query analyzer[" + fieldType.queryAnalyzer() + "] does not exist.");
+                    throw new ElasticsearchException("Query analyzer[" + fieldType.queryAnalyzer() + "] does not exist.");
                 }
                 queryAnalyzer = namedAnalyzer.analyzer();
             }
@@ -50,7 +49,7 @@ public abstract class AbstractCacheLoaderSuggester<T> extends CacheLoader<ShardS
             if (Strings.hasLength(fieldType.indexAnalyzer())) {
                 NamedAnalyzer namedAnalyzer = analysisService.analyzer(fieldType.indexAnalyzer());
                 if (namedAnalyzer == null) {
-                    throw new ElasticSearchException("Index analyzer[" + fieldType.indexAnalyzer() + "] does not exist.");
+                    throw new ElasticsearchException("Index analyzer[" + fieldType.indexAnalyzer() + "] does not exist.");
                 }
                 indexAnalyzer = namedAnalyzer.analyzer();
             }

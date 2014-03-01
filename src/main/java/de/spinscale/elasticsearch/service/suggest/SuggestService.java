@@ -1,10 +1,8 @@
 package de.spinscale.elasticsearch.service.suggest;
 
-import java.util.Iterator;
-
-import org.elasticsearch.ElasticSearchException;
 import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshRequest;
 import de.spinscale.elasticsearch.action.suggest.refresh.TransportSuggestRefreshAction;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.Nullable;
@@ -20,6 +18,8 @@ import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.shard.service.IndexShard;
 import org.elasticsearch.indices.IndicesLifecycle;
 import org.elasticsearch.indices.IndicesService;
+
+import java.util.Iterator;
 
 public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
 
@@ -42,7 +42,7 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
     }
 
     @Override
-    protected void doStart() throws ElasticSearchException {
+    protected void doStart() throws ElasticsearchException {
         if (suggestRefreshDisabled) {
             logger.info("Suggest component started with out refreshing automatically");
         } else {
@@ -78,7 +78,7 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
     }
 
     @Override
-    protected void doClose() throws ElasticSearchException {
+    protected void doClose() throws ElasticsearchException {
         if (closed) {
             return;
         }
@@ -91,7 +91,7 @@ public class SuggestService extends AbstractLifecycleComponent<SuggestService> {
     }
 
     @Override
-    protected void doStop() throws ElasticSearchException {}
+    protected void doStop() throws ElasticsearchException {}
 
     public class SuggestUpdaterThread implements Runnable {
         @Override

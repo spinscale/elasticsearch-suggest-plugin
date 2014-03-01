@@ -1,10 +1,7 @@
 package de.spinscale.elasticsearch.action.suggest.refresh;
 
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReferenceArray;
-
-import de.spinscale.elasticsearch.action.suggest.refresh.*;
-import org.elasticsearch.ElasticSearchException;
+import de.spinscale.elasticsearch.service.suggest.ShardSuggestService;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ShardOperationFailedException;
 import org.elasticsearch.action.support.DefaultShardOperationFailedException;
 import org.elasticsearch.action.support.broadcast.BroadcastShardOperationFailedException;
@@ -20,9 +17,11 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.service.IndexService;
 import org.elasticsearch.indices.IndicesService;
-import de.spinscale.elasticsearch.service.suggest.ShardSuggestService;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
+
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 
 public class TransportSuggestRefreshAction extends TransportBroadcastOperationAction<SuggestRefreshRequest, SuggestRefreshResponse, ShardSuggestRefreshRequest, ShardSuggestRefreshResponse> {
@@ -88,7 +87,7 @@ public class TransportSuggestRefreshAction extends TransportBroadcastOperationAc
     }
 
     @Override
-    protected ShardSuggestRefreshResponse shardOperation(ShardSuggestRefreshRequest request) throws ElasticSearchException {
+    protected ShardSuggestRefreshResponse shardOperation(ShardSuggestRefreshRequest request) throws ElasticsearchException {
         logger.trace("Entered TransportSuggestRefreshAction.shardOperation()");
         IndexService indexService = indicesService.indexServiceSafe(request.index());
         ShardSuggestService suggestShardService = indexService.shardInjectorSafe(request.shardId()).getInstance(ShardSuggestService.class);
