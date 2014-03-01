@@ -299,6 +299,7 @@ builder.execute().actionGet();
 
 ## Changelog
 
+* 2014-03-01: Version bump to 1.0.1, created a 0.90 branch
 * 2014-03-01: Version bump to 0.90.12, switched to randomized elasticsearch testing resulting in testing code cleanups and waaaaaaaay faster tests
 * 2013-12-10: Version bump to 0.90.7
 * 2013-08-13: Version bump to 0.90.3. Due to changes in Lucene 4.4, please check the tests to see that stopwords need to be handled on the request side if you use the fuzzy or full mode.
