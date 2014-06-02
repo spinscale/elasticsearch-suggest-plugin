@@ -3,26 +3,22 @@ package de.spinscale.elasticsearch.rest.action.suggest;
 import de.spinscale.elasticsearch.action.suggest.suggest.SuggestAction;
 import de.spinscale.elasticsearch.action.suggest.suggest.SuggestRequest;
 import de.spinscale.elasticsearch.action.suggest.suggest.SuggestResponse;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.rest.*;
-import org.elasticsearch.rest.action.support.RestXContentBuilder;
+import org.elasticsearch.rest.action.support.RestToXContentListener;
 
 import java.io.IOException;
 import java.util.Map;
 
 import static org.elasticsearch.rest.RestRequest.Method.GET;
 import static org.elasticsearch.rest.RestRequest.Method.POST;
-import static org.elasticsearch.rest.RestStatus.OK;
-import static org.elasticsearch.rest.action.support.RestActions.buildBroadcastShardsHeader;
+import static org.elasticsearch.rest.RestStatus.BAD_REQUEST;
 
 public class RestSuggestAction extends BaseRestHandler {
 
@@ -49,7 +45,7 @@ public class RestSuggestAction extends BaseRestHandler {
                 XContentParser parser = XContentFactory.xContent(source).createParser(source);
                 parserMap = parser.mapAndClose();
             } else {
-                handleException(channel, request, new ElasticsearchException("Please provide body data or source parameter"));
+                channel.sendResponse(new BytesRestResponse(BAD_REQUEST, "Please provide body data or source parameter"));
             }
 
             SuggestRequest suggestRequest = new SuggestRequest(indices);
@@ -66,39 +62,13 @@ public class RestSuggestAction extends BaseRestHandler {
             suggestRequest.similarity(XContentMapValues.nodeFloatValue(parserMap.get("similarity"), 1.0f));
             suggestRequest.size(XContentMapValues.nodeIntegerValue(parserMap.get("size"), 10));
 
-            client.execute(SuggestAction.INSTANCE, suggestRequest, new ActionListener<SuggestResponse>() {
-                @Override
-                public void onResponse(SuggestResponse response) {
-                    try {
-                        XContentBuilder builder = RestXContentBuilder.restContentBuilder(request);
-                        builder.startObject();
-                        buildBroadcastShardsHeader(builder, response);
-                        builder.field("suggestions", response.suggestions());
-
-                        builder.endObject();
-                        channel.sendResponse(new XContentRestResponse(request, OK, builder));
-                    } catch (Exception e) {
-                        onFailure(e);
-                    }
-                }
-
-                @Override
-                public void onFailure(Throwable e) {
-                    handleException(channel, request, e);
-                }
-
-            });
-
+            client.execute(SuggestAction.INSTANCE, suggestRequest, new RestToXContentListener<SuggestResponse>(channel));
         } catch (IOException e) {
-            handleException(channel, request, e);
-        }
-    }
-
-    final void handleException(final RestChannel channel, final RestRequest request, final Throwable e) {
-        try {
-            channel.sendResponse(new XContentThrowableRestResponse(request, e));
-        } catch (IOException e1) {
-            logger.error("Failed to send failure response", e1);
+            try {
+                channel.sendResponse(new BytesRestResponse(channel, RestStatus.BAD_REQUEST, e));
+            } catch (IOException e1) {
+                logger.error("Failed to send failure response", e1);
+            }
         }
     }
 }

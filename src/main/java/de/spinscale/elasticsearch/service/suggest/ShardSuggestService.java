@@ -17,6 +17,7 @@ import org.apache.lucene.search.suggest.analyzing.FuzzySuggester;
 import org.apache.lucene.search.suggest.fst.FSTCompletionLookup;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.base.Function;
 import org.elasticsearch.common.base.Joiner;
@@ -212,7 +213,12 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
     }
 
     public ShardSuggestResponse suggest(ShardSuggestRequest shardSuggestRequest) {
-        List<String> suggestions = Lists.newArrayList(getSuggestions(shardSuggestRequest));
+        List<String> suggestions;
+        try {
+            suggestions = Lists.newArrayList(getSuggestions(shardSuggestRequest));
+        } catch (IOException e) {
+            throw new ElasticsearchException("Error getting suggestions", e);
+        }
         return new ShardSuggestResponse(shardId.index().name(), shardId.id(), suggestions);
     }
 
@@ -232,15 +238,12 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         return Collections.emptyList();
     }
 
-    private Collection<String> getSuggestions(ShardSuggestRequest shardSuggestRequest) {
+    private Collection<String> getSuggestions(ShardSuggestRequest shardSuggestRequest) throws IOException {
         List<LookupResult> lookupResults = Lists.newArrayList();
         if ("full".equals(shardSuggestRequest.suggestType())) {
-            // TODO: support for multiple types here
             AnalyzingSuggester analyzingSuggester = analyzingSuggesterCache.getUnchecked(new FieldType(shardSuggestRequest));
             lookupResults.addAll(analyzingSuggester.lookup(shardSuggestRequest.term(), false, shardSuggestRequest.size()));
-
         } else if ("fuzzy".equals(shardSuggestRequest.suggestType())) {
-            // TODO: support for multiple types here
             lookupResults.addAll(fuzzySuggesterCache.getUnchecked(new FieldType(shardSuggestRequest))
                     .lookup(shardSuggestRequest.term(), false, shardSuggestRequest.size()));
 
@@ -271,9 +274,9 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
     public void resetIndexReader() {
         IndexReader currentIndexReader = null;
         if (indexShard.state() == IndexShardState.STARTED) {
-            Engine.Searcher currentIndexSearcher = indexShard.acquireSearcher( "suggest" );
-            currentIndexReader = currentIndexSearcher.reader();
-            currentIndexSearcher.release();
+            try (Engine.Searcher currentIndexSearcher = indexShard.acquireSearcher( "suggest" )) {
+                currentIndexReader = currentIndexSearcher.reader();
+            }
         }
 
         // if this index reader is not used in the current index searcher, we need to decrease the old refcount
@@ -312,10 +315,10 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
             if (indexReader == null) {
                 lock.lock();
                 if (indexReader == null) {
-                    // logger.info("1 shard {} : ref count {}", shardId, indexReader.getRefCount());
-                    Engine.Searcher indexSearcher = indexShard.acquireSearcher( "suggest" );
-                    indexReader = indexSearcher.reader();
-                    indexSearcher.release();
+                    try (Engine.Searcher indexSearcher = indexShard.acquireSearcher( "suggest" )) {
+                        indexReader = indexSearcher.reader();
+                        // logger.info("1 shard {} : ref count {}", shardId, indexReader.getRefCount());
+                    }
 
                     // If an indexreader closes, we have to refresh all our data structures!
                     indexReader.addReaderClosedListener(new IndexReader.ReaderClosedListener() {

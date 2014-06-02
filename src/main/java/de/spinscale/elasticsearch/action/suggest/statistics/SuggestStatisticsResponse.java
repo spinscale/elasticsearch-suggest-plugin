@@ -6,12 +6,16 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.xcontent.ToXContent;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class SuggestStatisticsResponse extends BroadcastOperationResponse {
+import static org.elasticsearch.rest.action.support.RestActions.buildBroadcastShardsHeader;
+
+public class SuggestStatisticsResponse extends BroadcastOperationResponse implements ToXContent {
 
     private FstStats fstStats = new FstStats();
 
@@ -47,5 +51,12 @@ public class SuggestStatisticsResponse extends BroadcastOperationResponse {
     }
     public FstStats getFstStats() {
         return fstStats;
+    }
+
+    @Override
+    public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+        buildBroadcastShardsHeader(builder, this);
+        fstStats.toXContent(builder, params);
+        return builder;
     }
 }

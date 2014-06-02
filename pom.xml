@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>de.spinscale</groupId>
     <artifactId>elasticsearch-plugin-suggest</artifactId>
-    <version>1.0.3-2.0.1-SNAPSHOT</version>
+    <version>1.2.0-2.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <description>Lucene FSTSuggester implementation for ElasticSearch</description>
     <inceptionYear>2011</inceptionYear>
@@ -17,8 +17,8 @@
     </scm>
 
     <properties>
-        <elasticsearch.version>1.1.2</elasticsearch.version>
-        <lucene.version>4.7.2</lucene.version>
+        <elasticsearch.version>1.2.0</elasticsearch.version>
+        <lucene.version>4.8.1</lucene.version>
         <tests.jvms>1</tests.jvms>
         <tests.shuffle>true</tests.shuffle>
         <tests.output>onerror</tests.output>
@@ -129,8 +129,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>2.3.2</version>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>1.7</source>
+                    <target>1.7</target>
                 </configuration>
             </plugin>
             <plugin>

@@ -8,8 +8,12 @@ import org.elasticsearch.action.support.broadcast.BroadcastOperationResponse;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.xcontent.ToXContent;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 
-public class SuggestResponse extends BroadcastOperationResponse {
+import static org.elasticsearch.rest.action.support.RestActions.buildBroadcastShardsHeader;
+
+public class SuggestResponse extends BroadcastOperationResponse implements ToXContent {
 
     private List<String> suggestions;
 
@@ -37,5 +41,12 @@ public class SuggestResponse extends BroadcastOperationResponse {
     @Override public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
         out.writeGenericValue(suggestions);
+    }
+
+    @Override
+    public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+        buildBroadcastShardsHeader(builder, this);
+        builder.field("suggestions", suggestions);
+        return builder;
     }
 }

@@ -7,9 +7,11 @@ import org.elasticsearch.action.ShardOperationFailedException;
 import org.elasticsearch.action.support.broadcast.BroadcastOperationResponse;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.xcontent.ToXContent;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 
 
-public class SuggestRefreshResponse extends BroadcastOperationResponse {
+public class SuggestRefreshResponse extends BroadcastOperationResponse implements ToXContent {
 
     public SuggestRefreshResponse() {}
 
@@ -25,5 +27,10 @@ public class SuggestRefreshResponse extends BroadcastOperationResponse {
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
+    }
+
+    @Override
+    public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+        return builder;
     }
 }

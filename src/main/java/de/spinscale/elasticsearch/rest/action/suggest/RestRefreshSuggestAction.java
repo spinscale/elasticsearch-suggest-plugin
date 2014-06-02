@@ -3,7 +3,6 @@ package de.spinscale.elasticsearch.rest.action.suggest;
 import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshAction;
 import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshRequest;
 import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshResponse;
-import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.inject.Inject;
@@ -12,12 +11,13 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.rest.*;
+import org.elasticsearch.rest.action.support.AcknowledgedRestListener;
+import org.elasticsearch.rest.action.support.RestToXContentListener;
 
 import java.io.IOException;
 import java.util.Map;
 
 import static org.elasticsearch.rest.RestRequest.Method.POST;
-import static org.elasticsearch.rest.RestStatus.OK;
 
 public class RestRefreshSuggestAction extends BaseRestHandler {
 
@@ -33,7 +33,6 @@ public class RestRefreshSuggestAction extends BaseRestHandler {
         final String[] indices = Strings.splitStringByCommaToArray(request.param("index"));
 
         try {
-
             SuggestRefreshRequest suggestRefreshRequest = new SuggestRefreshRequest(indices);
 
             if (request.hasContent()) {
@@ -45,33 +44,9 @@ public class RestRefreshSuggestAction extends BaseRestHandler {
                 }
             }
 
-            client.execute(SuggestRefreshAction.INSTANCE, suggestRefreshRequest, new ActionListener<SuggestRefreshResponse>() {
-
-                @Override
-                public void onResponse(SuggestRefreshResponse response) {
-                    try {
-                        channel.sendResponse(new StringRestResponse(OK));
-                    } catch (Exception e) {
-                        onFailure(e);
-                    }
-                }
-
-                @Override
-                public void onFailure(Throwable e) {
-                    try {
-                        channel.sendResponse(new XContentThrowableRestResponse(request, e));
-                    } catch (IOException e1) {
-                        logger.error("Failed to send failure response", e1);
-                    }
-                }
-            });
-
+            client.execute(SuggestRefreshAction.INSTANCE, suggestRefreshRequest, new RestToXContentListener<SuggestRefreshResponse>(channel));
         } catch (IOException e) {
-            try {
-                channel.sendResponse(new XContentThrowableRestResponse(request, e));
-            } catch (IOException e1) {
-                logger.error("Failed to send failure response", e1);
-            }
+            channel.sendResponse(new BytesRestResponse(RestStatus.BAD_REQUEST, "Could not extract field"));
         }
     }
 
