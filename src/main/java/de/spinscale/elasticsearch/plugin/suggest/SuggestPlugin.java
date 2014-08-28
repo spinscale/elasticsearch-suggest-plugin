@@ -1,14 +1,19 @@
 package de.spinscale.elasticsearch.plugin.suggest;
 
+import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshAction;
+import de.spinscale.elasticsearch.action.suggest.refresh.TransportSuggestRefreshAction;
+import de.spinscale.elasticsearch.action.suggest.statistics.SuggestStatisticsAction;
+import de.spinscale.elasticsearch.action.suggest.statistics.TransportSuggestStatisticsAction;
+import de.spinscale.elasticsearch.action.suggest.suggest.SuggestAction;
+import de.spinscale.elasticsearch.action.suggest.suggest.TransportSuggestAction;
 import de.spinscale.elasticsearch.module.suggest.ShardSuggestModule;
-import de.spinscale.elasticsearch.module.suggest.SuggestClientModule;
-import de.spinscale.elasticsearch.module.suggest.SuggestModule;
 import de.spinscale.elasticsearch.rest.action.suggest.RestRefreshSuggestAction;
 import de.spinscale.elasticsearch.rest.action.suggest.RestStatisticsAction;
 import de.spinscale.elasticsearch.rest.action.suggest.RestSuggestAction;
 import de.spinscale.elasticsearch.service.suggest.SuggestService;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.Version;
+import org.elasticsearch.action.ActionModule;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.component.LifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
@@ -23,16 +28,18 @@ import java.util.Locale;
 public class SuggestPlugin extends AbstractPlugin {
 
     private final Settings settings;
+    private final boolean isClient;
 
     @Inject
     public SuggestPlugin(Settings settings) {
         this.settings = settings;
+        this.isClient = settings.getAsBoolean("node.client", false);
 
         // Check if the plugin is newer than elasticsearch
         // First failure, if the versions dont match
         // Second failure: if the Version specified in before() does not yet exist, therefore catching Throwable
         try {
-            if (Version.CURRENT.before(Version.V_0_90_3)) {
+            if (Version.CURRENT.before(Version.V_1_2_4)) {
                 throw new Exception();
             }
         } catch (Throwable e) {
@@ -57,24 +64,20 @@ public class SuggestPlugin extends AbstractPlugin {
         restModule.addRestAction(RestStatisticsAction.class);
     }
 
+    public void onModule(ActionModule actionModule) {
+        actionModule.registerAction(SuggestAction.INSTANCE, TransportSuggestAction.class);
+        actionModule.registerAction(SuggestRefreshAction.INSTANCE, TransportSuggestRefreshAction.class);
+        actionModule.registerAction(SuggestStatisticsAction.INSTANCE, TransportSuggestStatisticsAction.class);
+    }
+
     @SuppressWarnings("rawtypes")
     @Override public Collection<Class<? extends LifecycleComponent>> services() {
         Collection<Class<? extends LifecycleComponent>> services = Lists.newArrayList();
 
-        if (!isClient()) {
+        if (!isClient) {
             services.add(SuggestService.class);
         }
         return services;
-    }
-
-    @Override public Collection<Class<? extends Module>> modules() {
-        Collection<Class<? extends Module>> modules = Lists.newArrayList();
-        if (isClient()) {
-            modules.add(SuggestClientModule.class);
-        } else {
-            modules.add(SuggestModule.class);
-        }
-        return modules;
     }
 
     @Override
@@ -82,9 +85,5 @@ public class SuggestPlugin extends AbstractPlugin {
         Collection<Class<? extends Module>> modules = Lists.newArrayList();
         modules.add(ShardSuggestModule.class);
         return modules;
-    }
-
-    private boolean isClient() {
-        return settings.getAsBoolean("node.client", false);
     }
 }

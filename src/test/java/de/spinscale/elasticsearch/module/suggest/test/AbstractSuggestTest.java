@@ -1,6 +1,7 @@
 package de.spinscale.elasticsearch.module.suggest.test;
 
 import de.spinscale.elasticsearch.action.suggest.statistics.FstStats;
+import de.spinscale.elasticsearch.plugin.suggest.SuggestPlugin;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 import static org.hamcrest.Matchers.*;
 
@@ -45,6 +47,14 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     abstract public void refreshIndexSuggesters(String index) throws Exception;
     abstract public void refreshFieldSuggesters(String index, String field) throws Exception;
     abstract public FstStats getStatistics() throws Exception;
+
+    @Override
+    protected Settings nodeSettings(int nodeOrdinal) {
+        return settingsBuilder()
+                .put(super.nodeSettings(nodeOrdinal))
+                .put("plugin.types", SuggestPlugin.class.getName())
+                .build();
+    }
 
     @Test
     public void testThatSimpleSuggestionWorks() throws Exception {
@@ -271,7 +281,7 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     @Test
     public void gettingStatisticsShouldWork() throws Exception {
         // needed to make sure that we hit the already queried shards for stats, the other are empty
-        Settings settings = ImmutableSettings.settingsBuilder()
+        Settings settings = settingsBuilder()
                 .put("index.number_of_replicas", 0)
                 .build();
         UpdateSettingsResponse response = client().admin().indices().prepareUpdateSettings(index).setSettings(settings).get();

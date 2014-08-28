@@ -12,9 +12,12 @@ import org.elasticsearch.common.Strings;
 
 import java.util.List;
 
+import static org.elasticsearch.test.ElasticsearchIntegrationTest.ClusterScope;
+import static org.elasticsearch.test.ElasticsearchIntegrationTest.Scope;
 import static org.hamcrest.Matchers.emptyArray;
 import static org.hamcrest.Matchers.is;
 
+@ClusterScope(scope = Scope.SUITE, transportClientRatio = 0.0)
 public class TransportSuggestActionTest extends AbstractSuggestTest {
 
     @Override

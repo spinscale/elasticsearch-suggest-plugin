@@ -5,20 +5,47 @@ import de.spinscale.elasticsearch.action.suggest.suggest.SuggestResponse;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestRefreshRequestBuilder;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestRequestBuilder;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestStatisticsRequestBuilder;
+import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.test.ElasticsearchIntegrationTest;
+import org.elasticsearch.transport.Transport;
+import org.junit.After;
 
 import java.util.List;
 
+import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
+import static org.elasticsearch.test.ElasticsearchIntegrationTest.ClusterScope;
+import static org.elasticsearch.test.ElasticsearchIntegrationTest.Scope;
 import static org.hamcrest.Matchers.emptyArray;
 import static org.hamcrest.Matchers.is;
 
-@ElasticsearchIntegrationTest.ClusterScope(scope=ElasticsearchIntegrationTest.Scope.SUITE, transportClientRatio = 1.0)
+@ClusterScope(scope=Scope.SUITE)
 public class TransportClientTest extends AbstractSuggestTest {
+
+    // TODO: Remove this class, once we can set transport client settings programmatically and then remove the transportclient ratio from all tests
+
+    private TransportClient transportClient;
+
+    private TransportClient transportClient() {
+        if (transportClient == null) {
+            transportClient = new TransportClient(settingsBuilder().put("cluster.name", cluster().getClusterName()).build());
+            Transport transport = cluster().getDataNodeInstance(Transport.class);
+            transportClient.addTransportAddress(transport.boundAddress().publishAddress());
+        }
+
+        return transportClient;
+    }
+
+    @After
+    public void closeTransportClient() {
+        if (transportClient != null) {
+            transportClient.close();
+        }
+    }
+
 
     @Override
     public List<String> getSuggestions(SuggestionQuery suggestionQuery) throws Exception {
-        SuggestRequestBuilder builder = new SuggestRequestBuilder(client())
+        SuggestRequestBuilder builder = new SuggestRequestBuilder(transportClient())
                 .setIndices(suggestionQuery.index)
                 .field(suggestionQuery.field)
                 .term(suggestionQuery.term);
@@ -51,25 +78,25 @@ public class TransportClientTest extends AbstractSuggestTest {
 
     @Override
     public void refreshAllSuggesters() throws Exception {
-        SuggestRefreshRequestBuilder builder = new SuggestRefreshRequestBuilder(client());
+        SuggestRefreshRequestBuilder builder = new SuggestRefreshRequestBuilder(transportClient());
         builder.execute().actionGet();
     }
 
     @Override
     public void refreshIndexSuggesters(String index) throws Exception {
-        SuggestRefreshRequestBuilder builder = new SuggestRefreshRequestBuilder(client()).setIndices(index);
+        SuggestRefreshRequestBuilder builder = new SuggestRefreshRequestBuilder(transportClient()).setIndices(index);
         builder.execute().actionGet();
     }
 
     @Override
     public void refreshFieldSuggesters(String index, String field) throws Exception {
-        SuggestRefreshRequestBuilder builder = new SuggestRefreshRequestBuilder(client()).setIndices(index).setField(field);
+        SuggestRefreshRequestBuilder builder = new SuggestRefreshRequestBuilder(transportClient()).setIndices(index).setField(field);
         builder.execute().actionGet();
     }
 
     @Override
     public FstStats getStatistics() throws Exception {
-        SuggestStatisticsRequestBuilder builder = new SuggestStatisticsRequestBuilder(client());
+        SuggestStatisticsRequestBuilder builder = new SuggestStatisticsRequestBuilder(transportClient());
         return builder.execute().actionGet().fstStats();
     }
 }

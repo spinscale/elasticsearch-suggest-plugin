@@ -12,6 +12,10 @@ import java.util.List;
 import static org.hamcrest.Matchers.emptyArray;
 import static org.hamcrest.Matchers.is;
 
+import static org.elasticsearch.test.ElasticsearchIntegrationTest.ClusterScope;
+import static org.elasticsearch.test.ElasticsearchIntegrationTest.Scope;
+
+@ClusterScope(scope = Scope.SUITE, transportClientRatio = 0.0)
 public class SuggestBuildersTest extends AbstractSuggestTest {
 
     @Override
