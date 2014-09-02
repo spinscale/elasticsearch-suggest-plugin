@@ -1,10 +1,10 @@
 package de.spinscale.elasticsearch.action.suggest.statistics;
 
 import de.spinscale.elasticsearch.client.action.suggest.SuggestStatisticsRequestBuilder;
-import org.elasticsearch.action.Action;
+import org.elasticsearch.action.ClientAction;
 import org.elasticsearch.client.Client;
 
-public class SuggestStatisticsAction extends Action<SuggestStatisticsRequest, SuggestStatisticsResponse, SuggestStatisticsRequestBuilder> {
+public class SuggestStatisticsAction extends ClientAction<SuggestStatisticsRequest, SuggestStatisticsResponse, SuggestStatisticsRequestBuilder> {
 
     public static final SuggestStatisticsAction INSTANCE = new SuggestStatisticsAction();
     public static final String NAME = "suggestStatistics";

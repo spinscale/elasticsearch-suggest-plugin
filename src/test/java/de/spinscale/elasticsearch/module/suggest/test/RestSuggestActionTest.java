@@ -9,6 +9,7 @@ import org.codehaus.jackson.node.ArrayNode;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.Lists;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
 import static org.hamcrest.Matchers.*;
 
 @ElasticsearchIntegrationTest.ClusterScope(scope = ElasticsearchIntegrationTest.Scope.SUITE, transportClientRatio = 0.0)
@@ -42,6 +44,13 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
     @After
     public void closeHttpClient() {
         httpClient.close();
+    }
+
+    @Override
+    protected Settings nodeSettings(int nodeOrdinal) {
+        return settingsBuilder().put(super.nodeSettings(nodeOrdinal))
+                .put("http.jsonp.enable", true)
+                .build();
     }
 
     @Test

@@ -30,13 +30,8 @@ public class TransportSuggestStatisticsAction extends TransportBroadcastOperatio
     @Inject
     public TransportSuggestStatisticsAction(Settings settings, ThreadPool threadPool, ClusterService clusterService,
                                             TransportService transportService, IndicesService indicesService) {
-        super(settings, threadPool, clusterService, transportService);
+        super(settings, SuggestStatisticsAction.NAME, threadPool, clusterService, transportService);
         this.indicesService = indicesService;
-    }
-
-    @Override
-    protected String transportAction() {
-        return SuggestStatisticsAction.NAME;
     }
 
     @Override
@@ -78,7 +73,7 @@ public class TransportSuggestStatisticsAction extends TransportBroadcastOperatio
     }
 
     @Override
-    protected ShardSuggestStatisticsRequest newShardRequest(ShardRouting shard, SuggestStatisticsRequest request) {
+    protected ShardSuggestStatisticsRequest newShardRequest(int numShards, ShardRouting shard, SuggestStatisticsRequest request) {
         return new ShardSuggestStatisticsRequest(shard.index(), shard.id(), request);
     }
 

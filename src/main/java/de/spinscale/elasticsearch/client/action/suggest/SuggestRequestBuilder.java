@@ -6,17 +6,16 @@ import org.elasticsearch.action.ActionRequestBuilder;
 import de.spinscale.elasticsearch.action.suggest.suggest.SuggestRequest;
 import de.spinscale.elasticsearch.action.suggest.suggest.SuggestResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.internal.InternalClient;
 
-public class SuggestRequestBuilder extends ActionRequestBuilder<SuggestRequest, SuggestResponse, SuggestRequestBuilder> {
+public class SuggestRequestBuilder extends ActionRequestBuilder<SuggestRequest, SuggestResponse, SuggestRequestBuilder, Client> {
 
     public SuggestRequestBuilder(Client client) {
-        super((InternalClient) client, new SuggestRequest());
+        super(client, new SuggestRequest());
     }
 
     @Override
     protected void doExecute(ActionListener<SuggestResponse> listener) {
-        ((Client)client).execute(SuggestAction.INSTANCE, request, listener);
+        client.execute(SuggestAction.INSTANCE, request, listener);
     }
 
     public SuggestRequestBuilder term(String term) {

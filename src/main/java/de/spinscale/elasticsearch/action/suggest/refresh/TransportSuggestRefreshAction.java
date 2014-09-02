@@ -31,13 +31,8 @@ public class TransportSuggestRefreshAction extends TransportBroadcastOperationAc
     @Inject
     public TransportSuggestRefreshAction(Settings settings, ThreadPool threadPool, ClusterService clusterService,
             TransportService transportService, IndicesService indicesService) {
-        super(settings, threadPool, clusterService, transportService);
+        super(settings, SuggestRefreshAction.NAME, threadPool, clusterService, transportService);
         this.indicesService = indicesService;
-    }
-
-    @Override
-    protected String transportAction() {
-        return SuggestRefreshAction.NAME;
     }
 
     @Override
@@ -77,7 +72,7 @@ public class TransportSuggestRefreshAction extends TransportBroadcastOperationAc
     }
 
     @Override
-    protected ShardSuggestRefreshRequest newShardRequest(ShardRouting shard, SuggestRefreshRequest request) {
+    protected ShardSuggestRefreshRequest newShardRequest(int numShards, ShardRouting shard, SuggestRefreshRequest request) {
         return new ShardSuggestRefreshRequest(shard.index(), shard.id(), request);
     }
 

@@ -32,7 +32,7 @@ public class RestSuggestAction extends BaseRestHandler {
     }
 
     @Override
-    public void handleRequest(final RestRequest request, final RestChannel channel) {
+    public void handleRequest(final RestRequest request, final RestChannel channel, Client client) {
         final String[] indices = Strings.splitStringByCommaToArray(request.param("index"));
 
         try {

@@ -40,7 +40,9 @@ bin/plugin -install de.spinscale/elasticsearch-plugin-suggest/0.90.5-0.9
     ----------------------------------------
     | suggest plugin   | Elasticsearch     |
     ----------------------------------------
-    | 1.0.1-2.0.0      | 1.0.1 -> master   |
+    | 1.3.2-2.0.1      | 1.3.2 -> master   |
+    ----------------------------------------
+    | 1.0.1-2.0.0      | 1.0.1             |
     ----------------------------------------
     | 0.90.12-1.1      | 0.90.12           |
     ----------------------------------------
@@ -88,7 +90,7 @@ Alternatively you can now use this plugin via maven and include it via the sonat
   <dependency>
     <groupId>de.spinscale</groupId>
     <artifactId>elasticsearch-suggest-plugin</artifactId>
-    <version>0.90.12-1.1</version>
+    <version>1.3.2-2.0.1</version>
   </dependency>
   ...
 <dependencies>
@@ -299,6 +301,7 @@ builder.execute().actionGet();
 
 ## Changelog
 
+* 2014-09-03: Version bump to 1.3.2, also created a 1.0, 1.1 and 1.2 branch
 * 2014-03-01: Version bump to 1.0.1, created a 0.90 branch
 * 2014-03-01: Version bump to 0.90.12, switched to randomized elasticsearch testing resulting in testing code cleanups and waaaaaaaay faster tests
 * 2013-12-10: Version bump to 0.90.7

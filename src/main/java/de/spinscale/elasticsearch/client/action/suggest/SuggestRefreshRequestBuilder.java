@@ -6,13 +6,11 @@ import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshAction;
 import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshRequest;
 import de.spinscale.elasticsearch.action.suggest.refresh.SuggestRefreshResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.internal.InternalClient;
 
-
-public class SuggestRefreshRequestBuilder extends ActionRequestBuilder<SuggestRefreshRequest, SuggestRefreshResponse, SuggestRefreshRequestBuilder> {
+public class SuggestRefreshRequestBuilder extends ActionRequestBuilder<SuggestRefreshRequest, SuggestRefreshResponse, SuggestRefreshRequestBuilder, Client> {
 
     public SuggestRefreshRequestBuilder(Client client) {
-        super((InternalClient) client, new SuggestRefreshRequest());
+        super(client, new SuggestRefreshRequest());
     }
 
     public SuggestRefreshRequestBuilder setIndices(String ... indices) {
@@ -27,7 +25,7 @@ public class SuggestRefreshRequestBuilder extends ActionRequestBuilder<SuggestRe
 
     @Override
     protected void doExecute(ActionListener<SuggestRefreshResponse> listener) {
-        ((Client)client).execute(SuggestRefreshAction.INSTANCE, request, listener);
+        client.execute(SuggestRefreshAction.INSTANCE, request, listener);
     }
 
 }

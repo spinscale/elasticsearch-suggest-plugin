@@ -1,10 +1,10 @@
 package de.spinscale.elasticsearch.action.suggest.refresh;
 
 import de.spinscale.elasticsearch.client.action.suggest.SuggestRefreshRequestBuilder;
-import org.elasticsearch.action.Action;
+import org.elasticsearch.action.ClientAction;
 import org.elasticsearch.client.Client;
 
-public class SuggestRefreshAction extends Action<SuggestRefreshRequest, SuggestRefreshResponse, SuggestRefreshRequestBuilder> {
+public class SuggestRefreshAction extends ClientAction<SuggestRefreshRequest, SuggestRefreshResponse, SuggestRefreshRequestBuilder> {
 
     public static final SuggestRefreshAction INSTANCE = new SuggestRefreshAction();
     public static final String NAME = "suggestRefresh-fst";

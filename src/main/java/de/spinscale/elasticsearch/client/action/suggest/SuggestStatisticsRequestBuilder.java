@@ -6,16 +6,15 @@ import de.spinscale.elasticsearch.action.suggest.statistics.SuggestStatisticsRes
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequestBuilder;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.internal.InternalGenericClient;
 
-public class SuggestStatisticsRequestBuilder extends ActionRequestBuilder<SuggestStatisticsRequest, SuggestStatisticsResponse, SuggestStatisticsRequestBuilder> {
+public class SuggestStatisticsRequestBuilder extends ActionRequestBuilder<SuggestStatisticsRequest, SuggestStatisticsResponse, SuggestStatisticsRequestBuilder, Client> {
 
     public SuggestStatisticsRequestBuilder(Client client) {
-        super((InternalGenericClient) client, new SuggestStatisticsRequest());
+        super(client, new SuggestStatisticsRequest());
     }
 
     @Override
     protected void doExecute(ActionListener<SuggestStatisticsResponse> listener) {
-        ((Client)client).execute(SuggestStatisticsAction.INSTANCE, request, listener);
+        client.execute(SuggestStatisticsAction.INSTANCE, request, listener);
     }
 }

@@ -27,12 +27,10 @@ import java.util.Locale;
 
 public class SuggestPlugin extends AbstractPlugin {
 
-    private final Settings settings;
     private final boolean isClient;
 
     @Inject
     public SuggestPlugin(Settings settings) {
-        this.settings = settings;
         this.isClient = settings.getAsBoolean("node.client", false);
 
         // Check if the plugin is newer than elasticsearch

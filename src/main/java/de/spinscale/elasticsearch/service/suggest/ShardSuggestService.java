@@ -295,13 +295,13 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         ShardSuggestStatisticsResponse shardSuggestStatisticsResponse = new ShardSuggestStatisticsResponse(shardId());
 
         for (FieldType fieldType : analyzingSuggesterCache.asMap().keySet()) {
-            long sizeInBytes = analyzingSuggesterCache.getIfPresent(fieldType).sizeInBytes();
+            long sizeInBytes = analyzingSuggesterCache.getIfPresent(fieldType).ramBytesUsed();
             FstStats.FstIndexShardStats fstIndexShardStats = new FstStats.FstIndexShardStats(shardId, "analyzingsuggester", fieldType, sizeInBytes);
             shardSuggestStatisticsResponse.getFstIndexShardStats().add(fstIndexShardStats);
         }
 
         for (FieldType fieldType : fuzzySuggesterCache.asMap().keySet()) {
-            long sizeInBytes = fuzzySuggesterCache.getIfPresent(fieldType).sizeInBytes();
+            long sizeInBytes = fuzzySuggesterCache.getIfPresent(fieldType).ramBytesUsed();
             FstStats.FstIndexShardStats fstIndexShardStats = new FstStats.FstIndexShardStats(shardId, "fuzzysuggester", fieldType, sizeInBytes);
             shardSuggestStatisticsResponse.getFstIndexShardStats().add(fstIndexShardStats);
         }

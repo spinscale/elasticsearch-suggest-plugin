@@ -23,7 +23,7 @@ public class RestStatisticsAction extends BaseRestHandler {
     }
 
     @Override
-    public void handleRequest(final RestRequest request, final RestChannel channel) {
+    public void handleRequest(final RestRequest request, final RestChannel channel, Client client) {
         client.execute(SuggestStatisticsAction.INSTANCE,  new SuggestStatisticsRequest(),
                 new RestToXContentListener<SuggestStatisticsResponse>(channel));
     }
