@@ -19,7 +19,7 @@
     <properties>
         <elasticsearch.version>1.3.2</elasticsearch.version>
         <lucene.version>4.9.0</lucene.version>
-        <tests.jvms>1</tests.jvms>
+        <tests.jvms>auto</tests.jvms>
         <tests.shuffle>true</tests.shuffle>
         <tests.output>onerror</tests.output>
         <tests.client.ratio />
@@ -167,7 +167,6 @@
                             <jvmArgs>
                                 <param>-Xmx512m</param>
                                 <param>-Xss256k</param>
-                                <param>-XX:MaxPermSize=128m</param>
                                 <param>-XX:MaxDirectMemorySize=512m</param>
                                 <param>-Des.logger.prefix=</param>
                             </jvmArgs>
