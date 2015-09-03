@@ -1,3 +1,9 @@
+# DO NOT USE THIS PLUGIN ANYMORE
+
+This plugin has been superceded by the [completion suggester](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-suggesters-completion.html) in Elasticsearch and is not developed further. There is an excellent [introductory blog post](https://www.elastic.co/blog/you-complete-me) available as well.
+
+**This plugin is not developed further than for Elasticsearch 1.3, which you should not use anymore!**
+
 # Suggester Plugin for Elasticsearch
 
 **Note**: If you only need prefix suggestions, please use the new `completion suggest` feature available since elasticsearch 0.90.3, which features blazing fast real time suggestions, uses the `AnalyzingSuggester` under the hood and will also support fuzzy mode in 0.90.4.
